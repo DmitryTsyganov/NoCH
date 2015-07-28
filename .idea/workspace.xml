@@ -2,7 +2,116 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="732faaef-c15a-400b-944b-359743c69d83" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/lib/matter-tools/32px.png" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/img/background.png" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/img/ball.png" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/img/block-2.png" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/img/block.png" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/img/box.png" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/build/Release/obj.target/memwatch/src/heapdiff.o" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/build/Release/obj.target/memwatch/src/init.o" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/build/Release/linker.lock" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/build/Release/memwatch.node" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/build/Release/obj.target/memwatch.node" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/build/Release/obj.target/memwatch/src/memwatch.o" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/img/rock.png" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/build/Release/obj.target/memwatch/src/util.o" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/img/wall-bg.jpg" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/#wscript#" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/geometry/Axes.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/factory/Bodies.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/body/Body.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/geometry/Bounds.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/CHANGELOG.md" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/CONTRIBUTING.md" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/ChangeLog" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/core/Common.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/body/Composite.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/factory/Composites.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/constraint/Constraint.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/collision/Contact.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/Demo.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/DemoMobile.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/collision/Detector.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/core/Engine.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/core/Events.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/collision/Grid.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/Gruntfile.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/module/Intro.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/LICENSE" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/build/Makefile" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/core/Metrics.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/core/Mouse.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/constraint/MouseConstraint.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/module/Outro.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/collision/Pair.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/collision/Pairs.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/collision/Query.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/README.md" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/README.md" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/render/Render.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/render/RenderPixi.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/collision/Resolver.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/core/Runner.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/collision/SAT.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/core/Sleeping.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/geometry/Svg.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/geometry/Vector.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/geometry/Vertices.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/src/body/World.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/examples/basic_heapdiff.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/build/binding.Makefile" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/binding.gyp" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/bower.json" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/build/config.gypi" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/lib/decomp.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/dev.html" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/examples/do_nothing_server.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/foo.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/lib/matter-tools/gif/gif.js.map" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/lib/matter-tools/gif/gif.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/lib/matter-tools/gif/gif.worker.js.map" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/lib/matter-tools/gif/gif.worker.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/src/heapdiff.cc" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/src/heapdiff.hh" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/svg/iconmonstr-check-mark-8-icon.svg" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/svg/iconmonstr-direction-4-icon.svg" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/svg/iconmonstr-paperclip-2-icon.svg" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/svg/iconmonstr-puzzle-icon.svg" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/svg/iconmonstr-user-icon.svg" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/include.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/index.html" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/garbage/index.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/src/init.cc" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/lib/matter-tools/jquery-1.11.0.min.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/build/matter-0.8.0.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/lib/matter-0.8.0.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/build/matter-0.8.0.min.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/lib/matter-tools/matter-tools-dev.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/lib/matter-tools/matter-tools.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/build/matter.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/build/matter.min.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/src/memwatch.cc" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/src/memwatch.hh" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/build/memwatch.target.mk" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/mobile.html" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/package.json" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/package.json" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/db/parametrs.json" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/lib/pixi.js.map" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/js/lib/pixi.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/src/platformcompat.hh" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/examples/slightly_leaky.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/css/style.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/svg/svg.svg" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/matter-js/demo/svg/terrain.svg" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/tests.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/src/util.cc" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/node_modules/memwatch/src/util.hh" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/db/parametrs.json" afterPath="" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/db/index.js" afterPath="$PROJECT_DIR$/node_modules/db/index.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/client.js" afterPath="$PROJECT_DIR$/client.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/player/index.js" afterPath="$PROJECT_DIR$/player/index.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/server.js" afterPath="$PROJECT_DIR$/server.js" />
     </list>
     <ignored path="server2.iws" />
@@ -24,21 +133,31 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="server.js" pinned="false" current-in-tab="false">
+      <file leaf-file-name="server.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/server.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="22" column="0" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.5248227">
+              <caret line="316" column="44" selection-start-line="316" selection-start-column="44" selection-end-line="316" selection-end-column="44" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="client.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="client.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/client.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.52897197">
-              <caret line="91" column="54" selection-start-line="91" selection-start-column="54" selection-end-line="91" selection-end-column="54" />
+            <state vertical-scroll-proportion="-10.466666">
+              <caret line="185" column="51" selection-start-line="185" selection-start-column="51" selection-end-line="185" selection-end-column="51" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="index.js" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/player/index.js">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="12.0">
+              <caret line="205" column="50" selection-start-line="205" selection-start-column="50" selection-end-line="205" selection-end-column="50" />
               <folding />
             </state>
           </provider>
@@ -52,8 +171,9 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/server.js" />
         <option value="$PROJECT_DIR$/client.js" />
+        <option value="$PROJECT_DIR$/player/index.js" />
+        <option value="$PROJECT_DIR$/server.js" />
       </list>
     </option>
   </component>
@@ -92,6 +212,7 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -106,14 +227,27 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
+              <option name="myItemId" value="nochServer" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
               <option name="myItemId" value="server2" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="nochServer" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="player" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
         </subPane>
       </pane>
       <pane id="Scope" />
-      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -165,8 +299,9 @@
       <envs />
       <method />
     </configuration>
-    <list size="1">
-      <item index="0" class="java.lang.String" itemvalue="Node.js.server.js" />
+    <list size="2">
+      <item index="0" class="java.lang.String" itemvalue="Node.js.bin/www" />
+      <item index="1" class="java.lang.String" itemvalue="Node.js.server.js" />
     </list>
     <recent_temporary>
       <list size="1">
@@ -245,7 +380,7 @@
     <entry file="file://$PROJECT_DIR$/server.js">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="16" column="35" selection-start-line="16" selection-start-column="35" selection-end-line="16" selection-end-column="35" />
+          <caret line="22" column="0" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
           <folding />
         </state>
       </provider>
@@ -261,15 +396,39 @@
     <entry file="file://$PROJECT_DIR$/server.js">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="22" column="0" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
+          <caret line="16" column="35" selection-start-line="16" selection-start-column="35" selection-end-line="16" selection-end-column="35" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/client.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.52897197">
-          <caret line="91" column="54" selection-start-line="91" selection-start-column="54" selection-end-line="91" selection-end-column="54" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/client.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-10.466666">
+          <caret line="185" column="51" selection-start-line="185" selection-start-column="51" selection-end-line="185" selection-end-column="51" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/player/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="12.0">
+          <caret line="205" column="50" selection-start-line="205" selection-start-column="50" selection-end-line="205" selection-end-column="50" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/server.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.5248227">
+          <caret line="316" column="44" selection-start-line="316" selection-start-column="44" selection-end-line="316" selection-end-column="44" />
           <folding />
         </state>
       </provider>
