@@ -1,43 +1,43 @@
 ;(function() {
-	var Noch = function(canvasId) {
-		this.canvas = document.getElementById(canvasId);
-		var ctx = this.canvas.getContext('2d');
+    var Noch = function(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        var ctx = this.canvas.getContext('2d');
 
-		this.started = false;
+        this.started = false;
 
-		this.canvas.width = window.innerWidth;
-		this.canvas.height = window.innerHeight;
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
 
-		var arrayOfImages = [];
-		var flag_array = 0;
+        var arrayOfImages = [];
+        var flag_array = 0;
 
-		this.gameSize = { x: this.canvas.width,
-						  y: this.canvas.height };
+        this.gameSize = { x: this.canvas.width,
+                          y: this.canvas.height };
 
-		this.img_count=7;
+        this.img_count=7;
         this.number_of_objects1 = 65;
         this.number_of_objects2 = 45;
         this.number_of_objects3 = 20;
-		function imageLoaded(){
-			flag_array++;
-		}
+        function imageLoaded(){
+            flag_array++;
+        }
         var fon;
         fon = new Image();
         fon.src = "fon.jpg";
         fon.onload = imageLoaded();
 
         for (var i=1; i<this.img_count+1; i++){
-			var img = new Image();
-			var path= String(i);
-			path+=".png";
+            var img = new Image();
+            var path= String(i);
+            path+=".png";
 
-			img.src = path;
+            img.src = path;
             arrayOfImages.push(img);
-			img.onload = imageLoaded();
-		}
+            img.onload = imageLoaded();
+        }
 
 
-		function backObjectClass (gameSize) {
+        function backObjectClass (gameSize) {
             this.check = function (point, speed, vector, traectory){
                 if(point.X > gameSize.x + gameSize.y/2) {
                     point.X = - gameSize.y/2;
@@ -129,7 +129,7 @@
             this.angle = { a:1, v: t1/Math.abs(t1)};
             this.traectory = Math.round(Math.random()*10);
         }
-		/////
+        /////
 
 
         this.bObjects1 = [];
@@ -137,7 +137,7 @@
         this.bObjects3 = [];
         //var backObject = new BackObject(this.gameSize, 3, i%this.img_count);
         //console.log( "s ", backObject.speed  );
-		for ( i=0; i<this.number_of_objects1; i++) {
+        for ( i=0; i<this.number_of_objects1; i++) {
             this.bObjects1[i] = new BackObject(this.gameSize, ctx, 1, i % this.img_count);
         }
         for ( i=0;i<this.number_of_objects2;i++) {
@@ -146,35 +146,35 @@
         for ( i=0;i<this.number_of_objects3;i++){
             this.bObjects3[i] = new BackObject(this.gameSize, ctx, 3, i%this.img_count );
 
-		}
+        }
 
-		var self = this;
-		var gameLoop = function() {
-			self.update();
-			self.draw(ctx, self.gameSize,arrayOfImages,self.img_count, fon);
-			requestAnimationFrame(gameLoop);
-		};
+        var self = this;
+        var gameLoop = function() {
+            self.update();
+            self.draw(ctx, self.gameSize,arrayOfImages,self.img_count, fon);
+            requestAnimationFrame(gameLoop);
+        };
 
-		while(flag_array!=this.img_count +1);
+        while(flag_array!=this.img_count +1);
         ctx.drawImage(fon, 0, 0);
 
-		gameLoop();
-	};
+        gameLoop();
+    };
 
-	var Game = {};
+    var Game = {};
 
-	window.onload = function() {
-		 Game = new Noch('canvas');
-	};
+    window.onload = function() {
+         Game = new Noch('canvas');
+    };
 
-	var freshData = {
+    var freshData = {
         previousRadius: 50,
         coefficient: 1000,
         targetCoefficient: 1000,
         coefficientScale: 1000,
-		inputData: {},
-		outputData:{ "mouseX": 0, "mouseY": 0 },
-		updateInput: function(data) {
+        inputData: {},
+        outputData:{ "mouseX": 0, "mouseY": 0 },
+        updateInput: function(data) {
             var newData = JSON.parse(data);
             if ("player" in newData) {
                 this.inputData = newData;
@@ -185,11 +185,11 @@
                         dicimalPlacesNumber) * this.coefficientScale;
                 console.log(this.getCoefficient());
             }
-		},
-		updateOutput: function(mouseX, mouseY) {
-			this.outputData.mouseX = mouseX;
-			this.outputData.mouseY = mouseY;
-		},
+        },
+        updateOutput: function(mouseX, mouseY) {
+            this.outputData.mouseX = mouseX;
+            this.outputData.mouseY = mouseY;
+        },
         getCoefficient: function() {
             return this.coefficient / this.coefficientScale;
         },
@@ -201,7 +201,7 @@
             }
         },
         send: false
-	};
+    };
 
     window.onresize = function() {
         Game.canvas.width = Game.gameSize.x
@@ -214,27 +214,27 @@
         socket.send(JSON.stringify(resolution));
     };
 
-	//creating connection
-	var socket = new WebSocket('ws://localhost:8085');
+    //creating connection
+    var socket = new WebSocket('ws://localhost:8085');
 
-	//getting data
-	socket.onmessage = function(event) {
-		//console.log('got message ' + event.data);
+    //getting data
+    socket.onmessage = function(event) {
+        //console.log('got message ' + event.data);
 
-		freshData.updateInput(event.data);
-		//updateInput(event.data);
-	};
+        freshData.updateInput(event.data);
+        //updateInput(event.data);
+    };
 
-	//sending data
-	document.onmousemove = function(event) {
-		/*var message = { "mouseX": event.clientX,
-						"mouseY": event.clientY };*/
-		freshData.updateOutput(event.clientX, event.clientY);
-		//socket.send(JSON.stringify(message));
-		/*if (Game.isStarted) {
-			socket.send(JSON.stringify(freshData.outputData));
-		}*/
-	};
+    //sending data
+    document.onmousemove = function(event) {
+        /*var message = { "mouseX": event.clientX,
+                        "mouseY": event.clientY };*/
+        freshData.updateOutput(event.clientX, event.clientY);
+        //socket.send(JSON.stringify(message));
+        /*if (Game.isStarted) {
+            socket.send(JSON.stringify(freshData.outputData));
+        }*/
+    };
 
     document.onmousedown = function() {
         freshData.send = true;
@@ -244,8 +244,8 @@
         freshData.send = false;
     };
 
-	document.onkeydown = function(event) {
-		if (event.keyCode == 32) {
+    document.onkeydown = function(event) {
+        if (event.keyCode == 32) {
             event.preventDefault();
             var shot = {
                 "shotX": freshData.outputData.mouseX,
@@ -253,60 +253,60 @@
             };
             socket.send(JSON.stringify(shot));
         }
-	};
+    };
 
-	socket.onopen = function() {
-		console.log("Connected.");
-		var resolution = {  "x": Game.gameSize.x,
-							"y": Game.gameSize.y };
-		socket.send(JSON.stringify(resolution));
+    socket.onopen = function() {
+        console.log("Connected.");
+        var resolution = {  "x": Game.gameSize.x,
+                            "y": Game.gameSize.y };
+        socket.send(JSON.stringify(resolution));
 
-		freshData.updateOutput(Game.gameSize.x,
-							   Game.gameSize.y);
+        freshData.updateOutput(Game.gameSize.x,
+                               Game.gameSize.y);
 
-		Game.start();
-	};
+        Game.start();
+    };
 
-	socket.onclose = function(event) {
-		if (event.wasClean) {
-			alert('Connection closed. All clear.');
-		} else {
-			alert("Connection failed.");
-		}
-		alert('Code ' + event.code +
-			" reason: " + event.data);
-	};
+    socket.onclose = function(event) {
+        if (event.wasClean) {
+            alert('Connection closed. All clear.');
+        } else {
+            alert("Connection failed.");
+        }
+        alert('Code ' + event.code +
+            " reason: " + event.data);
+    };
 
-	socket.onerror = function(error) {
-		alert("Error " + error.message);
-	};
-	//////////////////////////////////////////////
-	var previousX,previousY,prev_flag=0;
+    socket.onerror = function(error) {
+        alert("Error " + error.message);
+    };
+    //////////////////////////////////////////////
+    var previousX,previousY,prev_flag=0;
 
 
 
-	Noch.prototype = {
+    Noch.prototype = {
 
-		drawBackground: function(ctx, gameSize ) {
-			if (freshData.inputData.player) {
+        drawBackground: function(ctx, gameSize ) {
+            if (freshData.inputData.player) {
 
                 //temporary
-				//this.fillWithLines("x", "y", ctx, gameSize);
-				//this.fillWithLines("y", "x", ctx, gameSize);
+                //this.fillWithLines("x", "y", ctx, gameSize);
+                //this.fillWithLines("y", "x", ctx, gameSize);
 
-				if (prev_flag == 1 ) {
-					var deltaX = (freshData.inputData.player.x - previousX);
-					var deltaY = (freshData.inputData.player.y - previousY);
+                if (prev_flag == 1 ) {
+                    var deltaX = (freshData.inputData.player.x - previousX);
+                    var deltaY = (freshData.inputData.player.y - previousY);
 
                     for (var i = 1; i < 4; ++i) {
                         this.drawObjects(i, deltaX, deltaY, gameSize, ctx);
                     }
 
-				} else prev_flag = 1;
-				previousX = freshData.inputData.player.x;
-				previousY = freshData.inputData.player.y;
-			}
-		},
+                } else prev_flag = 1;
+                previousX = freshData.inputData.player.x;
+                previousY = freshData.inputData.player.y;
+            }
+        },
 
         drawObjects: function(number, deltaX, deltaY, gameSize, ctx) {
             for (var i = 0; i < this["number_of_objects" + number]; i++) {
@@ -325,15 +325,15 @@
             }
         },
         
-		start: function() {
-			this.started = true;
-		},
+        start: function() {
+            this.started = true;
+        },
 
-		isStarted: function() {
-			return this.started;
-		},
+        isStarted: function() {
+            return this.started;
+        },
 
-		update: function() {
+        update: function() {
             if (Game.isStarted && freshData.send) {
                 socket.send(JSON.stringify(freshData.outputData));
             }
@@ -344,15 +344,15 @@
                 freshData.coefficient += 10;
             }
 
-		},
+        },
 
-		drawElement: function(ctx, x, y, radius) {
-			ctx.beginPath();
-			ctx.arc(x, y, radius, 0, 2 * Math.PI);
-			ctx.stroke();
-			ctx.fillStyle = 'white';
-			ctx.fill();
-		},
+        drawElement: function(ctx, x, y, radius) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.fillStyle = 'white';
+            ctx.fill();
+        },
 
         drawStuff: function(stuff, letter, radius, ctx) {
 
@@ -409,68 +409,66 @@
         },
 
 
-		addLetter: function(ctx, x, y, letter, radius) {
-			ctx.fillStyle = 'black';
+        addLetter: function(ctx, x, y, letter, radius) {
+            ctx.fillStyle = 'black';
 
             var length = (letter.split('')).length;
 
-			var letterSizeCoefficient = 1.5;
+            var letterSizeCoefficient = 1.5;
 
-			var fontSize = radius * letterSizeCoefficient / Math.sqrt(length);
+            var fontSize = radius * letterSizeCoefficient / Math.sqrt(length);
 
             var xReducer = 5,
                 yReducer = 6;
             
-			ctx.font = "bold " + fontSize + "px Arial";
-			ctx.fillText(letter, x - radius / 2 - (length - 1) * radius / xReducer,
-				y + radius / 2 + - (length - 1) * radius / yReducer);
-		},
+            ctx.font = "bold " + fontSize + "px Arial";
+            ctx.fillText(letter, x - radius / 2 - (length - 1) * radius / xReducer,
+                y + radius / 2 + - (length - 1) * radius / yReducer);
+        },
 
 
 
-		fillWithLines: function(mainAxis, secondAxis, ctx, gameSize) {
-			var squareSide = 30;
-			ctx.strokeStyle = 'white';
+        fillWithLines: function(mainAxis, secondAxis, ctx, gameSize) {
+            var squareSide = 30;
+            ctx.strokeStyle = 'white';
 
-			var lineCoords = { x: 0, y: 0 };
+            var lineCoords = { x: 0, y: 0 };
 
-			for (var i = squareSide - freshData.inputData.player[mainAxis] *
+            for (var i = squareSide - freshData.inputData.player[mainAxis] *
                 freshData.targetCoefficient / 1000 % squareSide; i < gameSize[mainAxis]; i += squareSide) {
 
-				lineCoords[mainAxis] = i;
-				lineCoords[secondAxis] = 0;
+                lineCoords[mainAxis] = i;
+                lineCoords[secondAxis] = 0;
 
-				ctx.beginPath();
-				ctx.moveTo(lineCoords.x, lineCoords.y);
+                ctx.beginPath();
+                ctx.moveTo(lineCoords.x, lineCoords.y);
 
-				lineCoords[secondAxis] = gameSize[secondAxis];
+                lineCoords[secondAxis] = gameSize[secondAxis];
 
-				ctx.lineTo(lineCoords.x, lineCoords.y);
+                ctx.lineTo(lineCoords.x, lineCoords.y);
 
-				ctx.stroke();
-			}
-		},
+                ctx.stroke();
+            }
+        },
 
-		draw: function(ctx, gameSize) {
-			ctx.clearRect(0 ,0, gameSize.x, gameSize.y);
-			//draws squares to help player navigate
-			this.drawBackground(ctx, gameSize);
+        draw: function(ctx, gameSize) {
+            ctx.clearRect(0 ,0, gameSize.x, gameSize.y);
 
-			//this.drawPlayer(ctx, gameSize);
+            this.drawBackground(ctx, gameSize);
+
             this.drawStuff("Hydrogen", "H", 26, ctx);
             this.drawStuff("Carbon", "C", 40, ctx);
-			this.drawStuff("Helium", "He", 18, ctx);
-			this.drawStuff("Lithium", "Li", 72, ctx);
-			this.drawStuff("Beryllium", "Be", 56, ctx);
-			this.drawStuff("Boron", "B", 49, ctx);
-			this.drawStuff("Oxygen", "O", 30, ctx);
-			this.drawStuff("Neon", "Ne", 19, ctx);
-			this.drawStuff("Fluorine", "F", 36, ctx);
+            this.drawStuff("Helium", "He", 18, ctx);
+            this.drawStuff("Lithium", "Li", 72, ctx);
+            this.drawStuff("Beryllium", "Be", 56, ctx);
+            this.drawStuff("Boron", "B", 49, ctx);
+            this.drawStuff("Oxygen", "O", 30, ctx);
+            this.drawStuff("Neon", "Ne", 19, ctx);
+            this.drawStuff("Fluorine", "F", 36, ctx);
             this.drawStuff("proton", "p", 9, ctx);
             this.drawStuff("Nitrogen", "N", 31, ctx);
             this.drawBorder(ctx);
-			//this.drawProtons(ctx);
-		}
-	};
+        }
+    };
 
 })();
