@@ -1,17 +1,16 @@
 ;(function() {
 	var Noch = function(canvasId) {
 		this.canvas = document.getElementById(canvasId);
-		var ctx = canvas.getContext('2d');
+		var ctx = this.canvas.getContext('2d');
 
 		this.started = false;
 
-		canvas.width = window.innerWidth;
-		canvas.height = window.innerHeight;
+		this.canvas.width = window.innerWidth;
+		this.canvas.height = window.innerHeight;
 
 		this.gameSize = { x: canvas.width,
 						  y: canvas.height };
 
-		var playersOnScreen = [];
 		var arrayOfImages = [];
 		var flag_array = 0;
 
@@ -39,85 +38,84 @@
 
 
 		function backObjectClass (gameSize) {
-            this.check = function (p, s, v, t){
-                if(p.X > gameSize.x + gameSize.y/2) {
-                    p.X = - gameSize.y/2;
-                    p.Y = Math.random() * (2 * gameSize.y) - gameSize.y/2;
+            this.check = function (point, speed, vector, traectory){
+                if(point.X > gameSize.x + gameSize.y/2) {
+                    point.X = - gameSize.y/2;
+                    point.Y = Math.random() * (2 * gameSize.y) - gameSize.y/2;
 
                 }
-                if(p.X < - gameSize.y/2) {
-                    p.X = gameSize.x + gameSize.y/2;
-                    p.Y = Math.random() * (2 * gameSize.y) - gameSize.y/2;
+                if(point.X < - gameSize.y/2) {
+                    point.X = gameSize.x + gameSize.y/2;
+                    point.Y = Math.random() * (2 * gameSize.y) - gameSize.y/2;
                 }
-                if(p.Y < - gameSize.y/2) {
-                    p.X = Math.random() * (gameSize.x + gameSize.y) - gameSize.y/2;
-                    p.Y = 1.5 * gameSize.y;
+                if(point.Y < - gameSize.y/2) {
+                    point.X = Math.random() * (gameSize.x + gameSize.y) - gameSize.y/2;
+                    point.Y = 1.5 * gameSize.y;
                 }
-                if(p.Y > 1.5 * gameSize.y) {
-                    p.X = Math.random() * (gameSize.x + gameSize.y) - gameSize.y/2;
-                    p.Y = - gameSize.y/2;
+                if(point.Y > 1.5 * gameSize.y) {
+                    point.X = Math.random() * (gameSize.x + gameSize.y) - gameSize.y/2;
+                    point.Y = - gameSize.y/2;
                 }
             };
-            this.move = function (p, s, v, a, t){
-                switch (t%3){
-                    case 0: // по прямой
-                        p.X += s * v.X;
-                        p.Y += 0.7*s * v.Y;
+            this.move = function (point, speed, vector, angle, traectory){
+                switch (traectory%3){
+                    case 0: // translation
+                        point.X += speed * vector.X;
+                        point.Y += 0.7*speed * vector.Y;
                         break;
-                    case 1: // по кругу
-                        a.a+=s;
-                        p.X +=  1.5 * s* v.X*Math.cos(a.a/100);
-                        p.Y += 1.5 * s* v.Y*Math.sin(a.a/100);
+                    case 1: // rotational motion
+                        angle.a += speed;
+                        point.X +=  1.5 * speed * vector.X * Math.cos(angle.a / 100);
+                        point.Y += 1.5 * speed * vector.Y * Math.sin(angle.a / 100);
                         break;
-                    case 2: // вращение + мб перемещение
-                        if (Math.round(s*100)%2 == 0) {
-                            p.X += 0.5*s * v.X;
-                            p.Y += 0.4*s * v.Y;
+                    case 2: // compound motion
+                        if (Math.round(speed*100)%2 == 0) {
+                            point.X += 0.5*speed * vector.X;
+                            point.Y += 0.4*speed * vector.Y;
                         }
-                        a.a+=s;
+                        angle.angle+=speed;
                         break;
                 }
             };
-            this.drawBO = function (i, p, s, a, t , l, ctx){
-                switch (t%3){
+            this.drawBO = function (image, point, speed, angle, traectory, level, ctx){
+                switch (traectory % 3){
                     case 0:
-                        ctx.drawImage(i, p.X, p.Y, i.width*l/3, i.height*l/3);
+                        ctx.drawImage(image, point.X, point.Y,
+                            image.width*level / 3, image.height*level / 3);
                         break;
                     case 1:
-                        ctx.drawImage(i, p.X , p.Y, i.width*l/3, i.height*l/3);
+                        ctx.drawImage(image, point.X , point.Y,
+                            image.width*level / 3, image.height*level / 3);
                         break;
                     case 2:
-                        drawRotatedImage (i, p.X, p.Y, a.a* a.v, l);
+                        drawRotatedImage (image, point.X, point.Y,
+                            angle.a * angle.v, level);
                         break;
                 }
 
                 function drawRotatedImage(image, xx, yy, angle, kk) {
-                    var TO_RADIANS = Math.PI/180;
-                    // save the current co-ordinate system
-                    // before we screw with it
+                    var TO_RADIANS = Math.PI / 180;
+
                     ctx.save();
-                    // move to the middle of where we want to draw our image
                     ctx.translate(xx, yy);
-                    // rotate around that point, converting our
-                    // angle from degrees to radians
                     ctx.rotate(angle * TO_RADIANS );
-                    // draw it up and to the left by half the width
-                    // and height of the image
-                    ctx.drawImage(image, -(image.width*kk/6), -(image.height*kk/6), image.width*kk/3, image.height*kk/3);
-                    // and restore the co-ords to how they were when we began
+
+                    ctx.drawImage(image, -(image.width*kk/6),
+                        -(image.height*kk/6), image.width*kk/3, image.height*kk/3);
+
                     ctx.restore();
                 }
             }
 
         }
 
-        function BackObject (gameSize, ctx, l, i){
+        function BackObject (gameSize, ctx, level, image){
             backObjectClass.call(this, gameSize, ctx);
-            this.image = arrayOfImages[i];
+            this.image = arrayOfImages[image];
             this.point = {X : Math.random() * (gameSize.x + gameSize.y) - gameSize.y/2,
                          Y : Math.random() * (2 * gameSize.y) - gameSize.y/2};
-            this.level = l;
-            this.speed = l * 0.05 + Math.random();
+            this.level = level;
+            this.speed = level * 0.05 + Math.random();
             var t1 = Math.random() - 0.5;
             var t2 = Math.random() - 0.5;
             this.vector  = {
@@ -153,7 +151,7 @@
 			requestAnimationFrame(gameLoop);
 		};
 
-		while(flag_array!=this.img_count +1);//обработать ошибку загрузки
+		while(flag_array!=this.img_count +1);
         ctx.drawImage(fon, 0, 0);
 
 		gameLoop();
@@ -189,7 +187,7 @@
 
 	//getting data
 	socket.onmessage = function(event) {
-		//console.log('got message ' + event.data);
+		console.log('got message ' + event.data);
 
 		freshData.updateInput(event.data);
 		//updateInput(event.data);
@@ -238,6 +236,7 @@
 		drawBackground: function(ctx, gameSize ) {
 			if (freshData.inputData.player) {
 
+                //temporary
 				//this.fillWithLines("x", "y", ctx, gameSize);
 				//this.fillWithLines("y", "x", ctx, gameSize);
 
@@ -245,35 +244,33 @@
 					var deltaX = (freshData.inputData.player.x - previousX);
 					var deltaY = (freshData.inputData.player.y - previousY);
 
-					for (var i = 0; i < this.number_of_objects1; i++) {
-                        this.bObjects1[i].point.X -= (deltaX) % gameSize.x;
-                        this.bObjects1[i].point.Y -= (deltaY) % gameSize.y;
-                        this.bObjects1[i].move(this.bObjects1[i].point, this.bObjects1[i].speed, this.bObjects1[i].vector, this.bObjects1[i].angle, this.bObjects1[i].traectory);
-                        this.bObjects1[i].check(this.bObjects1[i].point, this.bObjects1[i].speed, this.bObjects1[i].vector, this.bObjects1[i].traectory);
-                        this.bObjects1[i].drawBO(this.bObjects1[i].image, this.bObjects1[i].point, this.bObjects1[i].speed, this.bObjects1[i].angle, this.bObjects1[i].traectory, this.bObjects1[i].level, ctx);
-					}
-                    for (i = 0; i < this.number_of_objects2; i++) {
-                        this.bObjects2[i].point.X -= (deltaX) % gameSize.x;
-                        this.bObjects2[i].point.Y -= (deltaY) % gameSize.y;
-                        this.bObjects2[i].move(this.bObjects2[i].point, this.bObjects2[i].speed, this.bObjects2[i].vector, this.bObjects2[i].angle, this.bObjects2[i].traectory);
-                        this.bObjects2[i].check(this.bObjects2[i].point, this.bObjects2[i].speed, this.bObjects2[i].vector,  this.bObjects2[i].traectory);
-                        this.bObjects2[i].drawBO(this.bObjects2[i].image, this.bObjects2[i].point, this.bObjects2[i].speed, this.bObjects2[i].angle, this.bObjects2[i].traectory, this.bObjects2[i].level, ctx);
+                    for (var i = 1; i < 4; ++i) {
+                        this.drawObjects(i, deltaX, deltaY, gameSize, ctx);
+                    }
 
-                    }
-                    for (i = 0; i < this.number_of_objects3; i++) {
-                        this.bObjects3[i].point.X -= deltaX % gameSize.x;
-                        this.bObjects3[i].point.Y -= deltaY % gameSize.y;
-                        this.bObjects3[i].move(this.bObjects3[i].point, this.bObjects3[i].speed, this.bObjects3[i].vector, this.bObjects3[i].angle, this.bObjects3[i].traectory);
-                        this.bObjects3[i].check(this.bObjects3[i].point, this.bObjects3[i].speed, this.bObjects3[i].vector,  this.bObjects3[i].traectory);
-                        this.bObjects3[i].drawBO(this.bObjects3[i].image, this.bObjects3[i].point, this.bObjects3[i].speed, this.bObjects3[i].angle, this.bObjects3[i].traectory, this.bObjects3[i].level, ctx);
-                    }
-				}
-				else prev_flag = 1;
+				} else prev_flag = 1;
 				previousX = freshData.inputData.player.x;
 				previousY = freshData.inputData.player.y;
 			}
 		},
 
+        drawObjects: function(number, deltaX, deltaY, gameSize, ctx) {
+            for (var i = 0; i < this["number_of_objects" + number]; i++) {
+                this["bObjects" + number][i].point.X -= deltaX % gameSize.x;
+                this["bObjects" + number][i].point.Y -= deltaY % gameSize.y;
+                this["bObjects" + number][i].move(this["bObjects" + number][i].point,
+                    this["bObjects" + number][i].speed, this["bObjects" + number][i].vector,
+                    this["bObjects" + number][i].angle, this["bObjects" + number][i].traectory);
+                this["bObjects" + number][i].check(this["bObjects" + number][i].point,
+                    this["bObjects" + number][i].speed, this["bObjects" + number][i].vector,
+                    this["bObjects" + number][i].traectory);
+                this["bObjects" + number][i].drawBO(this["bObjects" + number][i].image,
+                    this["bObjects" + number][i].point, this["bObjects" + number][i].speed,
+                    this["bObjects" + number][i].angle, this["bObjects" + number][i].traectory,
+                    this["bObjects" + number][i].level, ctx);
+            }
+        },
+        
 		start: function() {
 			this.started = true;
 		},

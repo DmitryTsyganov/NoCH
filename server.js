@@ -77,7 +77,7 @@ webSocketServer.on('connection', function(ws) {
         }
     });
 
-    ws.on('close', function () {
+    ws.on('close', function() {
         console.log('player disconnected ' + id);
         delete players[id];
         //--playersTotal;
