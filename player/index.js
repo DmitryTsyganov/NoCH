@@ -205,15 +205,21 @@ Player.prototype = {
 
     free: function(node, engine) {
         node.inGameType = "garbage";
-        World.remove(engine.world, node.constraint1);
-        World.remove(engine.world, node.constraint2);
-        delete node["constraint1"];
-        delete node["constraint2"];
+        if (node.constraint1) {
+            World.remove(engine.world, node.constraint1);
+            World.remove(engine.world, node.constraint2);
+            delete node["constraint1"];
+            delete node["constraint2"];
+        }
         node.chemicalBonds = 0;
         this.mass -= node.mass;
         setTimeout(function() {
             node.collisionFilter.group = 0;
         }, 1500);
+    },
+
+    die: function(engine) {
+        this.traversDST(this.body, this.free, this.setRandomSpeed, engine);
     },
 
     applyVelocity: function(mx, my) {

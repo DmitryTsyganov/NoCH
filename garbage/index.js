@@ -12,12 +12,20 @@ var Engine = Matter.Engine,
     Body = Matter.Body,
     Composite = Matter.Composite;
 
-var Garbage = function(body) {
+var Garbage = function(position, engine, elem) {
 
     this.CHARGE_RADIUS = 5;
 
+    var element = params.getParameter(elem);
+    this.body = Bodies.circle(position.x, position.y,
+        element.radius + this.CHARGE_RADIUS,
+        { frictionAir: 0.07, restitution: 0.99 });
+
+    this.setElement(elem);
+
+    World.addBody(engine.world, this.body);
+
     var self = this;
-    this.body = body;
     this.body.inGameType = "garbage";
     this.body.prevId = -1;
     this.body.chemicalBonds = 0;
@@ -87,13 +95,10 @@ Garbage.prototype = {
 
     free: function(node, engine) {
         node.inGameType = "garbage";
-        /*Composite.removeConstraint(node.composite, node.constraint1);
-        Composite.removeConstraint(node.composite, node.constraint2);*/
         World.remove(engine.world, node.constraint1);
         World.remove(engine.world, node.constraint2);
         delete node["constraint1"];
         delete node["constraint2"];
-        /*Composite.remove(node.composite, node);*/
         node.chemicalBonds = 0;
         node.collisionFilter.group = 0;
     }

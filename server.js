@@ -93,13 +93,23 @@ webSocketServer.on('connection', function(ws) {
 
     ws.on('close', function () {
         console.log('player exited ' + id);
-        deleteProperly(player.body, players);
+        deletePlayer();
     });
 
     ws.on('error', function () {
         console.log('player disconnected ' + id);
-        deleteProperly(player.body, players);
+        deletePlayer();
     });
+
+    function deletePlayer() {
+        var lastResort = player.body.position;
+        var elem = player.body.element;
+        player.die(engine);
+        delete players[id];
+        var playerGarbage = new Garbage(lastResort, engine, elem);
+        garbage.push(playerGarbage);
+        playerGarbage.body.number = garbage.indexOf(playerGarbage);
+    }
 
 });
 
@@ -111,29 +121,15 @@ function createGarbage(quantity) {
     for (var j = 0; j < quantity; ++j) {
         var element = elements[Math.ceil(getRandomArbitrary(-1, 9))];
 
-        var elem = params.getParameter(element);
-
         var OFFSET_BORDER = 40;
         var OFFSET_PLAYER = 400;
         var position = getRandomPositionInside(diameter / 2, OFFSET_PLAYER,
                                                 diameter / 2 - OFFSET_BORDER);
 
-        var CHARGE_RADIUS = 5;
-
-        var garbageBody = Bodies.circle(position.x, position.y,
-            elem.radius + CHARGE_RADIUS, { frictionAir: 0.07, restitution: 0.99 });
-
-        garbageBody.element = element;
-
-        garbageBody.totalBonds = elem.valency;
-        garbageBody.mass = elem.mass;
-
-        var singleGarbage = new Garbage(garbageBody);
-
-        World.addBody(engine.world, garbageBody);
+        var singleGarbage = new Garbage(position, engine, element);
 
         garbage.push(singleGarbage);
-        garbageBody.number = garbage.indexOf(singleGarbage);
+        singleGarbage.body.number = garbage.indexOf(singleGarbage);
     }
 }
 
