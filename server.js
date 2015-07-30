@@ -91,7 +91,6 @@ webSocketServer.on('connection', function(ws) {
         }
     });
 
-
     ws.on('close', function () {
         console.log('player exited ' + id);
         deleteProperly(player.body, players);
@@ -266,7 +265,7 @@ function findDestination(playerPosition, previousPosition,
 function createBond(playerBody, garbageBody) {
 
     if (playerBody.getFreeBonds() && garbageBody.getFreeBonds()) {
-        var prev = Composite.get(playerBody.composite, playerBody.prevId, "body");
+        var prev = Composite.get(/*playerBody.composite*/engine.world, playerBody.prevId, "body");
 
         if (prev) {
             var pos1 = playerBody.position;
@@ -283,7 +282,7 @@ function createBond(playerBody, garbageBody) {
         ++garbageBody.chemicalBonds;
 
         garbageBody.collisionFilter.group = playerBody.collisionFilter.group;
-        Composite.addBody(playerBody.composite, garbageBody);
+        /*Composite.addBody(playerBody.composite, garbageBody);*/
 
         playerBody.prevId = garbageBody.id;
         garbageBody.prevId = playerBody.id;
@@ -296,7 +295,7 @@ function createBond(playerBody, garbageBody) {
         var constraintA = createBondConstraint(playerBody, garbageBody, bondStiffness);
         var constraintB = createBondConstraint(garbageBody, playerBody, bondStiffness);
 
-        if (playerBody.id == players[playerBody.playerNumber].body.id) {
+        /*if (playerBody.id == players[playerBody.playerNumber].body.id) {
             var branchComposite = Composite.create();
             garbageBody.composite = branchComposite;
             Composite.add(branchComposite, playerBody);
@@ -305,11 +304,11 @@ function createBond(playerBody, garbageBody) {
 
         } else {
             garbageBody.composite = playerBody.composite;
-        }
+        }*/
 
         link(garbageBody, playerBody, constraintA, constraintB);
 
-        Composite.add(garbageBody.composite, [constraintA, constraintB]);
+        /*Composite.add(garbageBody.composite, [constraintA, constraintB]);*/
 
         World.add(engine.world, [constraintA, constraintB]);
 
@@ -322,10 +321,10 @@ function createBond(playerBody, garbageBody) {
 
 //links parts of a player to form tree structure
 function link(child, parent, constraint1, constraint2) {
-    parent.children.push(child);
+    parent.chemicalChildren.push(child);
     child.constraint1 = constraint1;
     child.constraint2 = constraint2;
-    child.children = [];
+    child.chemicalChildren = [];
 }
 
 //creates constraint suitable for making bond 

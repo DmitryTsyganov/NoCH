@@ -21,7 +21,7 @@ var Garbage = function(body) {
     this.body.inGameType = "garbage";
     this.body.prevId = -1;
     this.body.chemicalBonds = 0;
-    this.body.children = [];
+    this.body.chemicalChildren = [];
     this.body.getFreeBonds = function() {
         return self.body.totalBonds - self.body.chemicalBonds;
     }
@@ -53,12 +53,12 @@ Garbage.prototype = {
 
         this.setElement(elementName);
 
-        if (this.body.chemicalBonds > this.body.totalBonds &&
-            this.body.composite) {
+        if (this.body.chemicalBonds > this.body.totalBonds /*&&
+            this.body.composite*/) {
 
             if (this.body.chemicalBonds > 1) {
-                var child = this.body.children.pop();
-                this.traversDST(child, this.free, engine);
+                var child = this.body.chemicalChildren.pop();
+                this.traversDST(child, this.free, this.setRandomSpeed, engine);
                 --this.body.chemicalBonds;
             } else {
                 this.traversDST(this.body, this.free, engine);
@@ -68,15 +68,18 @@ Garbage.prototype = {
         return false;
     },
 
-    traversDST: function(node, visit, engine) {
+    traversDST: function(node, visit, visitAgain, engine) {
         visit(node, engine);
-        if (!node.children) return;
-        for (var i = 0; i < node.children.length; ++i) {
-            this.traversDST(node.children[i], visit, engine);
+        if (!node.chemicalChildren) return;
+        for (var i = 0; i < node.chemicalChildren.length; ++i) {
+            this.traversDST(node.chemicalChildren[i], visit, visitAgain, engine);
         }
+        visitAgain(node);
+    },
 
+    setRandomSpeed: function(body) {
         var speed = 10;
-        Matter.Body.setVelocity(node, {
+        Matter.Body.setVelocity(body, {
             x: Math.random() * speed,
             y: Math.random()* speed
         });
@@ -84,13 +87,13 @@ Garbage.prototype = {
 
     free: function(node, engine) {
         node.inGameType = "garbage";
-        Composite.removeConstraint(node.composite, node.constraint1);
-        Composite.removeConstraint(node.composite, node.constraint2);
+        /*Composite.removeConstraint(node.composite, node.constraint1);
+        Composite.removeConstraint(node.composite, node.constraint2);*/
         World.remove(engine.world, node.constraint1);
         World.remove(engine.world, node.constraint2);
         delete node["constraint1"];
         delete node["constraint2"];
-        Composite.remove(node.composite, node);
+        /*Composite.remove(node.composite, node);*/
         node.chemicalBonds = 0;
         node.collisionFilter.group = 0;
     }
