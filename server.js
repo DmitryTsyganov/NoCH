@@ -166,8 +166,8 @@ function addToArray(array, obj) {
 //returns coordinates equivalent in player's local CS
 function toLocalCS(coordinates, player) {
     return {
-        x: coordinates.x - (player.body.position.x - player.resolution.width / 2),
-        y: coordinates.y - (player.body.position.y - player.resolution.height / 2)
+        x: Math.ceil(coordinates.x - (player.body.position.x - player.resolution.width / 2)),
+        y: Math.ceil(coordinates.y - (player.body.position.y - player.resolution.height / 2))
     };
 }
 
@@ -177,9 +177,20 @@ function createMessage(id) {
     var response = {};
 
     response["player"] = {
-        x: players[id].body.position.x,
-        y: players[id].body.position.y
+        x: Math.ceil(players[id].body.position.x),
+        y: Math.ceil(players[id].body.position.y)
     };
+
+    var bonds = [];
+    (players.map(function(player) {
+        return player.getBondsPositions();
+    })).forEach(function(obj) {
+            bonds = bonds.concat(obj);
+    });
+
+    response["bonds"] = bonds.filter(dotInScreen, players[id]).map(function(obj) {
+            return toLocalCS(obj, players[id]);
+        });
 
     var particlesInScreen = ((players.filter(inScreen, players[id])).concat(
         garbage.filter(inScreen, players[id]))).concat(freeProtons.filter(inScreen, players[id]));
@@ -215,6 +226,14 @@ function inScreen(object) {
     this.body.position.y + this.resolution.height / this.body.coefficient / 2 &&
     object.body.position.y + object.body.circleRadius >
     this.body.position.y - this.resolution.height / this.body.coefficient / 2);
+}
+
+function dotInScreen(dot) {
+    var tolerance = 200;
+    return (dot.x < this.body.position.x + this.resolution.width + tolerance / this.body.coefficient / 2 &&
+    dot.x > this.body.position.x - this.resolution.width - tolerance / this.body.coefficient / 2 &&
+    dot.y < this.body.position.y + this.resolution.height + tolerance / this.body.coefficient / 2 &&
+    dot.y > this.body.position.y - this.resolution.height - tolerance / this.body.coefficient / 2);
 }
 
 function isElement(object) {
@@ -265,7 +284,7 @@ function findDestination(playerPosition, previousPosition,
 function createBond(playerBody, garbageBody) {
 
     if (playerBody.getFreeBonds() && garbageBody.getFreeBonds()) {
-        var prev = Composite.get(/*playerBody.composite*/engine.world, playerBody.prevId, "body");
+        var prev = Composite.get(engine.world, playerBody.prevId, "body");
 
         if (prev) {
             var pos1 = playerBody.position;
@@ -282,7 +301,6 @@ function createBond(playerBody, garbageBody) {
         ++garbageBody.chemicalBonds;
 
         garbageBody.collisionFilter.group = playerBody.collisionFilter.group;
-        /*Composite.addBody(playerBody.composite, garbageBody);*/
 
         playerBody.prevId = garbageBody.id;
         garbageBody.prevId = playerBody.id;
@@ -295,20 +313,7 @@ function createBond(playerBody, garbageBody) {
         var constraintA = createBondConstraint(playerBody, garbageBody, bondStiffness);
         var constraintB = createBondConstraint(garbageBody, playerBody, bondStiffness);
 
-        /*if (playerBody.id == players[playerBody.playerNumber].body.id) {
-            var branchComposite = Composite.create();
-            garbageBody.composite = branchComposite;
-            Composite.add(branchComposite, playerBody);
-            Composite.add(branchComposite, garbageBody);
-            addToArray(playerBody.composites, branchComposite);
-
-        } else {
-            garbageBody.composite = playerBody.composite;
-        }*/
-
         link(garbageBody, playerBody, constraintA, constraintB);
-
-        /*Composite.add(garbageBody.composite, [constraintA, constraintB]);*/
 
         World.add(engine.world, [constraintA, constraintB]);
 

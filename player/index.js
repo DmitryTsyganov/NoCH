@@ -26,9 +26,6 @@ var Player = function(ws, position, engine, elem) {
 
     this.setElement(elem);
 
-    /*this.body.composite = Composite.create();
-    Composite.addBody(this.body.composite, this.body);*/
-
     World.addBody(engine.world, this.body);
 
     var self = this;
@@ -43,7 +40,6 @@ var Player = function(ws, position, engine, elem) {
     this.body.coefficient = 1;
     this.timeLimit = null;
     this.ws = ws;
-    //this.body.composites = [];
     this.body.chemicalChildren= [];
     this.body.realRadius = this.body.circleRadius;
     this.body.coreId = this.body.id;
@@ -89,30 +85,41 @@ Player.prototype = {
         return addMass;
     },
 
-    recalculateMass: function() {
-
-        var func = this.makeMassCalc();
-        this.traversDST(this.body, func, null);
-        console.log(func.mass);
-        this.mass = func.mass;
-        /*var self = this;
-        this.mass = this.body.composites.reduce(function(sum, current) {
-            if (current) {
-                return sum + Composite.allBodies(current).reduce(
-                    function(sum, current) {
-                        if (current.id != self.body.id) {
-                            return sum + current.mass;
-                        }
-                        return sum;
-                    }, 0)
+    makeArrayCreator: function() {
+        function addPos(body) {
+            if (body.constraint1) {
+                addPos.bondPositions.push({
+                    x: body.constraint1.bodyA.position.x,
+                    y: body.constraint1.bodyA.position.y
+                });
+                addPos.bondPositions.push({
+                    x: body.constraint1.bodyB.position.x,
+                    y: body.constraint1.bodyB.position.y
+                });
             }
-            return sum;
-        }, 0);*/
+        }
+        addPos.bondPositions = [];
+        return addPos;
+    },
+
+    recalculateMass: function() {
+        this.mass = this.calculateMass(this.body);
+    },
+
+    calculateMass: function(body) {
+        var func = this.makeMassCalc();
+        this.traversDST(body, func);
+        return func.mass;
+    },
+
+    getBondsPositions: function() {
+        var func = this.makeArrayCreator();
+        this.traversDST(this.body, func);
+        return func.bondPositions;
     },
 
     shoot: function(shotPos, protonsArray, engine) {
 
-        console.log(this.body.chemicalChildren.length);
         if (!this.timeLimit && this.body.element != "Helium") {
             var element = params.getParameter("proton");
 
@@ -176,51 +183,34 @@ Player.prototype = {
         if (this.body.chemicalBonds > this.body.totalBonds) {
             --this.body.chemicalBonds;
 
-            var child = this.body.chemicalChildren.pop();
 
-            this.traversDST(child, this.free, this.setRandomSpeed, engine);
+            var child = { body: this.body.chemicalChildren[0],
+                            mass: this.calculateMass(this.body.chemicalChildren[0])};
 
-            /*var compositeToDelete = null;
-
-            for (var i = 0; i < this.body.composites.length; ++i) {
-                if (compositeToDelete == null) {
-                    compositeToDelete = this.body.composites[i];
-                } else if (this.body.composites[i] && Composite.allBodies(
-                        this.body.composites[i]).length <
-                    Composite.allBodies(compositeToDelete).length) {
-                    compositeToDelete = this.body.composites[i];
-                }
+            for (var i = 1; i < this.body.chemicalChildren.length; ++i) {
+                var nextChild = { body: this.body.chemicalChildren[i],
+                    mass: this.calculateMass(this.body.chemicalChildren[i])};
+                if (nextChild.mass < child.mass) child = nextChild;
             }
 
-            var bodies = Composite.allBodies(compositeToDelete);
-            var constraints = Composite.allConstraints(compositeToDelete);
+            this.body.chemicalChildren.splice(
+                this.body.chemicalChildren.indexOf(child.body), 1);
 
-            for (i = 0; i < constraints.length; ++i) {
-                World.remove(engine.world, constraints[i]);
-            }
-
-            for (i = 0; i < bodies.length; ++i) {
-                bodies[i].inGameType = "garbage";
-                bodies[i].collisionFilter.group = 0;
-            }*/
-
-            //this.body.composites[this.body.composites.indexOf(compositeToDelete)] = null;
+            this.traversDST(child.body, this.free, this.setRandomSpeed, engine);
 
             if (!this.body.chemicalBonds) this.checkResizeShrink();
-            this.recalculateMass();
+            //this.recalculateMass();
         }
     },
 
     free: function(node, engine) {
         node.inGameType = "garbage";
-        /*Composite.removeConstraint(node.composite, node.constraint1);
-        Composite.removeConstraint(node.composite, node.constraint2);*/
         World.remove(engine.world, node.constraint1);
         World.remove(engine.world, node.constraint2);
         delete node["constraint1"];
         delete node["constraint2"];
-        /*Composite.remove(node.composite, node);*/
         node.chemicalBonds = 0;
+        this.mass -= node.mass;
         setTimeout(function() {
             node.collisionFilter.group = 0;
         }, 1500);
@@ -230,7 +220,6 @@ Player.prototype = {
         var speed = params.getParameter(this.body.element).speed;
 
         var PERCENT_FULL = 100;
-        //var self = this;
         var massCoefficient = 0.5;
         var minMultiplier = 10;
         var partsMultiplier = 9;
@@ -238,6 +227,8 @@ Player.prototype = {
         var multiplier = PERCENT_FULL - this.mass * massCoefficient;
         if (multiplier < minMultiplier) multiplier = minMultiplier;
         speed = speed / PERCENT_FULL * multiplier / partsMultiplier;
+
+        //apply decreased velocity to all parts of the player
 
         this.traversDST(this.body, function(body) {
             Matter.Body.setVelocity(body, {
@@ -254,19 +245,6 @@ Player.prototype = {
             y: speed * my / Math.sqrt(mx * mx + my * my)
         });
 
-        //apply decreased velocity to all parts of the player
-
-        /*this.body.composites.forEach(function(item) {
-            if (item) {
-                Composite.allBodies(item).forEach(function(item) {
-                    if (item.id != self.body.id) {
-                        Matter.Body.setVelocity(item, {
-                            x: speed * mx / Math.sqrt(mx * mx + my * my),
-                            y: speed * my / Math.sqrt(mx * mx + my * my) })
-                    }
-                });
-            }
-        });*/
     },
 
     traversDST: function(node, visit, visitAgain, engine) {
@@ -303,27 +281,14 @@ Player.prototype = {
     checkResizeShrink: function() {
         this.body.realRadius = this.body.circleRadius;
 
-        /*for (var i = 0; i < this.body.composites.length; ++i) {
-            if (!this.body.composites[i]) continue;
-            var bodies = Composite.allBodies(this.body.composites[i]);
-            for (var j = 0; j < bodies.length; ++j) {
-                var pos1 = this.body.position;
-                var pos2 = bodies[j].position;
-                var newRadius = Math.sqrt((pos1.x - pos2.x) * (pos1.x - pos2.x)
-                    + (pos1.y - pos2.y) * (pos1.y - pos2.y));
-                if (newRadius > this.body.realRadius) {
-                    this.body.realRadius = newRadius;
-                }
-            }
-        }*/
-
+        var self = this;
         this.traversDST(this.body, function(body) {
-            var pos1 = this.body.position;
+            var pos1 = self.body.position;
             var pos2 = body.position;
             var newRadius = Math.sqrt((pos1.x - pos2.x) * (pos1.x - pos2.x)
                 + (pos1.y - pos2.y) * (pos1.y - pos2.y));
-            if (newRadius > this.body.realRadius) {
-                this.body.realRadius = newRadius;
+            if (newRadius > self.body.realRadius) {
+                self.body.realRadius = newRadius;
             }
         });
 

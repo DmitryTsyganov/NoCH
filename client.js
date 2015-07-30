@@ -219,7 +219,7 @@
 
     //getting data
     socket.onmessage = function(event) {
-        //console.log('got message ' + event.data);
+        console.log('got message ' + event.data);
 
         freshData.updateInput(event.data);
         //updateInput(event.data);
@@ -370,6 +370,23 @@
             }
         },
 
+        drawBonds: function(ctx) {
+            if (freshData.inputData.bonds) {
+                var bonds = freshData.inputData.bonds;
+                for (var i = 0; i < bonds.length; i += 2) {
+                    ctx.beginPath();
+                    var pos1 = freshData.Scale(bonds[i]);
+                    var pos2 = freshData.Scale(bonds[i + 1]);
+                    ctx.moveTo(pos1.x, pos1.y);
+                    ctx.lineTo(pos2.x, pos2.y);
+                    ctx.lineWidth = 10;
+
+                    ctx.strokeStyle = "white";
+                    ctx.stroke();
+                }
+            }
+        },
+
         drawBorder: function(ctx) {
             if (freshData.inputData.border) {
                 var border = freshData.inputData.border;
@@ -456,6 +473,7 @@
 
             this.drawBackground(ctx, gameSize);
 
+            this.drawBonds(ctx);
             this.drawStuff("Hydrogen", "H", 26, ctx);
             this.drawStuff("Carbon", "C", 40, ctx);
             this.drawStuff("Helium", "He", 18, ctx);
