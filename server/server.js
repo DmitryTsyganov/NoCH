@@ -42,6 +42,8 @@ var webSocketServer = new WebSocketServer.Server({
     port: 8085
 });
 
+console.log('The server is running');
+
 webSocketServer.on('connection', function(ws) {
 
     var mapRadius = params.getParameter("gameDiameter") / 2;
@@ -280,48 +282,80 @@ function findDestination(playerPosition, previousPosition,
     return localPos;
 }
 
+
 //creates Bond between player and garbage
 function createBond(playerBody, garbageBody) {
-
     if (playerBody.getFreeBonds() && garbageBody.getFreeBonds()) {
         var prev = Composite.get(engine.world, playerBody.prevId, "body");
 
         if (prev) {
-            var pos1 = playerBody.position;
-            var pos2 = prev.position;
+            //var pos1 = playerBody.position;
+            //var pos2 = prev.position;
+            //var destination = findDestination(pos1, pos2, playerBody.totalBonds,
+            //                                garbageBody.circleRadius, prev.circleRadius);
 
-            var destination = findDestination(pos1, pos2, playerBody.totalBonds,
-                                            garbageBody.circleRadius, prev.circleRadius);
-            Body.translate(garbageBody, {
-                x: destination.x + pos1.x - garbageBody.position.x,
-                y: destination.y + pos1.y - garbageBody.position.y });
+            //Body.translate(garbageBody, {
+            //    x: destination.x + pos1.x - garbageBody.position.x,
+            //    y: destination.y + pos1.y - garbageBody.position.y });
+            var i = 0;
+            var N = 10;     // Number of iterations
+            garbageBody.collisionFilter.mask = 0x0008;      // turn off collisions
+            var intervalID = setInterval(function () {
+                var pos1 = playerBody.position;
+                var pos2 = prev.position;
+
+                var destination = findDestination(pos1, pos2, playerBody.totalBonds,
+                    garbageBody.circleRadius, prev.circleRadius);
+
+                var delta = {
+                    x: (destination.x + pos1.x - garbageBody.position.x) / (N - i),
+                    y: (destination.y + pos1.y - garbageBody.position.y) / (N - i)
+                };
+
+
+                Body.translate(garbageBody, {
+                    x: delta.x ,
+                    y: delta.y });
+
+                if (++i === N) {
+                    clearInterval(intervalID);
+                    console.log('final:\tx = ' + garbageBody.position.x + '\ny = ' + garbageBody.position.y);
+                    garbageBody.collisionFilter.mask = 0x0001;
+                    finalCreateBond(playerBody, garbageBody);
+                }
+            }, 30);
+
+        } else {
+            finalCreateBond(playerBody, garbageBody);
         }
-
-        ++playerBody.chemicalBonds;
-        ++garbageBody.chemicalBonds;
-
-        garbageBody.collisionFilter.group = playerBody.collisionFilter.group;
-
-        playerBody.prevId = garbageBody.id;
-        garbageBody.prevId = playerBody.id;
-
-        garbageBody.inGameType  = "playerPart";
-        garbageBody.playerNumber = playerBody.playerNumber;
-        
-        var bondStiffness = 0.05;
-
-        var constraintA = createBondConstraint(playerBody, garbageBody, bondStiffness);
-        var constraintB = createBondConstraint(garbageBody, playerBody, bondStiffness);
-
-        link(garbageBody, playerBody, constraintA, constraintB);
-
-        World.add(engine.world, [constraintA, constraintB]);
-
-        var newRadius = calculateDistance(players[playerBody.playerNumber]
-                                            .body.position, garbageBody.position);
-        players[playerBody.playerNumber].checkResizeGrow(newRadius);
-        players[playerBody.playerNumber].recalculateMass();
     }
+}
+
+function finalCreateBond(playerBody, garbageBody) {
+    ++playerBody.chemicalBonds;
+    ++garbageBody.chemicalBonds;
+
+    garbageBody.collisionFilter.group = playerBody.collisionFilter.group;
+
+    playerBody.prevId = garbageBody.id;
+    garbageBody.prevId = playerBody.id;
+
+    garbageBody.inGameType = "playerPart";
+    garbageBody.playerNumber = playerBody.playerNumber;
+
+    var bondStiffness = 0.05;
+
+    var constraintA = createBondConstraint(playerBody, garbageBody, bondStiffness);
+    var constraintB = createBondConstraint(garbageBody, playerBody, bondStiffness);
+
+    link(garbageBody, playerBody, constraintA, constraintB);
+
+    World.add(engine.world, [constraintA, constraintB]);
+
+    var newRadius = calculateDistance(players[playerBody.playerNumber]
+        .body.position, garbageBody.position);
+    players[playerBody.playerNumber].checkResizeGrow(newRadius);
+    players[playerBody.playerNumber].recalculateMass();
 }
 
 //links parts of a player to form tree structure
