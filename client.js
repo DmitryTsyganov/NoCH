@@ -180,9 +180,9 @@
                 this.inputData = newData;
             }
             if ("coefficient" in newData) {
-                var dicimalPlacesNumber = 2;
+                var decimalPlacesNumber = 2;
                 this.targetCoefficient = (newData.coefficient).toFixed(
-                        dicimalPlacesNumber) * this.coefficientScale;
+                        decimalPlacesNumber) * this.coefficientScale;
                 console.log(this.getCoefficient());
             }
         },
@@ -219,21 +219,13 @@
 
     //getting data
     socket.onmessage = function(event) {
-        console.log('got message ' + event.data);
+        //console.log('got message ' + event.data);
 
         freshData.updateInput(event.data);
-        //updateInput(event.data);
     };
 
-    //sending data
     document.onmousemove = function(event) {
-        /*var message = { "mouseX": event.clientX,
-                        "mouseY": event.clientY };*/
         freshData.updateOutput(event.clientX, event.clientY);
-        //socket.send(JSON.stringify(message));
-        /*if (Game.isStarted) {
-            socket.send(JSON.stringify(freshData.outputData));
-        }*/
     };
 
     document.onmousedown = function() {
@@ -246,14 +238,23 @@
 
     document.onkeydown = function(event) {
         if (event.keyCode == 32) {
-            event.preventDefault();
-            var shot = {
-                "shotX": freshData.outputData.mouseX,
-                "shotY": freshData.outputData.mouseY
-            };
-            socket.send(JSON.stringify(shot));
+            shoot(event, "Proton");
+        }
+        if (event.keyCode == 78) {
+            shoot(event, "Neutron");
+            console.log("shot");
         }
     };
+
+    function shoot(event, particle) {
+        event.preventDefault();
+        var shot = {
+            "shotX": freshData.outputData.mouseX,
+            "shotY": freshData.outputData.mouseY,
+            "particle": particle
+        };
+        socket.send(JSON.stringify(shot));
+    }
 
     socket.onopen = function() {
         console.log("Connected.");
@@ -357,10 +358,11 @@
         drawStuff: function(stuff, letter, radius, ctx) {
 
             if (freshData.inputData[stuff]) {
-                for (var i = 0; i < freshData.inputData[stuff].length; ++i) {
-                    var pos = freshData.inputData[stuff][i];
+                for (var i = 0; i < freshData.inputData[stuff].length; i += 2) {
+                    var x = freshData.inputData[stuff][i];
+                    var y = freshData.inputData[stuff][i + 1];
 
-                    pos = freshData.Scale(pos);
+                    var pos = freshData.Scale({x: x, y: y});
 
                     if (pos) {
                         this.drawElement(ctx, pos.x, pos.y, radius * freshData.getCoefficient());
@@ -373,13 +375,13 @@
         drawBonds: function(ctx) {
             if (freshData.inputData.bonds) {
                 var bonds = freshData.inputData.bonds;
-                for (var i = 0; i < bonds.length; i += 2) {
+                for (var i = 0; i < bonds.length; i += 4) {
                     ctx.beginPath();
-                    var pos1 = freshData.Scale(bonds[i]);
-                    var pos2 = freshData.Scale(bonds[i + 1]);
+                    var pos1 = freshData.Scale({ x: bonds[i], y: bonds[i + 1] });
+                    var pos2 = freshData.Scale({ x: bonds[i + 2], y: bonds[i + 3] });
                     ctx.moveTo(pos1.x, pos1.y);
                     ctx.lineTo(pos2.x, pos2.y);
-                    ctx.lineWidth = 10;
+                    ctx.lineWidth = 10 * freshData.getCoefficient();
 
                     ctx.strokeStyle = "white";
                     ctx.stroke();
@@ -395,14 +397,19 @@
 
                 var half = 0.5;
 
-                for (var i = 0; i < border.length; ++i) {
+                for (var i = 0; i < border.length; i += 3) {
                     ctx.beginPath();
                     ctx.save();
 
-                    var pos = freshData.Scale(border[i].position);
+                    var x = border[i];
+                    var y = border[i + 1];
+                    var angle = border[i + 2];
+
+
+                    var pos = freshData.Scale({ x: x, y: y });
 
                     ctx.translate(pos.x, pos.y);
-                    ctx.rotate(border[i].angle);
+                    ctx.rotate(angle);
 
                     ctx.rect(-width * half, - height * half, width, height);
                     ctx.strokeStyle = 'White';
@@ -483,7 +490,8 @@
             this.drawStuff("Oxygen", "O", 30, ctx);
             this.drawStuff("Neon", "Ne", 19, ctx);
             this.drawStuff("Fluorine", "F", 36, ctx);
-            this.drawStuff("proton", "p", 9, ctx);
+            this.drawStuff("Proton", "p", 9, ctx);
+            this.drawStuff("Neutron", "n", 9, ctx);
             this.drawStuff("Nitrogen", "N", 31, ctx);
             this.drawBorder(ctx);
         }

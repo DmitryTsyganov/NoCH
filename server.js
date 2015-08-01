@@ -87,7 +87,7 @@ webSocketServer.on('connection', function(ws) {
                 x: parsedMessage.shotX - player.getLocalPosition().x,
                 y: parsedMessage.shotY - player.getLocalPosition().y
             };
-            player.shoot(shotPos, freeProtons, engine);
+            player.shoot(parsedMessage.particle, shotPos, freeProtons, engine);
         }
     });
 
@@ -105,6 +105,7 @@ webSocketServer.on('connection', function(ws) {
         var lastResort = player.body.position;
         var elem = player.body.element;
         player.die(engine);
+        World.remove(engine.world, player.body);
         delete players[id];
         var playerGarbage = new Garbage(lastResort, engine, elem);
         garbage.push(playerGarbage);
@@ -184,9 +185,9 @@ function createMessage(id) {
             bonds = bonds.concat(obj);
     });
 
-    response["bonds"] = bonds.filter(dotInScreen, players[id]).map(function(obj) {
+    response["bonds"] = parseCoordinates(bonds.filter(dotInScreen, players[id]).map(function(obj) {
             return toLocalCS(obj, players[id]);
-        });
+    }));
 
     var particlesInScreen = ((players.filter(inScreen, players[id])).concat(
         garbage.filter(inScreen, players[id]))).concat(freeProtons.filter(inScreen, players[id]));
@@ -194,19 +195,33 @@ function createMessage(id) {
     for (var j = 0; j < elements.length; ++j) {
         addElements(id, response, particlesInScreen, elements[j]);
     }
-    addElements(id, response, particlesInScreen, "proton");
+    addElements(id, response, particlesInScreen, "Proton");
+    addElements(id, response, particlesInScreen, "Neutron");
 
-    response["border"] = (border.filter(inScreen, players[id])).map(function(wall) {
-        return { position: toLocalCS(wall.body.position, players[id]), angle: wall.body.angle };
-    });
+    response["border"] = parseCoordinates((border.filter(inScreen, players[id])).map(function(wall) {
+        var pos = toLocalCS(wall.body.position, players[id]);
+        return { x: Math.ceil(pos.x), y: Math.ceil(pos.y), angle: wall.body.angle.toFixed(3) };
+    }));
 
     return JSON.stringify(response);
 }
 
 function addElements(id, object, array, elementName) {
-    object[elementName] = array.filter(isElement, elementName).map(function(particle) {
+    object[elementName] = parseCoordinates(array.filter(isElement, elementName).map(function(particle) {
         return toLocalCS(particle.body.position, players[id]);
-    });
+    }));
+}
+
+function parseCoordinates(array) {
+    var parsedArray = [];
+    for (var i = 0; i < array.length; ++i) {
+        /*parsedArray.push(array[i].x);
+        parsedArray.push(array[i].y);*/
+        for (var key in array[i]) {
+            parsedArray.push(array[i][key]);
+        }
+    }
+    return parsedArray;
 }
 
 //checks if object is in screen of current player, current player is 'this'
@@ -236,44 +251,60 @@ function isElement(object) {
     return object.body.element == this;
 }
 
+function spotQuatter(pos) {
+    if (pos.x >= 0 && pos.y >= 0) return 1;
+    if (pos.x <= 0 && pos.y >= 0) return 2;
+    if (pos.x <= 0 && pos.y <= 0) return 3;
+    if (pos.x >= 0 && pos.y <= 0) return 4;
+}
+
 //returns multipliers for next quarter of coordinate plane
-function findNextQuarter(pos) {
-    if (pos.x >= 0 && pos.y >= 0) return { x: -1, y: 1 };
-    if (pos.x <= 0 && pos.y >= 0) return { x: -1, y: -1 };
-    if (pos.x <= 0 && pos.y <= 0) return { x: 1, y: -1 };
-    if (pos.x >= 0 && pos.y <= 0) return { x: 1, y: 1 };
+function findNextQuarter(quatter) {
+    switch (quatter) {
+        case 1:
+            return {x: -1, y: 1};
+            break;
+        case 2:
+            return {x: -1, y: -1};
+            break;
+        case 3:
+            return {x: 1, y: -1};
+            break;
+        case 4:
+            return {x: 1, y: 1};
+            break;
+    }
 }
 
 //returns position for next element in player's coordinate system
 function findDestination(playerPosition, previousPosition,
                          bonds, newRadius, previousRadius) {
-    var localPos = { x: previousPosition.x - playerPosition.x,
-        y: previousPosition.y - playerPosition.y };
-    var multiplier;
-    var OFFSET = 20;
+    var hypotenuse = calculateDistance(playerPosition, previousPosition);
+        var cathetus = calculateDistance({ x: playerPosition.x, y: previousPosition.y },
+                                            previousPosition);
+        var cosine = cathetus / hypotenuse;
+        var angle = Math.acos(cosine);
 
-    if (bonds == 4) {
-        multiplier = findNextQuarter(localPos);
-        localPos = { x: Math.abs(localPos.y) * multiplier.x,
-                    y: Math.abs(localPos.x) * multiplier.y };
-    }
+        var quarter = spotQuatter({ x: previousPosition.x - playerPosition.x,
+                                    y: previousPosition.y - playerPosition.y });
 
-    if (bonds == 3) {
-        multiplier = findNextQuarter(localPos);
-        localPos = { x: (Math.abs(localPos.y) + OFFSET) * multiplier.x,
-            y: Math.abs(localPos.x) * multiplier.y };
-    }
+        switch (quarter) {
+            case 2:
+                angle = Math.PI - angle;
+                break;
+            case 3:
+                angle = Math.PI + angle;
+                break;
+            case 4:
+                angle = 2 * Math.PI - angle;
+        }
 
-    if (bonds == 2) {
-        localPos = { x: -localPos.x, y: -localPos.y };
-    }
+        var bondAngle = 2 * Math.PI / bonds;
 
-    var mainRadius = calculateDistance(localPos, { x: 0, y: 0 });
+        angle += bondAngle;
 
-    localPos = { x: localPos.x + (newRadius - previousRadius) / mainRadius * localPos.x,
-                y: localPos.y + (newRadius - previousRadius) / mainRadius * localPos.y };
-
-    return localPos;
+    return { x: (hypotenuse - previousRadius + newRadius) * Math.cos(angle),
+        y: (hypotenuse - previousRadius + newRadius) * Math.sin(angle) }
 }
 
 //creates Bond between player and garbage
@@ -458,10 +489,10 @@ function deleteProperly(body, array) {
 setInterval(function() {
     Matter.Engine.update(engine, engine.timing.delta);
     for (var j = 0; j < players.length; ++j) {
-        if(players[j] && players[j].ws) {
+        if (players[j]) {
             try {
                 players[j].ws.send(createMessage(j));
-            } catch(e) {
+            } catch (e) {
                 console.log('Caught ' + e.name + ': ' + e.message);
             }
         }

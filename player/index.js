@@ -38,7 +38,6 @@ var Player = function(ws, position, engine, elem) {
     this.body.prevId = -1;
     this.body.previousRadius = 40;
     this.body.coefficient = 1;
-    this.timeLimit = null;
     this.ws = ws;
     this.body.chemicalChildren= [];
     this.body.realRadius = this.body.circleRadius;
@@ -118,56 +117,73 @@ Player.prototype = {
         return func.bondPositions;
     },
 
-    shoot: function(shotPos, protonsArray, engine) {
+    shoot: function(particle, shotPos, nucleonsArray, engine) {
 
-        if (!this.timeLimit && this.body.element != "Helium") {
-            var element = params.getParameter("proton");
+        if (particle == "Proton" && this.body.element == "Helium") return;
+        if (particle == "Neutron" && this.body.mass == 1) return;
 
-            var offset = this.body.circleRadius + 8;
+        if (!this["timeLimit" + particle]) {
+            var element = params.getParameter(particle);
+            
+            var OFFSET_SHOT = 8;
+            
+            var offset = this.body.circleRadius + OFFSET_SHOT;
 
             var mx = shotPos.x;
             var my = shotPos.y;
 
-            var proton = {};
+            var nucleon = {};
 
-            var protonBody = Bodies.circle(this.body.position.x
+            var nucleonBody = Bodies.circle(this.body.position.x
                 + offset * mx / Math.sqrt(mx * mx + my * my),
                 this.body.position.y + offset * my
                 / Math.sqrt(mx * mx + my * my), element.radius,
                 {frictionAir: 0, restitution: 0.99, collisionFilter:
                 { group: this.body.collisionFilter.group }});
 
-            protonBody.inGameType = protonBody.element = "proton";
+            nucleonBody.inGameType = nucleonBody.element = particle;
 
-            Matter.Body.setVelocity(protonBody, {
+            Matter.Body.setVelocity(nucleonBody, {
                 x: element.speed * mx / Math.sqrt(mx * mx + my * my),
                 y: element.speed * my / Math.sqrt(mx * mx + my * my)
             });
 
-            proton.body = protonBody;
-            World.addBody(engine.world, protonBody);
-            protonsArray.push(proton);
-            protonBody.number = protonsArray.indexOf(proton);
+            nucleon.body = nucleonBody;
+            World.addBody(engine.world, nucleonBody);
+            nucleonsArray.push(nucleon);
+            nucleonBody.number = nucleonsArray.indexOf(nucleon);
 
-
-            this.changeCharge(-1, engine);
+            if (particle == "Proton") this.changeCharge(-1, engine);
 
             var self = this;
 
-            this.timeLimit = true;
+            this["timeLimit" + particle] = true;
             setTimeout(function() {
-                self.timeLimit = false;
-            }, 100);
+                self["timeLimit" + particle] = false;
+            }, element.coolDown);
 
-            protonBody.timerId1 = setTimeout(function() {
-                protonBody.collisionFilter.group = 0;
+            nucleonBody.timerId1 = setTimeout(function() {
+                nucleonBody.collisionFilter.group = 0;
             }, 2000);
 
-            protonBody.timerId2 = setTimeout(function() {
-                if (protonsArray[protonBody.number]) {
-                    delete protonsArray[protonBody.number];
+            nucleonBody.timerId2 = setTimeout(function() {
+                if (nucleonsArray[nucleonBody.number]) {
+                    delete nucleonsArray[nucleonBody.number];
                 }
             }, 10000);
+
+            if (particle == "Neutron") {
+
+                var neutronMass = 1;
+
+                this.body.mass -= neutronMass ;
+                this.body.inverseMass = 1 / this.body.mass;
+
+                setTimeout(function() {
+                    self.body.mass += neutronMass ;
+                    self.body.inverseMass = 1 / self.body.mass;
+                }, element.recoveryTime);
+            }
         }
     },
 
@@ -204,7 +220,8 @@ Player.prototype = {
     },
 
     free: function(node, engine) {
-        node.inGameType = "garbage";
+
+        node.inGameType = "temporary undefined";
         if (node.constraint1) {
             World.remove(engine.world, node.constraint1);
             World.remove(engine.world, node.constraint2);
@@ -215,6 +232,7 @@ Player.prototype = {
         this.mass -= node.mass;
         setTimeout(function() {
             node.collisionFilter.group = 0;
+            node.inGameType = "garbage";
         }, 1500);
     },
 
@@ -303,7 +321,7 @@ Player.prototype = {
         this.body.previousRadius = this.body.realRadius;
         this.ws.send(JSON.stringify( {
             "coefficient" : coefficient } ));
-        var self = this;
+
         setTimeout(function() {
             self.body.coefficient = coefficient;
         }, 1500);
