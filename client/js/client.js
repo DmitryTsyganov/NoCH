@@ -219,7 +219,7 @@
 
     //getting data
     socket.onmessage = function(event) {
-        console.log('got message ' + event.data);
+        //console.log('got message ' + event.data);
 
         freshData.updateInput(event.data);
         //updateInput(event.data);
@@ -427,8 +427,9 @@
 
 
         addLetter: function(ctx, x, y, letter, radius) {
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = 'red';
 
+            //letter += '+\n' + x + '+\n' + y;
             var length = (letter.split('')).length;
 
             var letterSizeCoefficient = 1.5;
