@@ -22,7 +22,7 @@ engine.world.gravity.y = 0;
 //parts of the border
 var border = [];
 
-//protons that will be deleted at next update
+//Protons that will be deleted at next update
 var ghosts = [];
 
 //connected players
@@ -387,7 +387,7 @@ function finalCreateBond(playerBody, garbageBody) {
 
 //links parts of a player to form tree structure
 function link(child, parent, constraint1, constraint2) {
-    parent.chemicalChildren.push(child);
+    addToArray(parent.chemicalChildren, child);
     child.constraint1 = constraint1;
     child.constraint2 = constraint2;
     child.chemicalChildren = [];
@@ -414,32 +414,32 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
                     (pair.bodyB.inGameType  == "player" ||
                     pair.bodyB.inGameType  == "playerPart")) {
             createBond(pair.bodyB, pair.bodyA);
-        } else if (pair.bodyA.inGameType  == "proton" &&
+        } else if (pair.bodyA.inGameType  == "Proton" &&
                     pair.bodyB.inGameType  == "player") {
             players[pair.bodyB.number].changeCharge(1, engine);
             prepareToDelete(pair.bodyA);
-        } else if (pair.bodyB.inGameType  == "proton" &&
+        } else if (pair.bodyB.inGameType  == "Proton" &&
                     pair.bodyA.inGameType  == "player") {
             players[pair.bodyA.number].changeCharge(1, engine);
             prepareToDelete(pair.bodyB);
-        } else if (pair.bodyA.inGameType  == "proton" &&
+        } else if (pair.bodyA.inGameType  == "Proton" &&
             pair.bodyB.inGameType  == "playerPart") {
             if (garbage[pair.bodyB.number].changeCharge(1, engine)) {
                 players[pair.bodyB.playerNumber].recalculateMass();
             }
             prepareToDelete(pair.bodyA);
-        } else if (pair.bodyB.inGameType  == "proton" &&
+        } else if (pair.bodyB.inGameType  == "Proton" &&
             pair.bodyA.inGameType  == "playerPart") {
             if (garbage[pair.bodyA.number].changeCharge(1, engine)) {
                 players[pair.bodyA.playerNumber].recalculateMass();
             }
             prepareToDelete(pair.bodyB);
-        } else if (pair.bodyA.inGameType  == "proton" &&
+        } else if (pair.bodyA.inGameType  == "Proton" &&
             pair.bodyB.inGameType  == "garbage") {
             garbage[pair.bodyB.number].setElement(elements[elements.
                 indexOf(pair.bodyB.element) + 1]);
             prepareToDelete(pair.bodyA);
-        } else if (pair.bodyB.inGameType  == "proton" &&
+        } else if (pair.bodyB.inGameType  == "Proton" &&
             pair.bodyA.inGameType  == "garbage") {
             garbage[pair.bodyA.number].setElement(elements[elements.
                 indexOf(pair.bodyA.element) + 1]);
@@ -448,7 +448,7 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
             pair.bodyA.inGameType  == "player") {
         }*/else if (pair.bodyA.inGameType == "ghost" ||
                     pair.bodyB.inGameType == "ghost") {
-            //special signal to show that proton was not deleted properly
+            //special signal to show that Proton was not deleted properly
             console.log("boo");
         }
     }
@@ -510,7 +510,7 @@ function deleteProperly(body, array) {
 
     var index = body.number;
 
-    if (body.inGameType == "proton") {
+    if (body.inGameType == "Proton") {
         clearTimeout(body.timerId1);
         clearTimeout(body.timerId2);
     }

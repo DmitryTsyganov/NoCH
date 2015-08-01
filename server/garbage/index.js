@@ -71,6 +71,8 @@ Garbage.prototype = {
             } else {
                 this.traversDST(this.body, this.free, engine);
             }
+            this.body.prevId = this.body.chemicalChildren
+                [this.body.chemicalChildren.length - 1].id;
             return true;
         }
         return false;

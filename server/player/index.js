@@ -119,7 +119,7 @@ Player.prototype = {
 
     shoot: function(particle, shotPos, nucleonsArray, engine) {
 
-        if (particle == "Proton" && this.body.element == "Helium") return;
+        if (particle == "Proton" && this.body.element == "Hydrogen") return;
         if (particle == "Neutron" && this.body.mass == 1) return;
 
         if (!this["timeLimit" + particle]) {
@@ -200,19 +200,34 @@ Player.prototype = {
             --this.body.chemicalBonds;
 
 
-            var child = { body: this.body.chemicalChildren[0],
-                            mass: this.calculateMass(this.body.chemicalChildren[0])};
+            var child = { body: null,
+                            mass: 9999999999999 };
 
-            for (var i = 1; i < this.body.chemicalChildren.length; ++i) {
-                var nextChild = { body: this.body.chemicalChildren[i],
-                    mass: this.calculateMass(this.body.chemicalChildren[i])};
-                if (nextChild.mass < child.mass) child = nextChild;
+            for (var i = 0; i < this.body.chemicalChildren.length; ++i) {
+                if (this.body.chemicalChildren[i]) {
+                    var nextChild = {
+                        body: this.body.chemicalChildren[i],
+                        mass: this.calculateMass(this.body.chemicalChildren[i])
+                    };
+                    if (nextChild.mass < child.mass) child = nextChild;
+                }
             }
 
-            this.body.chemicalChildren.splice(
-                this.body.chemicalChildren.indexOf(child.body), 1);
+            /*this.body.chemicalChildren.splice(
+                this.body.chemicalChildren.indexOf(child.body), 1);*/
 
             this.traversDST(child.body, this.free, this.setRandomSpeed, engine);
+
+            this.body.chemicalChildren[
+                this.body.chemicalChildren.indexOf(child.body)] = null;
+
+            this.body.prevId = -1;
+            for (i = this.body.chemicalChildren.length - 1; i >= 0; --i) {
+                if (this.body.chemicalChildren[i] && !this.body.chemicalChildren
+                        [(i + 1) % (this.body.chemicalChildren.length - 1)]) {
+                    this.body.prevId = this.body.chemicalChildren[i].id;
+                }
+            }
 
             if (!this.body.chemicalBonds) this.checkResizeShrink();
             //this.recalculateMass();
@@ -275,7 +290,9 @@ Player.prototype = {
         visit(node, engine);
         if (!node.chemicalChildren) return;
         for (var i = 0; i < node.chemicalChildren.length; ++i) {
-            this.traversDST(node.chemicalChildren[i], visit, visitAgain, engine);
+            if (node.chemicalChildren[i]) {
+                this.traversDST(node.chemicalChildren[i], visit, visitAgain, engine);
+            }
         }
         if (visitAgain) {
             visitAgain(node);
