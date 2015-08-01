@@ -13,18 +13,22 @@
 
         this.gameSize = { x: this.canvas.width,
                           y: this.canvas.height };
+        console.log('this.gameSize');
 
-        this.img_count=7;
+        this.img_count = 7;
         this.number_of_objects1 = 65;
         this.number_of_objects2 = 45;
         this.number_of_objects3 = 20;
+
         function imageLoaded(){
             flag_array++;
         }
-        var fon;
-        fon = new Image();
-        fon.src = "fon.jpg";
-        fon.onload = imageLoaded();
+
+        imageLoaded();  // "Костыль тут, ибо без него не работает т.к. убрал fon. см ниже"
+        // var fon;
+        // fon = new Image();
+        // fon.src = "fon.jpg";
+        // fon.onload = imageLoaded();
 
         for (var i=1; i<this.img_count+1; i++){
             var img = new Image();
@@ -151,139 +155,15 @@
         var self = this;
         var gameLoop = function() {
             self.update();
-            self.draw(ctx, self.gameSize,arrayOfImages,self.img_count, fon);
+            self.draw(ctx, self.gameSize);
             requestAnimationFrame(gameLoop);
         };
 
         while(flag_array!=this.img_count +1);
-        ctx.drawImage(fon, 0, 0);
+        // ctx.drawImage(fon, 0, 0);
 
         gameLoop();
     };
-
-    var Game = {};
-
-    window.onload = function() {
-         Game = new Noch('canvas');
-    };
-
-    var freshData = {
-        previousRadius: 50,
-        coefficient: 1000,
-        targetCoefficient: 1000,
-        coefficientScale: 1000,
-        inputData: {},
-        outputData:{ "mouseX": 0, "mouseY": 0 },
-        updateInput: function(data) {
-            var newData = JSON.parse(data);
-            if ("player" in newData) {
-                this.inputData = newData;
-            }
-            if ("coefficient" in newData) {
-                var dicimalPlacesNumber = 2;
-                this.targetCoefficient = (newData.coefficient).toFixed(
-                        dicimalPlacesNumber) * this.coefficientScale;
-                console.log(this.getCoefficient());
-            }
-        },
-        updateOutput: function(mouseX, mouseY) {
-            this.outputData.mouseX = mouseX;
-            this.outputData.mouseY = mouseY;
-        },
-        getCoefficient: function() {
-            return this.coefficient / this.coefficientScale;
-        },
-        Scale: function(position) {
-            var middle = 0.5;
-            return { x: (position.x - Game.gameSize.x * middle) * this.getCoefficient()
-            + Game.gameSize.x * middle, y: (position.y - Game.gameSize.y * middle)
-            * this.getCoefficient() + Game.gameSize.y * middle
-            }
-        },
-        send: false
-    };
-
-    window.onresize = function() {
-        Game.canvas.width = Game.gameSize.x
-            = window.innerWidth;
-        Game.canvas.height = Game.gameSize.y
-            = window.innerHeight;
-        var resolution = {  "x": Game.gameSize.x,
-            "y": Game.gameSize.y };
-
-        socket.send(JSON.stringify(resolution));
-    };
-
-    //creating connection
-    var socket = new WebSocket('ws://localhost:8085');
-
-    //getting data
-    socket.onmessage = function(event) {
-        //console.log('got message ' + event.data);
-
-        freshData.updateInput(event.data);
-        //updateInput(event.data);
-    };
-
-    //sending data
-    document.onmousemove = function(event) {
-        /*var message = { "mouseX": event.clientX,
-                        "mouseY": event.clientY };*/
-        freshData.updateOutput(event.clientX, event.clientY);
-        //socket.send(JSON.stringify(message));
-        /*if (Game.isStarted) {
-            socket.send(JSON.stringify(freshData.outputData));
-        }*/
-    };
-
-    document.onmousedown = function() {
-        freshData.send = true;
-    };
-
-    document.onmouseup = function() {
-        freshData.send = false;
-    };
-
-    document.onkeydown = function(event) {
-        if (event.keyCode == 32) {
-            event.preventDefault();
-            var shot = {
-                "shotX": freshData.outputData.mouseX,
-                "shotY": freshData.outputData.mouseY
-            };
-            socket.send(JSON.stringify(shot));
-        }
-    };
-
-    socket.onopen = function() {
-        console.log("Connected.");
-        var resolution = {  "x": Game.gameSize.x,
-                            "y": Game.gameSize.y };
-        socket.send(JSON.stringify(resolution));
-
-        freshData.updateOutput(Game.gameSize.x,
-                               Game.gameSize.y);
-
-        Game.start();
-    };
-
-    socket.onclose = function(event) {
-        if (event.wasClean) {
-            alert('Connection closed. All clear.');
-        } else {
-            alert("Connection failed.");
-        }
-        alert('Code ' + event.code +
-            " reason: " + event.data);
-    };
-
-    socket.onerror = function(error) {
-        alert("Error " + error.message);
-    };
-    //////////////////////////////////////////////
-    var previousX,previousY,prev_flag=0;
-
-
 
     Noch.prototype = {
 
@@ -425,7 +305,6 @@
             }
         },
 
-
         addLetter: function(ctx, x, y, letter, radius) {
             ctx.fillStyle = 'red';
 
@@ -443,8 +322,6 @@
             ctx.fillText(letter, x - radius / 2 - (length - 1) * radius / xReducer,
                 y + radius / 2 + - (length - 1) * radius / yReducer);
         },
-
-
 
         fillWithLines: function(mainAxis, secondAxis, ctx, gameSize) {
             var squareSide = 30;
@@ -489,5 +366,125 @@
             this.drawBorder(ctx);
         }
     };
+
+    var freshData = {
+        previousRadius: 50,
+        coefficient: 1000,
+        targetCoefficient: 1000,
+        coefficientScale: 1000,
+        inputData: {},
+        outputData:{ "mouseX": 0, "mouseY": 0 },
+        updateInput: function(data) {
+            var newData = JSON.parse(data);
+            if ("player" in newData) {
+                this.inputData = newData;
+            }
+            if ("coefficient" in newData) {
+                var dicimalPlacesNumber = 2;
+                this.targetCoefficient = (newData.coefficient).toFixed(
+                        dicimalPlacesNumber) * this.coefficientScale;
+                console.log(this.getCoefficient());
+            }
+        },
+        updateOutput: function(mouseX, mouseY) {
+            this.outputData.mouseX = mouseX;
+            this.outputData.mouseY = mouseY;
+        },
+        getCoefficient: function() {
+            return this.coefficient / this.coefficientScale;
+        },
+        Scale: function(position) {
+            var middle = 0.5;
+            return { x: (position.x - Game.gameSize.x * middle) * this.getCoefficient()
+            + Game.gameSize.x * middle, y: (position.y - Game.gameSize.y * middle)
+            * this.getCoefficient() + Game.gameSize.y * middle
+            }
+        },
+        send: false
+    };
+
+    var Game = {};
+    Game = new Noch('canvas');
+
+    window.onresize = function() {
+        Game.canvas.width = Game.gameSize.x
+            = window.innerWidth;
+        Game.canvas.height = Game.gameSize.y
+            = window.innerHeight;
+        var resolution = {  "x": Game.gameSize.x,
+            "y": Game.gameSize.y };
+
+        socket.send(JSON.stringify(resolution));
+    };
+
+
+    //creating connection
+    var socket = new WebSocket('ws://localhost:8085');
+
+    //getting data
+    socket.onmessage = function(event) {
+        //console.log('got message ' + event.data);
+
+        freshData.updateInput(event.data);
+        //updateInput(event.data);
+    };
+
+    //sending data
+    document.onmousemove = function(event) {
+        /*var message = { "mouseX": event.clientX,
+                        "mouseY": event.clientY };*/
+        freshData.updateOutput(event.clientX, event.clientY);
+        //socket.send(JSON.stringify(message));
+        /*if (Game.isStarted) {
+            socket.send(JSON.stringify(freshData.outputData));
+        }*/
+    };
+
+    document.onmousedown = function() {
+        freshData.send = true;
+    };
+
+    document.onmouseup = function() {
+        freshData.send = false;
+    };
+
+    document.onkeydown = function(event) {
+        if (event.keyCode == 32) {
+            event.preventDefault();
+            var shot = {
+                "shotX": freshData.outputData.mouseX,
+                "shotY": freshData.outputData.mouseY
+            };
+            socket.send(JSON.stringify(shot));
+        }
+    };
+
+    socket.onopen = function() {
+        console.log("Connected.");
+        var resolution = {  "x": Game.gameSize.x,
+                            "y": Game.gameSize.y };
+        socket.send(JSON.stringify(resolution));
+
+        freshData.updateOutput(Game.gameSize.x,
+                               Game.gameSize.y);
+
+        Game.start();
+    };
+
+    socket.onclose = function(event) {
+        if (event.wasClean) {
+            alert('Connection closed. All clear.');
+        } else {
+            alert("Connection failed.");
+        }
+        alert('Code ' + event.code +
+            " reason: " + event.data);
+    };
+
+    socket.onerror = function(error) {
+        alert("Error " + error.message);
+    };
+    //////////////////////////////////////////////
+    var previousX,previousY,prev_flag=0;
 
 })();
