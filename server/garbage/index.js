@@ -32,6 +32,9 @@ var Garbage = function(position, engine, elem) {
     this.body.chemicalChildren = [];
     this.body.getFreeBonds = function() {
         return self.body.totalBonds - self.body.chemicalBonds;
+    };
+    this.body.getAvailableNeutrons = function() {
+        return self.body.maxNeutrons - self.body.neutrons;
     }
 };
 
@@ -47,14 +50,17 @@ Garbage.prototype = {
             this.body.circleRadius = element.radius + this.CHARGE_RADIUS;
 
             this.body.totalBonds = element.valency;
-            this.body.speed = element.speed;
+            this.body.nuclearSpeed = element.speed;
             this.body.mass = element.mass;
             this.body.inverseMass = 1 / element.mass;
+            this.body.coolDown = element.coolDown;
+            this.body.neutrons = element.neutrons;
+            this.body.maxNeutrons = element.maxNeutrons;
         }
     },
     changeCharge: function(value, engine) {
 
-        this.CHARGE_RADIUS = 5;
+        this.CHARGE_RADIUS = 7;
 
         var elementName = elements[elements.indexOf(
             this.body.element) + value];
@@ -71,8 +77,11 @@ Garbage.prototype = {
             } else {
                 this.traversDST(this.body, this.free, engine);
             }
-            this.body.prevId = this.body.chemicalChildren
-                [this.body.chemicalChildren.length - 1].id;
+            if (this.body.chemicalBonds == 0) {
+                this.body.previousAngle = undefined;
+            } else {
+                this.body.previousAngle -= 2 * Math.PI / this.body.totalBonds;
+            }
             return true;
         }
         return false;

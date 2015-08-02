@@ -187,7 +187,14 @@ function createMessage(id) {
             bonds = bonds.concat(obj);
     });
 
-    response["bonds"] = parseCoordinates(bonds.filter(dotInScreen, players[id]).map(function(obj) {
+    for (var i = 0; i < bonds.length; i += 2) {
+        if (!dotInScreen.call(players[id], bonds[i] ||
+            !dotInScreen.call(players[id], bonds[i + 1]))) {
+            bonds.splice(i, 2);
+        }
+    }
+
+    response["bonds"] = parseCoordinates(bonds.map(function(obj) {
             return toLocalCS(obj, players[id]);
     }));
 
@@ -253,7 +260,7 @@ function isElement(object) {
     return object.body.element == this;
 }
 
-function spotQuatter(pos) {
+function spotQuarter(pos) {
     if (pos.x >= 0 && pos.y >= 0) return 1;
     if (pos.x <= 0 && pos.y >= 0) return 2;
     if (pos.x <= 0 && pos.y <= 0) return 3;
@@ -261,8 +268,8 @@ function spotQuatter(pos) {
 }
 
 //returns multipliers for next quarter of coordinate plane
-function findNextQuarter(quatter) {
-    switch (quatter) {
+function findNextQuarter(quarter) {
+    switch (quarter) {
         case 1:
             return {x: -1, y: 1};
             break;
@@ -279,16 +286,15 @@ function findNextQuarter(quatter) {
 }
 
 //returns position for next element in player's coordinate system
-function findDestination(playerPosition, previousPosition,
-                         bonds, newRadius, previousRadius) {
-    var hypotenuse = calculateDistance(playerPosition, previousPosition);
-        var cathetus = calculateDistance({ x: playerPosition.x, y: previousPosition.y },
-                                            previousPosition);
+function findAngle(playerPosition, garbagePosition, playerAngle) {
+    var hypotenuse = calculateDistance(playerPosition, garbagePosition);
+        var cathetus = calculateDistance({ x: playerPosition.x, y: garbagePosition.y },
+                                            garbagePosition);
         var cosine = cathetus / hypotenuse;
         var angle = Math.acos(cosine);
 
-        var quarter = spotQuatter({ x: previousPosition.x - playerPosition.x,
-                                    y: previousPosition.y - playerPosition.y });
+        var quarter = spotQuarter({ x: garbagePosition.x - playerPosition.x,
+                                    y: garbagePosition.y - playerPosition.y });
 
         switch (quarter) {
             case 2:
@@ -301,44 +307,55 @@ function findDestination(playerPosition, previousPosition,
                 angle = 2 * Math.PI - angle;
         }
 
-        var bondAngle = 2 * Math.PI / bonds;
-
-        angle += bondAngle;
-
-    return { x: (hypotenuse - previousRadius + newRadius) * Math.cos(angle),
-        y: (hypotenuse - previousRadius + newRadius) * Math.sin(angle) }
+    return angle - playerAngle;
+    /*{ x: (playerRadius + newRadius) *
+     Math.cos(angle) / Math.cos(playerAngle),
+     y: (playerRadius + newRadius) *
+     Math.sin(angle) / Math.sin(playerAngle) };*/
 }
 
 
 //creates Bond between player and garbage
 function createBond(playerBody, garbageBody) {
     if (playerBody.getFreeBonds() && garbageBody.getFreeBonds()) {
-        var prev = Composite.get(engine.world, playerBody.prevId, "body");
 
-        if (prev) {
-            //var pos1 = playerBody.position;
-            //var pos2 = prev.position;
-            //var destination = findDestination(pos1, pos2, playerBody.totalBonds,
-            //                                garbageBody.circleRadius, prev.circleRadius);
+        ++playerBody.chemicalBonds;
+        ++garbageBody.chemicalBonds;
 
-            //Body.translate(garbageBody, {
-            //    x: destination.x + pos1.x - garbageBody.position.x,
-            //    y: destination.y + pos1.y - garbageBody.position.y });
+        if (playerBody.previousAngle !== undefined) {
+
+            /*var pos1 = playerBody.position;
+            var pos2 = prev.position;
+            var destination = findAngle(pos1, pos2, playerBody.totalBonds,
+                                            garbageBody.circleRadius, prev.circleRadius);
+
+            Body.translate(garbageBody, {
+                x: destination.x + pos1.x - garbageBody.position.x,
+                y: destination.y + pos1.y - garbageBody.position.y });*/
             var i = 0;
-            var N = 10;     // Number of iterations
+            var N = 15;     // Number of iterations
             garbageBody.collisionFilter.mask = 0x0008;      // turn off collisions
+            var angle = playerBody.previousAngle + 2 * Math.PI / playerBody.totalBonds;
+            /*var destination = findAngle(playerBody.position, prev.position,
+                playerBody.totalBonds, garbageBody.circleRadius,
+                playerBody.circleRadius, playerBody.angle);*/
+            playerBody.previousAngle = angle;
+            if (playerBody.id == playerBody.playerNumber) {
+                garbageBody.constraintAngle = angle;    //for player/index.js 243
+            }
+
             var intervalID = setInterval(function () {
                 var pos1 = playerBody.position;
-                var pos2 = prev.position;
-
-                var destination = findDestination(pos1, pos2, playerBody.totalBonds,
-                    garbageBody.circleRadius, prev.circleRadius);
+                //var pos2 = prev.position;
 
                 var delta = {
-                    x: (destination.x + pos1.x - garbageBody.position.x) / (N - i),
-                    y: (destination.y + pos1.y - garbageBody.position.y) / (N - i)
+                    x: ((playerBody.circleRadius + garbageBody.circleRadius)
+                        * Math.cos(angle + playerBody.angle)
+                        + pos1.x - garbageBody.position.x) / (N - i),
+                    y: ((playerBody.circleRadius + garbageBody.circleRadius)
+                        * Math.sin(angle + playerBody.angle)
+                        + pos1.y - garbageBody.position.y) / (N - i)
                 };
-
 
                 Body.translate(garbageBody, {
                     x: delta.x ,
@@ -346,26 +363,28 @@ function createBond(playerBody, garbageBody) {
 
                 if (++i === N) {
                     clearInterval(intervalID);
-                    console.log('final:\tx = ' + garbageBody.position.x + '\ny = ' + garbageBody.position.y);
+                    console.log('final:\tx = ' + garbageBody.position.x +
+                                '\ny = ' + garbageBody.position.y);
                     garbageBody.collisionFilter.mask = 0x0001;
+                    garbageBody.previousAngle = findAngle(garbageBody.position,
+                        playerBody.position, garbageBody.angle);
                     finalCreateBond(playerBody, garbageBody);
                 }
             }, 30);
 
         } else {
+            playerBody.previousAngle =
+                findAngle(playerBody.position, garbageBody.position, playerBody.angle);
+            garbageBody.previousAngle =
+                findAngle(garbageBody.position, playerBody.position, garbageBody.angle);
             finalCreateBond(playerBody, garbageBody);
         }
     }
 }
 
 function finalCreateBond(playerBody, garbageBody) {
-    ++playerBody.chemicalBonds;
-    ++garbageBody.chemicalBonds;
 
     garbageBody.collisionFilter.group = playerBody.collisionFilter.group;
-
-    playerBody.prevId = garbageBody.id;
-    garbageBody.prevId = playerBody.id;
 
     garbageBody.inGameType = "playerPart";
     garbageBody.playerNumber = playerBody.playerNumber;
@@ -404,52 +423,69 @@ function createBondConstraint(_bodyA, _bodyB, _stiffness) {
 Matter.Events.on(engine, 'collisionStart', function(event) {
     var pairs = event.pairs;
     for (var i = 0; i < pairs.length; i++) {
-        var pair = pairs[i];
+        var bodyA = pairs[i].bodyA;
+        var bodyB = pairs[i].bodyB;
 
-        if ((pair.bodyA.inGameType  == "player" ||
-            pair.bodyA.inGameType  == "playerPart") &&
-            pair.bodyB.inGameType  == "garbage") {
-            createBond(pair.bodyA, pair.bodyB);
-        } else if (pair.bodyA.inGameType  == "garbage" &&
-                    (pair.bodyB.inGameType  == "player" ||
-                    pair.bodyB.inGameType  == "playerPart")) {
-            createBond(pair.bodyB, pair.bodyA);
-        } else if (pair.bodyA.inGameType  == "Proton" &&
-                    pair.bodyB.inGameType  == "player") {
-            players[pair.bodyB.number].changeCharge(1, engine);
-            prepareToDelete(pair.bodyA);
-        } else if (pair.bodyB.inGameType  == "Proton" &&
-                    pair.bodyA.inGameType  == "player") {
-            players[pair.bodyA.number].changeCharge(1, engine);
-            prepareToDelete(pair.bodyB);
-        } else if (pair.bodyA.inGameType  == "Proton" &&
-            pair.bodyB.inGameType  == "playerPart") {
-            if (garbage[pair.bodyB.number].changeCharge(1, engine)) {
-                players[pair.bodyB.playerNumber].recalculateMass();
+        if ((bodyA.inGameType  == "player" ||
+            bodyA.inGameType  == "playerPart") &&
+            bodyB.inGameType  == "garbage") {
+            createBond(bodyA, bodyB);
+        } else if (bodyA.inGameType  == "garbage" &&
+                    (bodyB.inGameType  == "player" ||
+                    bodyB.inGameType  == "playerPart")) {
+            createBond(bodyB, bodyA);
+        } else if (bodyA.inGameType  == "Proton" &&
+                    bodyB.inGameType  == "player") {
+            players[bodyB.number].changeCharge(1, engine);
+            prepareToDelete(bodyA);
+        } else if (bodyB.inGameType  == "Proton" &&
+                    bodyA.inGameType  == "player") {
+            players[bodyA.number].changeCharge(1, engine);
+            prepareToDelete(bodyB);
+        } else if (bodyA.inGameType  == "Proton" &&
+            bodyB.inGameType  == "playerPart") {
+            if (garbage[bodyB.number].changeCharge(1, engine)) {
+                players[bodyB.playerNumber].recalculateMass();
             }
-            prepareToDelete(pair.bodyA);
-        } else if (pair.bodyB.inGameType  == "Proton" &&
-            pair.bodyA.inGameType  == "playerPart") {
-            if (garbage[pair.bodyA.number].changeCharge(1, engine)) {
-                players[pair.bodyA.playerNumber].recalculateMass();
+            prepareToDelete(bodyA);
+        } else if (bodyB.inGameType  == "Proton" &&
+            bodyA.inGameType  == "playerPart") {
+            if (garbage[bodyA.number].changeCharge(1, engine)) {
+                players[bodyA.playerNumber].recalculateMass();
             }
-            prepareToDelete(pair.bodyB);
-        } else if (pair.bodyA.inGameType  == "Proton" &&
-            pair.bodyB.inGameType  == "garbage") {
-            garbage[pair.bodyB.number].setElement(elements[elements.
-                indexOf(pair.bodyB.element) + 1]);
-            prepareToDelete(pair.bodyA);
-        } else if (pair.bodyB.inGameType  == "Proton" &&
-            pair.bodyA.inGameType  == "garbage") {
-            garbage[pair.bodyA.number].setElement(elements[elements.
-                indexOf(pair.bodyA.element) + 1]);
-            prepareToDelete(pair.bodyB);
-        } /*else if (pair.bodyB.inGameType  == "player" &&
-            pair.bodyA.inGameType  == "player") {
-        }*/else if (pair.bodyA.inGameType == "ghost" ||
-                    pair.bodyB.inGameType == "ghost") {
+            prepareToDelete(bodyB);
+        } else if (bodyA.inGameType  == "Proton" &&
+            bodyB.inGameType  == "garbage") {
+            garbage[bodyB.number].setElement(elements[elements.
+                indexOf(bodyB.element) + 1]);
+            prepareToDelete(bodyA);
+        } else if (bodyB.inGameType  == "Proton" &&
+            bodyA.inGameType  == "garbage") {
+            garbage[bodyA.number].setElement(elements[elements.
+                indexOf(bodyA.element) + 1]);
+            prepareToDelete(bodyB);
+        } /*else if (bodyB.inGameType  == "player" &&
+            bodyA.inGameType  == "player") {
+        }*/else if (bodyA.inGameType == "ghost" ||
+                    bodyB.inGameType == "ghost") {
             //special signal to show that Proton was not deleted properly
             console.log("boo");
+        } else if (bodyA.inGameType == "Neutron" &&
+                    (bodyB.inGameType == "player" ||
+                    bodyB.inGameType == "garbage")) {
+            if (Math.sqrt(bodyA.velocity.x * bodyA.velocity.x +
+                    bodyA.velocity.y * bodyA.velocity.y) < 7) {
+                prepareToDelete(bodyA);
+                ++bodyB.mass;
+            }
+        } else if (bodyB.inGameType == "Neutron" &&
+            (bodyA.inGameType == "player" ||
+            bodyA.inGameType == "garbage")) {
+            if (Math.sqrt(bodyB.velocity.x * bodyB.velocity.x +
+                    bodyB.velocity.y * bodyB.velocity.y) < 7) {
+                prepareToDelete(bodyB);
+                ++bodyA.mass;
+            }
         }
     }
 });

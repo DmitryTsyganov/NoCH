@@ -13,7 +13,7 @@
 
         this.gameSize = { x: this.canvas.width,
                           y: this.canvas.height };
-        console.log('this.gameSize');
+        console.log(this.gameSize);
 
         this.img_count = 7;
         this.number_of_objects1 = 65;
@@ -62,10 +62,10 @@
                 }
             };
             this.move = function (point, speed, vector, angle, traectory){
-                switch (traectory%3){
+                switch (traectory % 3){
                     case 0: // translation
                         point.X += speed * vector.X;
-                        point.Y += 0.7*speed * vector.Y;
+                        point.Y += 0.7 * speed * vector.Y;
                         break;
                     case 1: // rotational motion
                         angle.a += speed;
@@ -73,9 +73,9 @@
                         point.Y += 1.5 * speed * vector.Y * Math.sin(angle.a / 100);
                         break;
                     case 2: // compound motion
-                        if (Math.round(speed*100)%2 == 0) {
-                            point.X += 0.5*speed * vector.X;
-                            point.Y += 0.4*speed * vector.Y;
+                        if (Math.round(speed * 100) % 2 == 0) {
+                            point.X += 0.5 * speed * vector.X;
+                            point.Y += 0.4 * speed * vector.Y;
                         }
                         angle.angle+=speed;
                         break;
@@ -175,8 +175,8 @@
                 //this.fillWithLines("y", "x", ctx, gameSize);
 
                 if (prev_flag == 1 ) {
-                    var deltaX = (freshData.inputData.player.x - previousX);
-                    var deltaY = (freshData.inputData.player.y - previousY);
+                    var deltaX = (freshData.inputData.player.x - previousX) / 2;
+                    var deltaY = (freshData.inputData.player.y - previousY) / 2;
 
                     for (var i = 1; i < 4; ++i) {
                         this.drawObjects(i, deltaX, deltaY, gameSize, ctx);
@@ -229,6 +229,7 @@
         drawElement: function(ctx, x, y, radius) {
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            ctx.lineWidth = 1;
             ctx.stroke();
             ctx.fillStyle = 'white';
             ctx.fill();

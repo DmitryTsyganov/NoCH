@@ -16,7 +16,7 @@ var Player = function(ws, position, engine, elem) {
 
     var group = Body.nextGroup(true);
 
-    this.CHARGE_RADIUS = 5;
+    this.CHARGE_RADIUS = 7;
 
     //creating physics body for player
     var element = params.getParameter(elem);
@@ -45,7 +45,10 @@ var Player = function(ws, position, engine, elem) {
     this.resolution = { width: 0, height: 0 };
     this.body.getFreeBonds = function() {
         return self.body.totalBonds - self.body.chemicalBonds;
-    }
+    };
+    this.body.getAvailableNeutrons = function() {
+        return self.body.maxNeutrons - self.body.neutrons;
+    };
 };
 
 Player.prototype = {
@@ -70,9 +73,12 @@ Player.prototype = {
             this.body.circleRadius = element.radius + this.CHARGE_RADIUS;
 
             this.body.totalBonds = element.valency;
-            this.body.speed = element.speed;
+            this.body.nuclearSpeed = element.speed;
             this.body.mass = element.mass;
             this.body.inverseMass = 1 / element.mass;
+            this.body.coolDown = element.coolDown;
+            this.body.neutrons = element.neutrons;
+            this.body.maxNeutrons = element.maxNeutrons;
         }
     },
 
@@ -120,12 +126,16 @@ Player.prototype = {
     shoot: function(particle, shotPos, nucleonsArray, engine) {
 
         if (particle == "Proton" && this.body.element == "Hydrogen") return;
-        if (particle == "Neutron" && this.body.mass == 1) return;
+        if (particle == "Neutron" && this.body.neutrons == 0) return;
 
         if (!this["timeLimit" + particle]) {
             var element = params.getParameter(particle);
             
             var OFFSET_SHOT = 8;
+
+            var nucleonMass = 1;
+
+            this.body.mass -= nucleonMass;
             
             var offset = this.body.circleRadius + OFFSET_SHOT;
 
@@ -160,29 +170,34 @@ Player.prototype = {
             this["timeLimit" + particle] = true;
             setTimeout(function() {
                 self["timeLimit" + particle] = false;
-            }, element.coolDown);
+            }, this.body.coolDown);
 
             nucleonBody.timerId1 = setTimeout(function() {
                 nucleonBody.collisionFilter.group = 0;
-            }, 2000);
+            }, 1500);
 
             nucleonBody.timerId2 = setTimeout(function() {
                 if (nucleonsArray[nucleonBody.number]) {
+                    World.remove(engine.world, nucleonBody);
                     delete nucleonsArray[nucleonBody.number];
                 }
             }, 10000);
 
             if (particle == "Neutron") {
 
-                var neutronMass = 1;
+                --this.body.neutrons;
 
-                this.body.mass -= neutronMass ;
                 this.body.inverseMass = 1 / this.body.mass;
 
                 setTimeout(function() {
-                    self.body.mass += neutronMass ;
+                    ++self.body.neutrons;
+                    self.body.mass += nucleonMass;
                     self.body.inverseMass = 1 / self.body.mass;
-                }, element.recoveryTime);
+                }, this.body.coolDown);
+                setTimeout(function() {
+                    nucleonBody.inGameType =
+                        nucleonBody.element = "Proton";
+                }, element.protonMorphing);
             }
         }
     },
@@ -221,11 +236,11 @@ Player.prototype = {
             this.body.chemicalChildren[
                 this.body.chemicalChildren.indexOf(child.body)] = null;
 
-            this.body.prevId = -1;
+            this.body.previousAngle = undefined;
             for (i = this.body.chemicalChildren.length - 1; i >= 0; --i) {
                 if (this.body.chemicalChildren[i] && !this.body.chemicalChildren
                         [(i + 1) % (this.body.chemicalChildren.length - 1)]) {
-                    this.body.prevId = this.body.chemicalChildren[i].id;
+                    this.body.previousAngle = this.body.chemicalChildren[i].constraintAngle;
                 }
             }
 
@@ -256,11 +271,11 @@ Player.prototype = {
     },
 
     applyVelocity: function(mx, my) {
-        var speed = params.getParameter(this.body.element).speed;
+        var speed = this.body.nuclearSpeed;
 
         var PERCENT_FULL = 100;
         var massCoefficient = 0.5;
-        var minMultiplier = 10;
+        var minMultiplier = 20;
         var partsMultiplier = 9;
 
         var multiplier = PERCENT_FULL - this.mass * massCoefficient;
@@ -269,17 +284,26 @@ Player.prototype = {
 
         //apply decreased velocity to all parts of the player
 
+        var pos1 = this.body.position;
+
         this.traversDST(this.body, function(body) {
-            Matter.Body.setVelocity(body, {
-                x: speed * mx / Math.sqrt(mx * mx + my * my),
-                y: speed * my / Math.sqrt(mx * mx + my * my)
+            body.force = { x: 0, y: 0 };
+            body.torque = 0;
+            var pos2 = body.position;
+            var distance = Math.sqrt((pos1.x - pos2.x) * (pos1.x - pos2.x)
+                + (pos1.y - pos2.y) * (pos1.y - pos2.y));
+            if (!distance) distance = 1;
+            Body.applyForce(body, body.position,
+            /*Matter.Body.setVelocity(body,*/ {
+                x: speed / 100 / distance * mx / Math.sqrt(mx * mx + my * my),
+                y: speed / 100 / distance * my / Math.sqrt(mx * mx + my * my)
             });
         });
 
         speed *= partsMultiplier;
 
         //apply regular velocity to player.body only
-        Matter.Body.setVelocity(this.body, {
+        Body.setVelocity(this.body, {
             x: speed * mx / Math.sqrt(mx * mx + my * my),
             y: speed * my / Math.sqrt(mx * mx + my * my)
         });
