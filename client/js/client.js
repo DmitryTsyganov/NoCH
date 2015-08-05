@@ -226,16 +226,17 @@
 
         },
 
-        drawElement: function(ctx, x, y, radius) {
+        drawElement: function(ctx, x, y, radius, color) {
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, 2 * Math.PI);
             ctx.lineWidth = 1;
+            ctx.strokeStyle = "black";
             ctx.stroke();
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = color;
             ctx.fill();
         },
 
-        drawStuff: function(stuff, letter, radius, ctx) {
+        drawStuff: function(stuff, radius, ctx) {
 
             if (freshData.inputData[stuff]) {
                 for (var i = 0; i < freshData.inputData[stuff].length; i += 2) {
@@ -245,8 +246,10 @@
                     var pos = freshData.Scale({x: x, y: y});
 
                     if (pos) {
-                        this.drawElement(ctx, pos.x, pos.y, radius * freshData.getCoefficient());
-                        this.addLetter(ctx, pos.x, pos.y, letter, radius * freshData.getCoefficient());
+                        this.drawElement(ctx, pos.x, pos.y,
+                                        radius * freshData.getCoefficient(), "white");
+                        this.addLetter(ctx, pos.x, pos.y, stuff,
+                                        radius * freshData.getCoefficient());
                     }
                 }
             }
@@ -269,6 +272,24 @@
             }
         },
 
+        drawPlayers: function(ctx) {
+            if (freshData.inputData.players) {
+                var _players = freshData.inputData.players;
+
+                for (var i = 0; i < _players.length; i += 3) {
+                    var pos = freshData.Scale({ x: _players[i + 1], y: _players[i + 2]});
+                    this.drawElement(ctx, pos.x, pos.y,
+                                    radiuses[players[_players[i]].element]
+                                    * freshData.getCoefficient(),
+                                        players[_players[i]].color);
+                    this.addLetter(ctx, pos.x, pos.y,
+                                    players[_players[i]].element,
+                                    radiuses[players[_players[i]].element]
+                                    * freshData.getCoefficient());
+                }
+            }
+        },
+
         drawBorder: function(ctx) {
             if (freshData.inputData.border) {
                 var border = freshData.inputData.border;
@@ -284,7 +305,6 @@
                     var x = border[i];
                     var y = border[i + 1];
                     var angle = border[i + 2];
-
 
                     var pos = freshData.Scale({ x: x, y: y });
 
@@ -359,21 +379,53 @@
             this.drawBackground(ctx, gameSize);
 
             this.drawBonds(ctx);
-            this.drawStuff("Hydrogen", "H", 26, ctx);
-            this.drawStuff("Carbon", "C", 40, ctx);
-            this.drawStuff("Helium", "He", 18, ctx);
-            this.drawStuff("Lithium", "Li", 72, ctx);
-            this.drawStuff("Beryllium", "Be", 56, ctx);
-            this.drawStuff("Boron", "B", 49, ctx);
-            this.drawStuff("Oxygen", "O", 30, ctx);
-            this.drawStuff("Neon", "Ne", 19, ctx);
-            this.drawStuff("Fluorine", "F", 36, ctx);
-            this.drawStuff("Proton", "p", 9, ctx);
-            this.drawStuff("Neutron", "n", 9, ctx);
-            this.drawStuff("Nitrogen", "N", 31, ctx);
+            this.drawStuff("H", 26, ctx);
+            this.drawStuff("C", 40, ctx);
+            this.drawStuff("He", 18, ctx);
+            this.drawStuff("Li", 72, ctx);
+            this.drawStuff("Be", 56, ctx);
+            this.drawStuff("B", 49, ctx);
+            this.drawStuff("O", 30, ctx);
+            this.drawStuff("Ne", 19, ctx);
+            this.drawStuff("F", 36, ctx);
+            this.drawStuff("p", 9, ctx);
+            this.drawStuff("n", 9, ctx);
+            this.drawStuff("N", 31, ctx);
+            this.drawPlayers(ctx);
             this.drawBorder(ctx);
         }
     };
+
+    var players = {};
+
+    var radiuses = {
+        "N": 31,
+        "F": 36,
+        "Ne": 19,
+        "O": 30,
+        "B": 49,
+        "Be": 56,
+        "Li": 72,
+        "He": 18,
+        "C": 40,
+        "H": 26
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     var freshData = {
         previousRadius: 50,
@@ -392,6 +444,10 @@
                 this.targetCoefficient = (newData.coefficient).toFixed(
                         dicimalPlacesNumber) * this.coefficientScale;
                 console.log(this.getCoefficient());
+            }
+            if ("id" in newData) {
+                players[newData.id] = { "color": newData.c,
+                                        "element": newData.e};
             }
         },
         updateOutput: function(mouseX, mouseY) {
@@ -425,17 +481,19 @@
         socket.send(JSON.stringify(resolution));
     };
 
-
     //creating connection
     var socket = new WebSocket('ws://localhost:8085');
 
     //getting data
     socket.onmessage = function(event) {
         //console.log('got message ' + event.data);
-
         freshData.updateInput(event.data);
         //updateInput(event.data);
     };
+
+    /*socket.on("np", function() {
+        console.log("hi");
+    });*/
 
     //sending data
     document.onmousemove = function(event) {
@@ -458,11 +516,10 @@
 
     document.onkeydown = function(event) {
         if (event.keyCode == 32) {
-            shoot(event, "Proton");
+            shoot(event, "p");
         }
         if (event.keyCode == 78) {
-            shoot(event, "Neutron");
-            console.log("shot");
+            shoot(event, "n");
         }
     };
 

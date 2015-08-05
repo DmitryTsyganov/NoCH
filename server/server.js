@@ -56,7 +56,7 @@ webSocketServer.on('connection', function(ws) {
 
     var Player = require('./player');
 
-    var player = new Player(ws, defaultPosition, engine, "Carbon");
+    var player = new Player(ws, defaultPosition, engine, "C");
 
     var id = addToArray(players, player);
 
@@ -64,6 +64,28 @@ webSocketServer.on('connection', function(ws) {
 
     console.log('new player ' + id +
      ', players total ' + players.length);
+
+    /*player.ws.emit("np", JSON.stringify({ "id": player.body.id,
+                                            "c": "white",
+                                            "e": player.body.element}));*/
+
+    var colors = ["green", "blue", "yellow", "purple", "orange"];
+    player.color = colors[Math.ceil(Math.random() * 4)];
+
+    for (var i = 0; i < players.length; ++i) {
+        if (players[i]) {
+            try {
+                players[i].ws.send(JSON.stringify({ "id": player.body.id,
+                    "c": player.color,
+                    "e": player.body.element}));
+                player.ws.send(JSON.stringify({ "id": players[i].body.id,
+                    "c": players[i].color,
+                    "e": players[i].body.element}));
+            } catch (e) {
+                console.log('Caught ' + e.name + ': ' + e.message);
+            }
+        }
+    }
 
     ws.on('message', function(message) {
         //console.log('player ' + id + " says " + message);
@@ -165,8 +187,10 @@ function addToArray(array, obj) {
 //returns coordinates equivalent in player's local CS
 function toLocalCS(coordinates, player) {
     return {
-        x: Math.ceil(coordinates.x - (player.body.position.x - player.resolution.width / 2)),
-        y: Math.ceil(coordinates.y - (player.body.position.y - player.resolution.height / 2))
+        x: Math.ceil(coordinates.x - (player.body.position.x
+                            - player.resolution.width / 2)),
+        y: Math.ceil(coordinates.y - (player.body.position.y
+                            - player.resolution.height / 2))
     };
 }
 
@@ -195,28 +219,37 @@ function createMessage(id) {
     }
 
     response["bonds"] = parseCoordinates(bonds.map(function(obj) {
-            return toLocalCS(obj, players[id]);
-    }));
+                        return toLocalCS(obj, players[id]); }));
 
-    var particlesInScreen = ((players.filter(inScreen, players[id])).concat(
-        garbage.filter(inScreen, players[id]))).concat(freeProtons.filter(inScreen, players[id]));
+    response["players"] =
+        parseCoordinates(players.filter(inScreen,
+            players[id]).map(function(player) {
+            var pos = toLocalCS(player.body.position, players[id]);
+            return { id: player.body.id, x: Math.ceil(pos.x), y: Math.ceil(pos.y) };
+        }));
+
+    var particlesInScreen = ((garbage.filter(inScreen, players[id])))
+                            .concat(freeProtons.filter(inScreen, players[id]));
 
     for (var j = 0; j < elements.length; ++j) {
         addElements(id, response, particlesInScreen, elements[j]);
     }
-    addElements(id, response, particlesInScreen, "Proton");
-    addElements(id, response, particlesInScreen, "Neutron");
+    addElements(id, response, particlesInScreen, "p");
+    addElements(id, response, particlesInScreen, "n");
 
-    response["border"] = parseCoordinates((border.filter(inScreen, players[id])).map(function(wall) {
+    response["border"] = parseCoordinates((border.filter(inScreen,
+                                            players[id])).map(function(wall) {
         var pos = toLocalCS(wall.body.position, players[id]);
-        return { x: Math.ceil(pos.x), y: Math.ceil(pos.y), angle: wall.body.angle.toFixed(3) };
+        return { x: Math.ceil(pos.x), y: Math.ceil(pos.y),
+                    angle: wall.body.angle.toFixed(3) };
     }));
 
     return JSON.stringify(response);
 }
 
 function addElements(id, object, array, elementName) {
-    object[elementName] = parseCoordinates(array.filter(isElement, elementName).map(function(particle) {
+    object[elementName] = parseCoordinates(array.filter(isElement,
+                            elementName).map(function(particle) {
         return toLocalCS(particle.body.position, players[id]);
     }));
 }
@@ -239,21 +272,20 @@ function parseCoordinates(array) {
  */
 function inScreen(object) {
     return (object.body.position.x - object.body.circleRadius <
-    this.body.position.x + this.resolution.width / this.body.coefficient / 2 &&
-    object.body.position.x + object.body.circleRadius >
-    this.body.position.x - this.resolution.width / this.body.coefficient / 2 &&
-    object.body.position.y - object.body.circleRadius <
-    this.body.position.y + this.resolution.height / this.body.coefficient / 2 &&
-    object.body.position.y + object.body.circleRadius >
-    this.body.position.y - this.resolution.height / this.body.coefficient / 2);
+        this.body.position.x + this.resolution.width / this.body.coefficient / 2 &&
+        object.body.position.x + object.body.circleRadius >
+        this.body.position.x - this.resolution.width / this.body.coefficient / 2 &&
+        object.body.position.y - object.body.circleRadius <
+        this.body.position.y + this.resolution.height / this.body.coefficient / 2 &&
+        object.body.position.y + object.body.circleRadius >
+        this.body.position.y - this.resolution.height / this.body.coefficient / 2);
 }
 
 function dotInScreen(dot) {
-    var tolerance = 200;
-    return (dot.x < this.body.position.x + this.resolution.width + tolerance / this.body.coefficient / 2 &&
-    dot.x > this.body.position.x - this.resolution.width - tolerance / this.body.coefficient / 2 &&
-    dot.y < this.body.position.y + this.resolution.height + tolerance / this.body.coefficient / 2 &&
-    dot.y > this.body.position.y - this.resolution.height - tolerance / this.body.coefficient / 2);
+    return (dot.x < this.body.position.x + this.resolution.width / this.body.coefficient / 2 &&
+    dot.x > this.body.position.x - this.resolution.width / this.body.coefficient / 2 &&
+    dot.y < this.body.position.y + this.resolution.height / this.body.coefficient / 2 &&
+    dot.y > this.body.position.y - this.resolution.height / this.body.coefficient / 2);
 }
 
 function isElement(object) {
@@ -434,32 +466,32 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
                     (bodyB.inGameType  == "player" ||
                     bodyB.inGameType  == "playerPart")) {
             createBond(bodyB, bodyA);
-        } else if (bodyA.inGameType  == "Proton" &&
+        } else if (bodyA.inGameType  == "p" &&
                     bodyB.inGameType  == "player") {
             players[bodyB.number].changeCharge(1, engine);
             prepareToDelete(bodyA);
-        } else if (bodyB.inGameType  == "Proton" &&
+        } else if (bodyB.inGameType  == "p" &&
                     bodyA.inGameType  == "player") {
             players[bodyA.number].changeCharge(1, engine);
             prepareToDelete(bodyB);
-        } else if (bodyA.inGameType  == "Proton" &&
+        } else if (bodyA.inGameType  == "p" &&
             bodyB.inGameType  == "playerPart") {
             if (garbage[bodyB.number].changeCharge(1, engine)) {
                 players[bodyB.playerNumber].recalculateMass();
             }
             prepareToDelete(bodyA);
-        } else if (bodyB.inGameType  == "Proton" &&
+        } else if (bodyB.inGameType  == "p" &&
             bodyA.inGameType  == "playerPart") {
             if (garbage[bodyA.number].changeCharge(1, engine)) {
                 players[bodyA.playerNumber].recalculateMass();
             }
             prepareToDelete(bodyB);
-        } else if (bodyA.inGameType  == "Proton" &&
+        } else if (bodyA.inGameType  == "p" &&
             bodyB.inGameType  == "garbage") {
             garbage[bodyB.number].setElement(elements[elements.
                 indexOf(bodyB.element) + 1]);
             prepareToDelete(bodyA);
-        } else if (bodyB.inGameType  == "Proton" &&
+        } else if (bodyB.inGameType  == "p" &&
             bodyA.inGameType  == "garbage") {
             garbage[bodyA.number].setElement(elements[elements.
                 indexOf(bodyA.element) + 1]);
@@ -470,7 +502,7 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
                     bodyB.inGameType == "ghost") {
             //special signal to show that Proton was not deleted properly
             console.log("boo");
-        } else if (bodyA.inGameType == "Neutron" &&
+        } else if (bodyA.inGameType == "n" &&
                     (bodyB.inGameType == "player" ||
                     bodyB.inGameType == "garbage")) {
             if (Math.sqrt(bodyA.velocity.x * bodyA.velocity.x +
@@ -478,7 +510,7 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
                 prepareToDelete(bodyA);
                 ++bodyB.mass;
             }
-        } else if (bodyB.inGameType == "Neutron" &&
+        } else if (bodyB.inGameType == "n" &&
             (bodyA.inGameType == "player" ||
             bodyA.inGameType == "garbage")) {
             if (Math.sqrt(bodyB.velocity.x * bodyB.velocity.x +
@@ -546,7 +578,7 @@ function deleteProperly(body, array) {
 
     var index = body.number;
 
-    if (body.inGameType == "Proton") {
+    if (body.inGameType == "p") {
         clearTimeout(body.timerId1);
         clearTimeout(body.timerId2);
     }

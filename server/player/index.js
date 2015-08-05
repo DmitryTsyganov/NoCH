@@ -125,8 +125,8 @@ Player.prototype = {
 
     shoot: function(particle, shotPos, nucleonsArray, engine) {
 
-        if (particle == "Proton" && this.body.element == "Hydrogen") return;
-        if (particle == "Neutron" && this.body.neutrons == 0) return;
+        if (particle == "p" && this.body.element == "H") return;
+        if (particle == "n" && this.body.neutrons == 0) return;
 
         if (!this["timeLimit" + particle]) {
             var element = params.getParameter(particle);
@@ -163,7 +163,7 @@ Player.prototype = {
             nucleonsArray.push(nucleon);
             nucleonBody.number = nucleonsArray.indexOf(nucleon);
 
-            if (particle == "Proton") this.changeCharge(-1, engine);
+            if (particle == "p") this.changeCharge(-1, engine);
 
             var self = this;
 
@@ -183,7 +183,7 @@ Player.prototype = {
                 }
             }, 10000);
 
-            if (particle == "Neutron") {
+            if (particle == "n") {
 
                 --this.body.neutrons;
 
@@ -196,7 +196,7 @@ Player.prototype = {
                 }, this.body.coolDown);
                 setTimeout(function() {
                     nucleonBody.inGameType =
-                        nucleonBody.element = "Proton";
+                        nucleonBody.element = "p";
                 }, element.protonMorphing);
             }
         }
@@ -276,7 +276,7 @@ Player.prototype = {
         var PERCENT_FULL = 100;
         var massCoefficient = 0.5;
         var minMultiplier = 20;
-        var partsMultiplier = 9;
+        var partsMultiplier = 6;
 
         var multiplier = PERCENT_FULL - this.mass * massCoefficient;
         if (multiplier < minMultiplier) multiplier = minMultiplier;
@@ -362,6 +362,8 @@ Player.prototype = {
         this.body.previousRadius = this.body.realRadius;
         this.ws.send(JSON.stringify( {
             "coefficient" : coefficient } ));
+
+        console.log(self.body.realRadius);
 
         setTimeout(function() {
             self.body.coefficient = coefficient;
