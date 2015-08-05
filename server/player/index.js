@@ -295,8 +295,10 @@ Player.prototype = {
             if (!distance) distance = 1;
             Body.applyForce(body, body.position,
             /*Matter.Body.setVelocity(body,*/ {
-                x: speed / 100 / distance * mx / Math.sqrt(mx * mx + my * my),
-                y: speed / 100 / distance * my / Math.sqrt(mx * mx + my * my)
+                x: speed / 100 / Math.sqrt(distance) *
+                mx / Math.sqrt(mx * mx + my * my),
+                y: speed / 100 / Math.sqrt(distance) *
+                my / Math.sqrt(mx * mx + my * my)
             });
         });
 
@@ -363,7 +365,7 @@ Player.prototype = {
         this.ws.send(JSON.stringify( {
             "coefficient" : coefficient } ));
 
-        console.log(self.body.realRadius);
+        //console.log(self.body.realRadius);
 
         setTimeout(function() {
             self.body.coefficient = coefficient;

@@ -349,68 +349,66 @@ function findAngle(playerPosition, garbagePosition, playerAngle) {
 
 //creates Bond between player and garbage
 function createBond(playerBody, garbageBody) {
-    if (playerBody.getFreeBonds() && garbageBody.getFreeBonds()) {
 
-        ++playerBody.chemicalBonds;
-        ++garbageBody.chemicalBonds;
+    ++playerBody.chemicalBonds;
+    ++garbageBody.chemicalBonds;
 
-        if (playerBody.previousAngle !== undefined) {
+    if (playerBody.previousAngle !== undefined) {
 
-            /*var pos1 = playerBody.position;
-            var pos2 = prev.position;
-            var destination = findAngle(pos1, pos2, playerBody.totalBonds,
-                                            garbageBody.circleRadius, prev.circleRadius);
+        /*var pos1 = playerBody.position;
+        var pos2 = prev.position;
+        var destination = findAngle(pos1, pos2, playerBody.totalBonds,
+                                        garbageBody.circleRadius, prev.circleRadius);
+
+        Body.translate(garbageBody, {
+            x: destination.x + pos1.x - garbageBody.position.x,
+            y: destination.y + pos1.y - garbageBody.position.y });*/
+        var i = 0;
+        var N = 15;     // Number of iterations
+        garbageBody.collisionFilter.mask = 0x0008;      // turn off collisions
+        var angle = playerBody.previousAngle + 2 * Math.PI / playerBody.totalBonds;
+        /*var destination = findAngle(playerBody.position, prev.position,
+            playerBody.totalBonds, garbageBody.circleRadius,
+            playerBody.circleRadius, playerBody.angle);*/
+        playerBody.previousAngle = angle;
+        if (playerBody.id == playerBody.playerNumber) {
+            garbageBody.constraintAngle = angle;    //for player/index.js 243
+        }
+
+        var intervalID = setInterval(function () {
+            var pos1 = playerBody.position;
+            //var pos2 = prev.position;
+
+            var delta = {
+                x: ((playerBody.circleRadius + garbageBody.circleRadius)
+                    * Math.cos(angle + playerBody.angle)
+                    + pos1.x - garbageBody.position.x) / (N - i),
+                y: ((playerBody.circleRadius + garbageBody.circleRadius)
+                    * Math.sin(angle + playerBody.angle)
+                    + pos1.y - garbageBody.position.y) / (N - i)
+            };
 
             Body.translate(garbageBody, {
-                x: destination.x + pos1.x - garbageBody.position.x,
-                y: destination.y + pos1.y - garbageBody.position.y });*/
-            var i = 0;
-            var N = 15;     // Number of iterations
-            garbageBody.collisionFilter.mask = 0x0008;      // turn off collisions
-            var angle = playerBody.previousAngle + 2 * Math.PI / playerBody.totalBonds;
-            /*var destination = findAngle(playerBody.position, prev.position,
-                playerBody.totalBonds, garbageBody.circleRadius,
-                playerBody.circleRadius, playerBody.angle);*/
-            playerBody.previousAngle = angle;
-            if (playerBody.id == playerBody.playerNumber) {
-                garbageBody.constraintAngle = angle;    //for player/index.js 243
+                x: delta.x ,
+                y: delta.y });
+
+            if (++i === N) {
+                clearInterval(intervalID);
+                /*console.log('final:\tx = ' + garbageBody.position.x +
+                            '\ny = ' + garbageBody.position.y);*/
+                garbageBody.collisionFilter.mask = 0x0001;
+                garbageBody.previousAngle = findAngle(garbageBody.position,
+                    playerBody.position, garbageBody.angle);
+                finalCreateBond(playerBody, garbageBody);
             }
+        }, 30);
 
-            var intervalID = setInterval(function () {
-                var pos1 = playerBody.position;
-                //var pos2 = prev.position;
-
-                var delta = {
-                    x: ((playerBody.circleRadius + garbageBody.circleRadius)
-                        * Math.cos(angle + playerBody.angle)
-                        + pos1.x - garbageBody.position.x) / (N - i),
-                    y: ((playerBody.circleRadius + garbageBody.circleRadius)
-                        * Math.sin(angle + playerBody.angle)
-                        + pos1.y - garbageBody.position.y) / (N - i)
-                };
-
-                Body.translate(garbageBody, {
-                    x: delta.x ,
-                    y: delta.y });
-
-                if (++i === N) {
-                    clearInterval(intervalID);
-                    console.log('final:\tx = ' + garbageBody.position.x +
-                                '\ny = ' + garbageBody.position.y);
-                    garbageBody.collisionFilter.mask = 0x0001;
-                    garbageBody.previousAngle = findAngle(garbageBody.position,
-                        playerBody.position, garbageBody.angle);
-                    finalCreateBond(playerBody, garbageBody);
-                }
-            }, 30);
-
-        } else {
-            playerBody.previousAngle =
-                findAngle(playerBody.position, garbageBody.position, playerBody.angle);
-            garbageBody.previousAngle =
-                findAngle(garbageBody.position, playerBody.position, garbageBody.angle);
-            finalCreateBond(playerBody, garbageBody);
-        }
+    } else {
+        playerBody.previousAngle =
+            findAngle(playerBody.position, garbageBody.position, playerBody.angle);
+        garbageBody.previousAngle =
+            findAngle(garbageBody.position, playerBody.position, garbageBody.angle);
+        finalCreateBond(playerBody, garbageBody);
     }
 }
 
@@ -461,11 +459,19 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
         if ((bodyA.inGameType  == "player" ||
             bodyA.inGameType  == "playerPart") &&
             bodyB.inGameType  == "garbage") {
-            createBond(bodyA, bodyB);
+            if (bodyA.getFreeBonds() && bodyB.getFreeBonds()) {
+                createBond(bodyA, bodyB);
+            } else {
+
+            }
         } else if (bodyA.inGameType  == "garbage" &&
                     (bodyB.inGameType  == "player" ||
                     bodyB.inGameType  == "playerPart")) {
-            createBond(bodyB, bodyA);
+            if (bodyB.getFreeBonds() && bodyA.getFreeBonds()) {
+                createBond(bodyB, bodyA);
+            } else {
+                
+            }
         } else if (bodyA.inGameType  == "p" &&
                     bodyB.inGameType  == "player") {
             players[bodyB.number].changeCharge(1, engine);
