@@ -277,6 +277,7 @@ Player.prototype = {
         var massCoefficient = 0.5;
         var minMultiplier = 20;
         var partsMultiplier = 6;
+        var forceCoefficient = 130;
 
         var multiplier = PERCENT_FULL - this.mass * massCoefficient;
         if (multiplier < minMultiplier) multiplier = minMultiplier;
@@ -295,19 +296,21 @@ Player.prototype = {
             if (!distance) distance = 1;
             Body.applyForce(body, body.position,
             /*Matter.Body.setVelocity(body,*/ {
-                x: speed / 100 / Math.sqrt(distance) *
+                x: speed / forceCoefficient / Math.sqrt(distance) *
                 mx / Math.sqrt(mx * mx + my * my),
-                y: speed / 100 / Math.sqrt(distance) *
+                y: speed / forceCoefficient / Math.sqrt(distance) *
                 my / Math.sqrt(mx * mx + my * my)
             });
         });
 
-        speed *= partsMultiplier;
+        //speed *= partsMultiplier;
 
         //apply regular velocity to player.body only
-        Body.setVelocity(this.body, {
-            x: speed * mx / Math.sqrt(mx * mx + my * my),
-            y: speed * my / Math.sqrt(mx * mx + my * my)
+        this.body.force = { x: 0, y: 0 };
+        Body.applyForce(this.body, this.body.position,
+        /*Body.setVelocity(this.body,*/ {
+            x: speed / forceCoefficient * mx / Math.sqrt(mx * mx + my * my),
+            y: speed / forceCoefficient * my / Math.sqrt(mx * mx + my * my)
         });
 
     },

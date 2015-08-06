@@ -294,7 +294,7 @@
             if (freshData.inputData.border) {
                 var border = freshData.inputData.border;
                 var width = 20 * freshData.getCoefficient();
-                var height = 398 * freshData.getCoefficient();
+                var height = 100 * freshData.getCoefficient();
 
                 var half = 0.5;
 
@@ -311,22 +311,22 @@
                     ctx.translate(pos.x, pos.y);
                     ctx.rotate(angle);
 
-                    ctx.rect(-width * half, - height * half, width, height);
+                    ctx.rect(-width * half, - height * half, width * 30, height);
                     ctx.strokeStyle = 'White';
                     ctx.lineWidth = 4 * freshData.getCoefficient();
 
                     var grd = ctx.createLinearGradient(-width * half, - height * half,
-                                                        width * half, -height * half);
+                                                        width * 30, -height * half);
 
-                    grd.addColorStop(0.6, 'white');
-                    grd.addColorStop(0.9, "rgba(255, 255, 255, 0.6)");
-                    grd.addColorStop(1, "rgba(255, 255, 255, 0)");
+                    grd.addColorStop(0.35, 'black');
+                    //grd.addColorStop(0.45, "rgba(0, 0, 0, 1)");
+                    grd.addColorStop(1, "transparent");
 
                     ctx.fillStyle = grd;
                     //temporary
-                    //ctx.fill();
+                    ctx.fill();
 
-                    ctx.stroke();
+                    //ctx.stroke();
                     ctx.restore();
                 }
             }

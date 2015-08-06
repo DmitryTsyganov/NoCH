@@ -32,8 +32,8 @@ var players = [];
 var Garbage = require("./garbage");
 var garbage = [];
 
-createGarbage(100);
 createFullBorder(params.getParameter("gameDiameter") / 2);
+createGarbage(params.getParameter("gameDiameter") / 2 / 30);
 
 var freeProtons = [];
 
@@ -470,7 +470,7 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
             if (bodyB.getFreeBonds() && bodyA.getFreeBonds()) {
                 createBond(bodyB, bodyA);
             } else {
-                
+
             }
         } else if (bodyA.inGameType  == "p" &&
                     bodyB.inGameType  == "player") {
@@ -529,45 +529,26 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
 });
 
 function createFullBorder(radius) {
-    createBorder(radius, 1, 1);
-    createBorder(radius, -1, -1);
-    createBorder(radius, 1, -1);
-    createBorder(radius, -1, 1);
-}
+    var BORDER_PART_LENGTH = 100;
+    var BORDER_PART_HEIGHT = 20;
 
-function createBorder(radius, xCoeff, yCoeff) {
-    var angle = 82 * yCoeff;
-    var standardHeight = 20;
-    var length = 2 * radius * Math.sin(toRadians(15 / 2));
+    var center = { x: radius, y: radius };
 
-    var step = 15;
-    var HALF = 0.5;
+    var step = Math.asin(BORDER_PART_LENGTH / 2 / radius) * 2;
 
-    var RIGHT_ANGLE = 90;
-
-    var position = { x: radius, y: radius - yCoeff * radius};
-
-    for (var i = 0; i < 6; ++i) {
-        var difference = { x: - yCoeff * length *
-        Math.cos(toRadians(RIGHT_ANGLE - Math.abs(angle)))
-        * xCoeff * HALF, y: yCoeff * length *
-        Math.sin(toRadians(RIGHT_ANGLE - Math.abs(angle))) * HALF};
-        position = { x: position.x + difference.x,
-            y: position.y + difference.y };
-        var borderBody = Bodies.rectangle(position.x, position.y,
-            standardHeight, length, { isStatic: true,
-                angle: toRadians(angle) * xCoeff * yCoeff });
+    for (var i = step / 2; i <= Math.PI * 2; i += step) {
+        var borderBody =
+            Bodies.rectangle(center.x - radius * Math.cos(i),
+                center.y - radius * Math.sin(i),
+                BORDER_PART_HEIGHT, BORDER_PART_LENGTH, { isStatic: true,
+                angle: i });
 
         var borderPart = { body: borderBody };
-        borderBody.circleRadius = length * HALF;
+        borderBody.circleRadius = BORDER_PART_LENGTH * 2;
         borderBody.inGameType = "Border";
 
         World.addBody(engine.world, borderBody);
         border.push(borderPart);
-
-        position = { x: position.x + difference.x,
-            y: position.y + difference.y };
-        angle -= step * yCoeff;
     }
 }
 
