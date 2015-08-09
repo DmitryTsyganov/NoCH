@@ -594,9 +594,9 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
                 garbage[bodyA.number].checkDecoupling(momentum, engine);
             }
         } else if (bodyA.inGameType == "Border") {
-            ghosts.push(bodyB);
+            prepareToDelete(bodyB);
         } else if (bodyB.inGameType == "Border") {
-            ghosts.push(bodyA);
+            prepareToDelete(bodyA);
         }
     }
 });
@@ -642,7 +642,7 @@ function toRadians(angle) {
 }
 
 function prepareToDelete(body) {
-    body.inGameType = "ghost";
+    //body.inGameType = "ghost";
     ghosts.push(body);
 }
 
@@ -672,6 +672,7 @@ setInterval(function() {
         }
         if (ghosts.length) {
             for (var i = 0; i < ghosts.length; ++i) {
+                console.log(ghosts[i].inGameType);
                 switch (ghosts[i].inGameType) {
                     case "p":
                         deleteProperly(ghosts[i], freeProtons);
