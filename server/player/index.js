@@ -5,6 +5,7 @@
 var Matter = require('matter-js/build/matter.js');
 var params = require("db");
 var elements = params.getParameter("elements");
+var basicParticle = require("../basic particle");
 
 var Engine = Matter.Engine,
     World = Matter.World,
@@ -14,9 +15,11 @@ var Engine = Matter.Engine,
 
 var Player = function(ws, position, engine, elem) {
 
+    this.ws = ws;
+
     var group = Body.nextGroup(true);
 
-    this.CHARGE_RADIUS = 7;
+    this.CHARGE_RADIUS = 5;
 
     //creating physics body for player
     var element = params.getParameter(elem);
@@ -30,18 +33,15 @@ var Player = function(ws, position, engine, elem) {
 
     var self = this;
 
-    this.mass = 0;
+    this.body.realMass = element.mass;
 
     this.body.inGameType = "player";
     this.body.chemicalBonds = 0;
 
-    this.body.prevId = -1;
-    this.body.previousRadius = 40;
+    this.body.previousRadius = element.radius;
     this.body.coefficient = 1;
-    this.ws = ws;
-    this.body.chemicalChildren= [];
+    this.body.chemicalChildren = [];
     this.body.realRadius = this.body.circleRadius;
-    this.body.coreId = this.body.id;
     this.resolution = { width: 0, height: 0 };
     this.body.getFreeBonds = function() {
         return self.body.totalBonds - self.body.chemicalBonds;
@@ -60,26 +60,6 @@ Player.prototype = {
     getLocalPosition: function() {
         return { x: this.resolution.width / 2,
                  y: this.resolution.height / 2 };
-    },
-
-    setElement: function(elem) {
-        var element = params.getParameter(elem);
-        if (elem) {
-            this.body.element = elem;
-            var coefficient = (element.radius + this.CHARGE_RADIUS)
-                / this.body.circleRadius;
-
-            Body.scale(this.body, coefficient, coefficient);
-            this.body.circleRadius = element.radius + this.CHARGE_RADIUS;
-
-            this.body.totalBonds = element.valency;
-            this.body.nuclearSpeed = element.speed;
-            this.body.mass = element.mass;
-            this.body.inverseMass = 1 / element.mass;
-            this.body.coolDown = element.coolDown;
-            this.body.neutrons = element.neutrons;
-            this.body.maxNeutrons = element.maxNeutrons;
-        }
     },
 
     makeMassCalc: function() {
@@ -108,7 +88,7 @@ Player.prototype = {
     },
 
     recalculateMass: function() {
-        this.mass = this.calculateMass(this.body);
+        this.body.realMass = this.calculateMass(this.body);
     },
 
     calculateMass: function(body) {
@@ -130,40 +110,10 @@ Player.prototype = {
 
         if (!this["timeLimit" + particle]) {
             var element = params.getParameter(particle);
-            
-            var OFFSET_SHOT = 8;
 
-            var nucleonMass = 1;
+            var nucleonBody = this.createNucleon(particle, shotPos, nucleonsArray, engine);
 
-            this.body.mass -= nucleonMass;
-            
-            var offset = this.body.circleRadius + OFFSET_SHOT;
-
-            var mx = shotPos.x;
-            var my = shotPos.y;
-
-            var nucleon = {};
-
-            var nucleonBody = Bodies.circle(this.body.position.x
-                + offset * mx / Math.sqrt(mx * mx + my * my),
-                this.body.position.y + offset * my
-                / Math.sqrt(mx * mx + my * my), element.radius,
-                {frictionAir: 0, restitution: 0.99, collisionFilter:
-                { group: this.body.collisionFilter.group }});
-
-            nucleonBody.inGameType = nucleonBody.element = particle;
-
-            Matter.Body.setVelocity(nucleonBody, {
-                x: element.speed * mx / Math.sqrt(mx * mx + my * my),
-                y: element.speed * my / Math.sqrt(mx * mx + my * my)
-            });
-
-            nucleon.body = nucleonBody;
-            World.addBody(engine.world, nucleonBody);
-            nucleonsArray.push(nucleon);
-            nucleonBody.number = nucleonsArray.indexOf(nucleon);
-
-            if (particle == "p") this.changeCharge(-1, engine);
+            if (particle == "p") this.changeCharge(-1, engine, nucleonsArray);
 
             var self = this;
 
@@ -191,7 +141,7 @@ Player.prototype = {
 
                 setTimeout(function() {
                     ++self.body.neutrons;
-                    self.body.mass += nucleonMass;
+                    self.body.mass += element.mass;
                     self.body.inverseMass = 1 / self.body.mass;
                 }, this.body.coolDown);
                 setTimeout(function() {
@@ -202,9 +152,17 @@ Player.prototype = {
         }
     },
 
-    changeCharge: function(value, engine) {
+    changeCharge: function(value, engine, nucleonsArray) {
 
         this.CHARGE_RADIUS = 5;
+
+        if (this.body.element == "Ne" && value == 1) {
+            value = -1;
+            this.createNucleon("p", { x: Math.random(), y: Math.random() },
+                                nucleonsArray, engine);
+            this.createNucleon("p", { x: Math.random(), y: Math.random() },
+                                nucleonsArray, engine);
+        }
 
         var elementName = elements[elements.indexOf(
                         this.body.element) + value];
@@ -249,37 +207,45 @@ Player.prototype = {
         }
     },
 
-    free: function(node, engine) {
+    //turns player into garbage before appending it to another player
+    garbagify: function(playersArray, garbageArray, newPlayerBody) {
+        delete (this.body.realRadius);
+        delete (this.body.previousRadius);
+        delete (this.body.coefficient);
+        delete (this.body.resolution);
 
-        node.inGameType = "temporary undefined";
-        if (node.constraint1) {
-            World.remove(engine.world, node.constraint1);
-            World.remove(engine.world, node.constraint2);
-            delete node["constraint1"];
-            delete node["constraint2"];
+        this.ws.close(1000, "lost");
+        if (newPlayerBody !== undefined) delete (this.ws);
+        garbageArray.push(this);
+        this.body.number = garbageArray.indexOf(this);
+        delete playersArray[this.body.playerNumber];
+
+        if (newPlayerBody !== undefined) {
+
+            this.traversDST(this.body, function(node) {
+                node.collisionFilter.group =
+                    newPlayerBody.collisionFilter.group;
+                node.playerNumber = newPlayerBody.playerNumber;
+
+            });
+            this.body.inGameType = "playerPart";
+        } else {
+            this.traversDST(this.body, function(node) {
+                node.inGameType = "garbage";
+            });
         }
-        node.chemicalBonds = 0;
-        this.mass -= node.mass;
-        setTimeout(function() {
-            node.collisionFilter.group = 0;
-            node.inGameType = "garbage";
-        }, 1500);
-    },
-
-    die: function(engine) {
-        this.traversDST(this.body, this.free, this.setRandomSpeed, engine);
     },
 
     applyVelocity: function(mx, my) {
         var speed = this.body.nuclearSpeed;
 
         var PERCENT_FULL = 100;
-        var massCoefficient = 0.5;
+        var massCoefficient = 0;
         var minMultiplier = 20;
-        var partsMultiplier = 6;
-        var forceCoefficient = 130;
+        var partsMultiplier = 2;
+        var forceCoefficient = 490;
 
-        var multiplier = PERCENT_FULL - this.mass * massCoefficient;
+        var multiplier = PERCENT_FULL - this.body.realMass * massCoefficient;
         if (multiplier < minMultiplier) multiplier = minMultiplier;
         speed = speed / PERCENT_FULL * multiplier / partsMultiplier;
 
@@ -287,23 +253,7 @@ Player.prototype = {
 
         var pos1 = this.body.position;
 
-        this.traversDST(this.body, function(body) {
-            body.force = { x: 0, y: 0 };
-            body.torque = 0;
-            var pos2 = body.position;
-            var distance = Math.sqrt((pos1.x - pos2.x) * (pos1.x - pos2.x)
-                + (pos1.y - pos2.y) * (pos1.y - pos2.y));
-            if (!distance) distance = 1;
-            Body.applyForce(body, body.position,
-            /*Matter.Body.setVelocity(body,*/ {
-                x: speed / forceCoefficient / Math.sqrt(distance) *
-                mx / Math.sqrt(mx * mx + my * my),
-                y: speed / forceCoefficient / Math.sqrt(distance) *
-                my / Math.sqrt(mx * mx + my * my)
-            });
-        });
-
-        //speed *= partsMultiplier;
+        speed *= partsMultiplier;
 
         //apply regular velocity to player.body only
         this.body.force = { x: 0, y: 0 };
@@ -314,28 +264,6 @@ Player.prototype = {
         });
 
     },
-
-    traversDST: function(node, visit, visitAgain, engine) {
-        visit(node, engine);
-        if (!node.chemicalChildren) return;
-        for (var i = 0; i < node.chemicalChildren.length; ++i) {
-            if (node.chemicalChildren[i]) {
-                this.traversDST(node.chemicalChildren[i], visit, visitAgain, engine);
-            }
-        }
-        if (visitAgain) {
-            visitAgain(node);
-        }
-    },
-
-    setRandomSpeed: function(body) {
-        var speed = 10;
-        Matter.Body.setVelocity(body, {
-            x: Math.random() * speed,
-            y: Math.random()* speed
-        });
-    },
-
 
     checkResizeGrow: function(newRadius) {
         if (newRadius > this.body.realRadius) {
@@ -373,7 +301,13 @@ Player.prototype = {
         setTimeout(function() {
             self.body.coefficient = coefficient;
         }, 1500);
+    },
+
+    checkDecoupling: function(momentum) {
+
     }
 };
+
+Player.prototype.__proto__ = basicParticle.prototype;
 
 module.exports = Player;

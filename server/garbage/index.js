@@ -5,6 +5,7 @@
 var params = require("db");
 var elements = params.getParameter("elements");
 var Matter = require('matter-js/build/matter.js');
+var basicParticle = require("../basic particle");
 
 var Engine = Matter.Engine,
     World = Matter.World,
@@ -27,7 +28,6 @@ var Garbage = function(position, engine, elem) {
 
     var self = this;
     this.body.inGameType = "garbage";
-    this.body.prevId = -1;
     this.body.chemicalBonds = 0;
     this.body.chemicalChildren = [];
     this.body.getFreeBonds = function() {
@@ -39,28 +39,18 @@ var Garbage = function(position, engine, elem) {
 };
 
 Garbage.prototype = {
-    setElement: function(elem) {
-        if (elem) {
-            var element = params.getParameter(elem);
-            this.body.element = elem;
-            var coefficient = (element.radius + this.CHARGE_RADIUS)
-                / this.body.circleRadius;
 
-            Body.scale(this.body, coefficient, coefficient);
-            this.body.circleRadius = element.radius + this.CHARGE_RADIUS;
+    changeCharge: function(value, engine, nucleonsArray) {
 
-            this.body.totalBonds = element.valency;
-            this.body.nuclearSpeed = element.speed;
-            this.body.mass = element.mass;
-            this.body.inverseMass = 1 / element.mass;
-            this.body.coolDown = element.coolDown;
-            this.body.neutrons = element.neutrons;
-            this.body.maxNeutrons = element.maxNeutrons;
+        this.CHARGE_RADIUS = 5;
+
+        if (this.body.element == "Ne" && value == 1) {
+            value = -1;
+            this.createNucleon("p", { x: Math.random(), y: Math.random() },
+                nucleonsArray, engine);
+            this.createNucleon("p", { x: Math.random(), y: Math.random() },
+                nucleonsArray, engine);
         }
-    },
-    changeCharge: function(value, engine) {
-
-        this.CHARGE_RADIUS = 7;
 
         var elementName = elements[elements.indexOf(
             this.body.element) + value];
@@ -75,7 +65,7 @@ Garbage.prototype = {
                 this.traversDST(child, this.free, this.setRandomSpeed, engine);
                 --this.body.chemicalBonds;
             } else {
-                this.traversDST(this.body, this.free, engine);
+                this.traversDST(this.body, this.free, null, engine);
             }
             if (this.body.chemicalBonds == 0) {
                 this.body.previousAngle = undefined;
@@ -87,32 +77,14 @@ Garbage.prototype = {
         return false;
     },
 
-    traversDST: function(node, visit, visitAgain, engine) {
-        visit(node, engine);
-        if (!node.chemicalChildren) return;
-        for (var i = 0; i < node.chemicalChildren.length; ++i) {
-            this.traversDST(node.chemicalChildren[i], visit, visitAgain, engine);
+    checkDecoupling: function(momentum, engine) {
+        var bondStrength = 250;
+        if (momentum > bondStrength) {
+            this.traversDST(this.body, this.free, null, engine);
         }
-        visitAgain(node);
-    },
-
-    setRandomSpeed: function(body) {
-        var speed = 10;
-        Matter.Body.setVelocity(body, {
-            x: Math.random() * speed,
-            y: Math.random()* speed
-        });
-    },
-
-    free: function(node, engine) {
-        node.inGameType = "garbage";
-        World.remove(engine.world, node.constraint1);
-        World.remove(engine.world, node.constraint2);
-        delete node["constraint1"];
-        delete node["constraint2"];
-        node.chemicalBonds = 0;
-        node.collisionFilter.group = 0;
     }
 };
+
+Garbage.prototype.__proto__ = basicParticle.prototype;
 
 module.exports = Garbage;

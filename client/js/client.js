@@ -311,12 +311,12 @@
                     ctx.translate(pos.x, pos.y);
                     ctx.rotate(angle);
 
-                    ctx.rect(-width * half, - height * half, width * 30, height);
+                    ctx.rect(-width * half, - height * half, width * half/*30*/, height);
                     ctx.strokeStyle = 'White';
                     ctx.lineWidth = 4 * freshData.getCoefficient();
 
                     var grd = ctx.createLinearGradient(-width * half, - height * half,
-                                                        width * 30, -height * half);
+                                                        width * half/* 30*/, -height * half);
 
                     grd.addColorStop(0.35, 'black');
                     //grd.addColorStop(0.45, "rgba(0, 0, 0, 1)");
@@ -324,9 +324,9 @@
 
                     ctx.fillStyle = grd;
                     //temporary
-                    ctx.fill();
+                    //ctx.fill();
 
-                    //ctx.stroke();
+                    ctx.stroke();
                     ctx.restore();
                 }
             }
@@ -411,22 +411,6 @@
         "H": 26
     };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     var freshData = {
         previousRadius: 50,
         coefficient: 1000,
@@ -445,9 +429,19 @@
                         dicimalPlacesNumber) * this.coefficientScale;
                 console.log(this.getCoefficient());
             }
-            if ("id" in newData) {
+            if ("c" in newData && "e" in newData) {
                 players[newData.id] = { "color": newData.c,
                                         "element": newData.e};
+            }
+            if ("ne" in newData && players[newData.id]) {
+                players[newData.id]["element"] = newData.ne;
+            }
+            if ("dp" in newData) {
+                delete players[newData.dp];
+            }
+            if ("dead" in newData) {
+                alert("you're dead lol");
+                console.log("you're dead lol");
             }
         },
         updateOutput: function(mouseX, mouseY) {
@@ -547,11 +541,11 @@
 
     socket.onclose = function(event) {
         if (event.wasClean) {
-            alert('Connection closed. All clear.');
+            console.log('Connection closed. All clear.');
         } else {
             alert("Connection failed.");
         }
-        alert('Code ' + event.code +
+        console.log('Code ' + event.code +
             " reason: " + event.data);
     };
 

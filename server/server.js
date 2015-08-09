@@ -31,9 +31,11 @@ var players = [];
 //free elements
 var Garbage = require("./garbage");
 var garbage = [];
+var garbageDensity = 0.00002;
 
 createFullBorder(params.getParameter("gameDiameter") / 2);
-createGarbage(params.getParameter("gameDiameter") / 2 / 30);
+createGarbage(params.getParameter("gameDiameter") *
+    params.getParameter("gameDiameter") / 4 * garbageDensity);
 
 var freeProtons = [];
 
@@ -112,28 +114,31 @@ webSocketServer.on('connection', function(ws) {
                 y: parsedMessage.shotY - player.getLocalPosition().y
             };
             player.shoot(parsedMessage.particle, shotPos, freeProtons, engine);
+            sendEverybody({"id": player.body.id, "ne": player.body.element});
         }
     });
 
-    ws.on('close', function () {
+    ws.on('close', function(event) {
         console.log('player exited ' + id);
-        deletePlayer();
+        if (event != 1000) deletePlayer();
     });
 
-    ws.on('error', function () {
+    ws.on('error', function(event) {
         console.log('player disconnected ' + id);
         deletePlayer();
     });
 
     function deletePlayer() {
-        var lastResort = player.body.position;
-        var elem = player.body.element;
-        player.die(engine);
-        World.remove(engine.world, player.body);
+        /*var lastResort = player.body.position;
+        var elem = player.body.element;*/
+        /*player.die(engine);*/
+        player.garbagify(players, garbage);
+        sendEverybody({ "dp": player.body.id });
+        /*World.remove(engine.world, player.body);
         delete players[id];
         var playerGarbage = new Garbage(lastResort, engine, elem);
         garbage.push(playerGarbage);
-        playerGarbage.body.number = garbage.indexOf(playerGarbage);
+        playerGarbage.body.number = garbage.indexOf(playerGarbage);*/
     }
 
 });
@@ -212,9 +217,10 @@ function createMessage(id) {
     });
 
     for (var i = 0; i < bonds.length; i += 2) {
-        if (!dotInScreen.call(players[id], bonds[i] ||
-            !dotInScreen.call(players[id], bonds[i + 1]))) {
+        if ((!dotInScreen.call(players[id], bonds[i])) &&
+            (!dotInScreen.call(players[id], bonds[i + 1]))) {
             bonds.splice(i, 2);
+            i -= 2;
         }
     }
 
@@ -439,7 +445,7 @@ function link(child, parent, constraint1, constraint2) {
     addToArray(parent.chemicalChildren, child);
     child.constraint1 = constraint1;
     child.constraint2 = constraint2;
-    child.chemicalChildren = [];
+    child.chemicalParent = parent;
 }
 
 //creates constraint suitable for making bond 
@@ -447,6 +453,36 @@ function createBondConstraint(_bodyA, _bodyB, _stiffness) {
     return Matter.Constraint.create({bodyA: _bodyA, bodyB: _bodyB,
         pointA: { x: _bodyB.position.x - _bodyA.position.x,
             y: _bodyB.position.y - _bodyA.position.y }, stiffness: _stiffness});
+}
+
+function calculateMomentum(bodyA, bodyB) {
+    return (bodyA.mass + bodyB.mass) * Math.sqrt((bodyA.velocity.x - bodyB.velocity.x) *
+            (bodyA.velocity.x - bodyB.velocity.x) + (bodyA.velocity.y - bodyB.velocity.y) *
+            (bodyA.velocity.y - bodyB.velocity.y));
+}
+
+function connectPlayers(bodyA, bodyB) {
+    var massA = players[bodyA.playerNumber].body.realMass;
+    var massB = players[bodyB.playerNumber].body.realMass;
+    if (massA == massB) return;
+    var playerBody = massA > massB ? bodyA : bodyB;
+    var garbageBody = massA < massB ? bodyA : bodyB;
+
+    //console.log("target id = " + players[garbageBody.playerNumber].body.id);
+    var deletedId = players[garbageBody.playerNumber].body.id;
+
+    players[garbageBody.playerNumber].ws.send( JSON.stringify({"dead": true}));
+    players[garbageBody.playerNumber].garbagify(players, garbage, playerBody);
+    garbage[garbageBody.number].reverse();
+    sendEverybody({ "dp": deletedId });
+    createBond(playerBody, garbageBody);
+
+    //testing
+    /*setTimeout(function() {
+    players[playerBody.playerNumber].traversDST(players[playerBody.playerNumber].body, function(node){
+        node.element = "He";
+        console.log("Body " + node.id + " has " + node.chemicalChildren.length);
+    })}, 5500);*/
 }
 
 //creates bonds on collision if necessary
@@ -461,50 +497,63 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
             bodyB.inGameType  == "garbage") {
             if (bodyA.getFreeBonds() && bodyB.getFreeBonds()) {
                 createBond(bodyA, bodyB);
-            } else {
-
+            } else if (bodyA.inGameType  == "playerPart"){
+                var momentum = calculateMomentum(bodyA, bodyB);
+                //console.log(momentum);
+                garbage[bodyA.number].checkDecoupling(momentum, engine);
             }
         } else if (bodyA.inGameType  == "garbage" &&
                     (bodyB.inGameType  == "player" ||
                     bodyB.inGameType  == "playerPart")) {
             if (bodyB.getFreeBonds() && bodyA.getFreeBonds()) {
                 createBond(bodyB, bodyA);
-            } else {
-
+            } else if (bodyB.inGameType  == "playerPart") {
+                var momentum = calculateMomentum(bodyB, bodyA);
+                //console.log(momentum);
+                garbage[bodyB.number].checkDecoupling(momentum, engine);
             }
         } else if (bodyA.inGameType  == "p" &&
                     bodyB.inGameType  == "player") {
-            players[bodyB.number].changeCharge(1, engine);
+            players[bodyB.number].changeCharge(1, engine, freeProtons);
+            sendEverybody({"id": bodyB.id, "ne": bodyB.element});
             prepareToDelete(bodyA);
         } else if (bodyB.inGameType  == "p" &&
                     bodyA.inGameType  == "player") {
-            players[bodyA.number].changeCharge(1, engine);
+            players[bodyA.number].changeCharge(1, engine, freeProtons);
+            sendEverybody({"id": bodyA.id, "ne": bodyA.element});
             prepareToDelete(bodyB);
         } else if (bodyA.inGameType  == "p" &&
             bodyB.inGameType  == "playerPart") {
-            if (garbage[bodyB.number].changeCharge(1, engine)) {
+            if (garbage[bodyB.number].changeCharge(1, engine, freeProtons)) {
                 players[bodyB.playerNumber].recalculateMass();
             }
             prepareToDelete(bodyA);
         } else if (bodyB.inGameType  == "p" &&
             bodyA.inGameType  == "playerPart") {
-            if (garbage[bodyA.number].changeCharge(1, engine)) {
+            if (garbage[bodyA.number].changeCharge(1, engine, freeProtons)) {
                 players[bodyA.playerNumber].recalculateMass();
             }
             prepareToDelete(bodyB);
         } else if (bodyA.inGameType  == "p" &&
             bodyB.inGameType  == "garbage") {
-            garbage[bodyB.number].setElement(elements[elements.
-                indexOf(bodyB.element) + 1]);
+            garbage[bodyB.number].changeCharge(1, engine, freeProtons);
             prepareToDelete(bodyA);
         } else if (bodyB.inGameType  == "p" &&
             bodyA.inGameType  == "garbage") {
-            garbage[bodyA.number].setElement(elements[elements.
-                indexOf(bodyA.element) + 1]);
+            garbage[bodyA.number].changeCharge(1, engine, freeProtons);
             prepareToDelete(bodyB);
-        } /*else if (bodyB.inGameType  == "player" &&
-            bodyA.inGameType  == "player") {
-        }*/else if (bodyA.inGameType == "ghost" ||
+        } else if (bodyB.inGameType  == "player" &&
+            bodyA.inGameType  == "player" ||
+            bodyB.inGameType  == "player" &&
+            bodyA.inGameType  == "playerPart" ||
+            bodyB.inGameType  == "playerPart" &&
+            bodyA.inGameType  == "player" ||
+            bodyB.inGameType  == "playerPart" &&
+            bodyA.inGameType  == "playerPart") {
+            if (bodyB.getFreeBonds() && bodyA.getFreeBonds()) {
+                connectPlayers(bodyA, bodyB);
+            }
+        } else if (bodyA.inGameType == "ghost" ||
                     bodyB.inGameType == "ghost") {
             //special signal to show that Proton was not deleted properly
             console.log("boo");
@@ -524,6 +573,30 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
                 prepareToDelete(bodyB);
                 ++bodyA.mass;
             }
+        } else if (bodyA.inGameType  == "player" &&
+            (bodyB.inGameType  == "player" ||
+            bodyB.inGameType  == "playerPart")) {
+            if (bodyB.getFreeBonds() && bodyA.getFreeBonds()) {
+                createBond(bodyB, bodyA);
+            } else if (bodyB.inGameType  == "playerPart") {
+                var momentum = calculateMomentum(bodyB, bodyA);
+                //console.log(momentum);
+                garbage[bodyB.number].checkDecoupling(momentum, engine);
+            }
+        } else if (bodyB.inGameType  == "player" &&
+            (bodyA.inGameType  == "player" ||
+            bodyA.inGameType  == "playerPart")) {
+            if (bodyA.getFreeBonds() && bodyB.getFreeBonds()) {
+                createBond(bodyA, bodyB);
+            } else if (bodyA.inGameType  == "playerPart") {
+                var momentum = calculateMomentum(bodyA, bodyB);
+                //console.log(momentum);
+                garbage[bodyA.number].checkDecoupling(momentum, engine);
+            }
+        } else if (bodyA.inGameType == "Border") {
+            ghosts.push(bodyB);
+        } else if (bodyB.inGameType == "Border") {
+            ghosts.push(bodyA);
         }
     }
 });
@@ -549,6 +622,18 @@ function createFullBorder(radius) {
 
         World.addBody(engine.world, borderBody);
         border.push(borderPart);
+    }
+}
+
+function sendEverybody(message) {
+    for (var i = 0; i < players.length; ++i) {
+        if (players[i]) {
+            try {
+                players[i].ws.send(JSON.stringify(message));
+            } catch (e) {
+                console.log('Caught ' + e.name + ': ' + e.message);
+            }
+        }
     }
 }
 
@@ -587,7 +672,27 @@ setInterval(function() {
         }
         if (ghosts.length) {
             for (var i = 0; i < ghosts.length; ++i) {
-                deleteProperly(ghosts[i], freeProtons);
+                switch (ghosts[i].inGameType) {
+                    case "p":
+                        deleteProperly(ghosts[i], freeProtons);
+                        break;
+                    case "playerPart":
+                        var parent = ghosts[i].parent;
+                        garbage[ghosts[i].number].die(engine);
+                        delete parent.chemicalChildren[parent.
+                            chemicalChildren.indexOf(ghosts[i])];
+                        deleteProperly(ghosts[i], garbage);
+                        --parent.chemicalBonds;
+                        break;
+                    case "garbage":
+                        garbage[ghosts[i].number].die(engine);
+                        deleteProperly(ghosts[i], garbage);
+                        break;
+                    case "player":
+                        players[ghosts[i].number].ws.send( JSON.stringify({"dead": true}));
+                        players[ghosts[i].number].garbagify(players, garbage);
+                        break;
+                }
             }
             ghosts = [];
         }
