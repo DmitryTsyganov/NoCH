@@ -20,7 +20,7 @@ var Garbage = function(position, engine, elem) {
     var element = params.getParameter(elem);
     this.body = Bodies.circle(position.x, position.y,
         element.radius + this.CHARGE_RADIUS,
-        { frictionAir: 0.07, restitution: 0.99 });
+        { frictionAir: 0.003, restitution: 0.99 });
 
     this.setElement(elem);
 
@@ -72,15 +72,6 @@ Garbage.prototype = {
             } else {
                 this.body.previousAngle -= 2 * Math.PI / this.body.totalBonds;
             }
-            return true;
-        }
-        return false;
-    },
-
-    checkDecoupling: function(momentum, engine) {
-        var bondStrength = 250;
-        if (momentum > bondStrength) {
-            this.traversDST(this.body, this.free, null, engine);
         }
     }
 };

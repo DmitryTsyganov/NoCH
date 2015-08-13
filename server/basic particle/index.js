@@ -19,7 +19,12 @@ var basicParticle = function() {
 basicParticle.prototype = {
     traversDST: function(node, visit, visitAgain, engine) {
         visit(node, engine);
-        if (!node.chemicalChildren) return;
+        if (!node.chemicalChildren) {
+            if (visitAgain) {
+                visitAgain(node);
+            }
+            return;
+        }
         for (var i = 0; i < node.chemicalChildren.length; ++i) {
             if (node.chemicalChildren[i]) {
                 this.traversDST(node.chemicalChildren[i], visit, visitAgain, engine);
@@ -42,6 +47,30 @@ basicParticle.prototype = {
     free: function(node, engine, breakConstraints) {
 
         node.inGameType = "temporary undefined";
+        if (node.chemicalParent) {
+            switch (node.chemicalParent.inGameType) {
+                case "playerPart" :
+                    node.chemicalParent.chemicalChildren.splice(
+                        node.chemicalParent.chemicalChildren
+                            .indexOf(node), 1);
+                    break;
+                case "player":
+                    delete node.chemicalParent.chemicalChildren[
+                        node.chemicalParent.chemicalChildren
+                            .indexOf(node)];
+            }
+            node.chemicalParent.previousAngle -= 2 * Math.PI / node.chemicalParent.totalBonds;
+            if (node.chemicalParent.chemicalBonds) {
+                --node.chemicalParent.chemicalBonds;
+            }
+            delete node.chemicalParent;
+        }
+        if (node.player) {
+            console.log(node.player.body.realMass);
+            node.player.body.realMass -= node.mass;
+            console.log(" - " + node.mass + " = " + node.player.body.realMass);
+        }
+
         if (node.constraint1) {
             World.remove(engine.world, node.constraint1);
             World.remove(engine.world, node.constraint2);
@@ -49,9 +78,8 @@ basicParticle.prototype = {
             delete node["constraint2"];
         }
         node.chemicalBonds = 0;
-        if (this.mass) {
-            this.mass -= node.mass;
-        }
+        /*if (this.body.realMass) {
+        }*/
         setTimeout(function() {
             node.collisionFilter.group = 0;
             node.inGameType = "garbage";
@@ -132,6 +160,16 @@ basicParticle.prototype = {
         return revertTree;
     },
 
+    prepareForBond: function(newPlayerBody) {
+        this.traversDST(this.body, function (node) {
+            node.inGameType = "playerPart";
+            node.collisionFilter.group =
+                newPlayerBody.collisionFilter.group;
+            node.playerNumber = newPlayerBody.playerNumber;
+
+        });
+    },
+
     /*returnRevertTree: function() {
         function revertTree(node) {
             node.oldParent = node.chemicalParent;
@@ -189,6 +227,16 @@ basicParticle.prototype = {
     reverse: function() {
         var func = this.returnPostRevertTree();
         this.reversDST(this.body, func);
+    },
+
+    checkDecoupling: function(momentum, engine) {
+        var bondStrength = 25;
+        if (momentum > bondStrength) {
+            this.traversDST(this.body, this.free, null, engine);
+            if (this.body.player) {
+                this.body.player.checkResizeShrink();
+            }
+        }
     }
 };
 

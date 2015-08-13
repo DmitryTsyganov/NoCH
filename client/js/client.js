@@ -277,15 +277,17 @@
                 var _players = freshData.inputData.players;
 
                 for (var i = 0; i < _players.length; i += 3) {
-                    var pos = freshData.Scale({ x: _players[i + 1], y: _players[i + 2]});
-                    this.drawElement(ctx, pos.x, pos.y,
-                                    radiuses[players[_players[i]].element]
-                                    * freshData.getCoefficient(),
-                                        players[_players[i]].color);
-                    this.addLetter(ctx, pos.x, pos.y,
-                                    players[_players[i]].element,
-                                    radiuses[players[_players[i]].element]
-                                    * freshData.getCoefficient());
+                    if (players[_players[i]]) {
+                        var pos = freshData.Scale({x: _players[i + 1], y: _players[i + 2]});
+                        this.drawElement(ctx, pos.x, pos.y,
+                            radiuses[players[_players[i]].element]
+                            * freshData.getCoefficient(),
+                            players[_players[i]].color);
+                        this.addLetter(ctx, pos.x, pos.y,
+                            players[_players[i]].element,
+                            radiuses[players[_players[i]].element]
+                            * freshData.getCoefficient());
+                    }
                 }
             }
         },

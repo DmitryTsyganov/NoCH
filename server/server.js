@@ -31,7 +31,7 @@ var players = [];
 //free elements
 var Garbage = require("./garbage");
 var garbage = [];
-var garbageDensity = 0.00002;
+var garbageDensity = 0.000005;
 
 createFullBorder(params.getParameter("gameDiameter") / 2);
 createGarbage(params.getParameter("gameDiameter") *
@@ -58,7 +58,7 @@ webSocketServer.on('connection', function(ws) {
 
     var Player = require('./player');
 
-    var player = new Player(ws, defaultPosition, engine, "C");
+    var player = new Player(ws, defaultPosition, engine, "Ne");
 
     var id = addToArray(players, player);
 
@@ -120,25 +120,32 @@ webSocketServer.on('connection', function(ws) {
 
     ws.on('close', function(event) {
         console.log('player exited ' + id);
-        if (event != 1000) deletePlayer();
+        if (event != 1000) prepareToDelete(player.body);
+        //prepareToDelete(player.body);
+        deletePlayer(player.body.id);
     });
 
     ws.on('error', function(event) {
         console.log('player disconnected ' + id);
-        deletePlayer();
+        prepareToDelete(player.body);
+        /*deletePlayer();*/
+        deletePlayer(player.body.id);
     });
 
-    function deletePlayer() {
+    function deletePlayer(number) {
         /*var lastResort = player.body.position;
-        var elem = player.body.element;*/
-        /*player.die(engine);*/
-        player.garbagify(players, garbage);
-        sendEverybody({ "dp": player.body.id });
+         var elem = player.body.element;*/
+        /*var player = players[number];
+         var id = players[number].body.id;*/
+        //player.garbagify(players, garbage);
+        //player.die(engine);
+        sendEverybody({ "dp": number });
+        //delete players[id];
         /*World.remove(engine.world, player.body);
-        delete players[id];
-        var playerGarbage = new Garbage(lastResort, engine, elem);
-        garbage.push(playerGarbage);
-        playerGarbage.body.number = garbage.indexOf(playerGarbage);*/
+         delete players[id];
+         var playerGarbage = new Garbage(lastResort, engine, elem);
+         garbage.push(playerGarbage);
+         playerGarbage.body.number = garbage.indexOf(playerGarbage);*/
     }
 
 });
@@ -160,6 +167,7 @@ function createGarbage(quantity) {
 
         garbage.push(singleGarbage);
         singleGarbage.body.number = garbage.indexOf(singleGarbage);
+        console.log(singleGarbage.body.number);
     }
 }
 
@@ -209,12 +217,25 @@ function createMessage(id) {
         y: Math.ceil(players[id].body.position.y)
     };
 
-    var bonds = [];
-    (players.map(function(player) {
+    /*var bonds = [];
+    players.map(function(player) {
         return player.getBondsPositions();
-    })).forEach(function(obj) {
+    }).forEach(function(obj) {
             bonds = bonds.concat(obj);
-    });
+    });*/
+
+    var bonds = [];
+    Composite.allConstraints(engine.world).forEach(
+        function(bond) {
+            bonds.push({
+                x: bond.bodyA.position.x,
+                y: bond.bodyA.position.y
+            });
+            bonds.push({
+                x: bond.bodyB.position.x,
+                y: bond.bodyB.position.y
+            });
+        });
 
     for (var i = 0; i < bonds.length; i += 2) {
         if ((!dotInScreen.call(players[id], bonds[i])) &&
@@ -356,6 +377,8 @@ function findAngle(playerPosition, garbagePosition, playerAngle) {
 //creates Bond between player and garbage
 function createBond(playerBody, garbageBody) {
 
+    players[playerBody.playerNumber].body.superMutex = false;
+
     ++playerBody.chemicalBonds;
     ++garbageBody.chemicalBonds;
 
@@ -436,8 +459,12 @@ function finalCreateBond(playerBody, garbageBody) {
 
     var newRadius = calculateDistance(players[playerBody.playerNumber]
         .body.position, garbageBody.position);
+    garbageBody.player = players[playerBody.playerNumber];
     players[playerBody.playerNumber].checkResizeGrow(newRadius);
+    console.log("mass = " + players[playerBody.playerNumber].body.realMass);
     players[playerBody.playerNumber].recalculateMass();
+    players[playerBody.playerNumber].body.superMutex = true;
+    console.log("final mass = " + players[playerBody.playerNumber].body.realMass);
 }
 
 //links parts of a player to form tree structure
@@ -461,9 +488,19 @@ function calculateMomentum(bodyA, bodyB) {
             (bodyA.velocity.y - bodyB.velocity.y));
 }
 
+function connectGarbageToPlayer(playerBody, garbageBody) {
+    garbage[garbageBody.number].reverse();
+    garbage[garbageBody.number].prepareForBond(playerBody);
+    createBond(playerBody, garbageBody);
+}
+
 function connectPlayers(bodyA, bodyB) {
+    /*console.log("first player " + bodyA.playerNumber);
+    console.log("second player " + bodyB.playerNumber);*/
     var massA = players[bodyA.playerNumber].body.realMass;
     var massB = players[bodyB.playerNumber].body.realMass;
+    /*console.log("first mass = " + massA);
+    console.log("second mass = " + massB);*/
     if (massA == massB) return;
     var playerBody = massA > massB ? bodyA : bodyB;
     var garbageBody = massA < massB ? bodyA : bodyB;
@@ -471,8 +508,7 @@ function connectPlayers(bodyA, bodyB) {
     //console.log("target id = " + players[garbageBody.playerNumber].body.id);
     var deletedId = players[garbageBody.playerNumber].body.id;
 
-    players[garbageBody.playerNumber].ws.send( JSON.stringify({"dead": true}));
-    players[garbageBody.playerNumber].garbagify(players, garbage, playerBody);
+    players[garbageBody.playerNumber].lose(engine, players, garbage, playerBody);
     garbage[garbageBody.number].reverse();
     sendEverybody({ "dp": deletedId });
     createBond(playerBody, garbageBody);
@@ -496,21 +532,39 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
             bodyA.inGameType  == "playerPart") &&
             bodyB.inGameType  == "garbage") {
             if (bodyA.getFreeBonds() && bodyB.getFreeBonds()) {
-                createBond(bodyA, bodyB);
+                /*createBond(bodyA, bodyB);*/
+                connectGarbageToPlayer(bodyA, bodyB);
             } else if (bodyA.inGameType  == "playerPart"){
                 var momentum = calculateMomentum(bodyA, bodyB);
                 //console.log(momentum);
-                garbage[bodyA.number].checkDecoupling(momentum, engine);
+                switch (bodyA.inGameType) {
+                    case "player":
+                        players[bodyA.number].checkDecoupling(momentum, engine);
+                        break;
+                    case "playerPart":
+                        garbage[bodyA.number].checkDecoupling(momentum, engine);
+                        break;
+                }
+                garbage[bodyB.number].checkDecoupling(momentum, engine);
             }
         } else if (bodyA.inGameType  == "garbage" &&
                     (bodyB.inGameType  == "player" ||
                     bodyB.inGameType  == "playerPart")) {
             if (bodyB.getFreeBonds() && bodyA.getFreeBonds()) {
-                createBond(bodyB, bodyA);
+                /*createBond(bodyB, bodyA);*/
+                connectGarbageToPlayer(bodyB, bodyA);
             } else if (bodyB.inGameType  == "playerPart") {
                 var momentum = calculateMomentum(bodyB, bodyA);
                 //console.log(momentum);
-                garbage[bodyB.number].checkDecoupling(momentum, engine);
+                garbage[bodyA.number].checkDecoupling(momentum, engine);
+                switch (bodyB.inGameType) {
+                    case "player":
+                        players[bodyB.number].checkDecoupling(momentum, engine);
+                        break;
+                    case "playerPart":
+                        garbage[bodyB.number].checkDecoupling(momentum, engine);
+                        break;
+                }
             }
         } else if (bodyA.inGameType  == "p" &&
                     bodyB.inGameType  == "player") {
@@ -524,15 +578,11 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
             prepareToDelete(bodyB);
         } else if (bodyA.inGameType  == "p" &&
             bodyB.inGameType  == "playerPart") {
-            if (garbage[bodyB.number].changeCharge(1, engine, freeProtons)) {
-                players[bodyB.playerNumber].recalculateMass();
-            }
+            garbage[bodyB.number].changeCharge(1, engine, freeProtons);
             prepareToDelete(bodyA);
         } else if (bodyB.inGameType  == "p" &&
             bodyA.inGameType  == "playerPart") {
-            if (garbage[bodyA.number].changeCharge(1, engine, freeProtons)) {
-                players[bodyA.playerNumber].recalculateMass();
-            }
+            garbage[bodyA.number].changeCharge(1, engine, freeProtons);
             prepareToDelete(bodyB);
         } else if (bodyA.inGameType  == "p" &&
             bodyB.inGameType  == "garbage") {
@@ -552,6 +602,24 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
             bodyA.inGameType  == "playerPart") {
             if (bodyB.getFreeBonds() && bodyA.getFreeBonds()) {
                 connectPlayers(bodyA, bodyB);
+            } else {
+                var momentum = calculateMomentum(bodyB, bodyA);
+                switch (bodyA.inGameType) {
+                    case "player":
+                        players[bodyA.number].checkDecoupling(momentum, engine);
+                        break;
+                    case "playerPart":
+                        garbage[bodyA.number].checkDecoupling(momentum, engine);
+                        break;
+                }
+                switch (bodyB.inGameType) {
+                    case "player":
+                        players[bodyB.number].checkDecoupling(momentum, engine);
+                        break;
+                    case "playerPart":
+                        garbage[bodyB.number].checkDecoupling(momentum, engine);
+                        break;
+                }
             }
         } else if (bodyA.inGameType == "ghost" ||
                     bodyB.inGameType == "ghost") {
@@ -594,9 +662,17 @@ Matter.Events.on(engine, 'collisionStart', function(event) {
                 garbage[bodyA.number].checkDecoupling(momentum, engine);
             }
         } else if (bodyA.inGameType == "Border") {
-            prepareToDelete(bodyB);
+            if (bodyB.inGameType == "player") {
+                players[bodyB.number].lose(engine, players, garbage);
+            } else {
+                prepareToDelete(bodyB);
+            }
         } else if (bodyB.inGameType == "Border") {
-            prepareToDelete(bodyA);
+            if (bodyA.inGameType == "player") {
+                players[bodyA.number].lose(engine, players, garbage);
+            } else {
+                prepareToDelete(bodyA);
+            }
         }
     }
 });
@@ -643,7 +719,9 @@ function toRadians(angle) {
 
 function prepareToDelete(body) {
     //body.inGameType = "ghost";
-    ghosts.push(body);
+    if (ghosts.indexOf(body) == -1) {
+        addToArray(ghosts, body);
+    }
 }
 
 function deleteProperly(body, array) {
@@ -662,6 +740,51 @@ function deleteProperly(body, array) {
 //main loop
 setInterval(function() {
     Matter.Engine.update(engine, engine.timing.delta);
+    for (var i = 0; i < ghosts.length; ++i) {
+        if (ghosts[i]) {
+            switch (ghosts[i].inGameType) {
+                case "p":
+                    deleteProperly(ghosts[i], freeProtons);
+                    delete ghosts[i];
+                    /*ghosts.splice(i, 1);*/
+                    break;
+                case "playerPart":
+                    var parent = ghosts[i].parent;
+                    garbage[ghosts[i].number].die(engine);
+                    delete parent.chemicalChildren[parent.
+                        chemicalChildren.indexOf(ghosts[i])];
+                    deleteProperly(ghosts[i], garbage);
+                    --parent.chemicalBonds;
+                    delete ghosts[i];
+                    /*ghosts.splice(i, 1);*/
+                    break;
+                case "garbage":
+                    console.log("index is " + ghosts[i].number);
+                    //garbage[ghosts[i].number].die(engine);
+                    deleteProperly(ghosts[i], garbage);
+                    delete ghosts[i];
+                    /*ghosts.splice(i, 1);*/
+                    break;
+                case "player":
+                    //players[ghosts[i].number].garbagify(players, garbage);
+                    //players[ghosts[i].number].lose(engine, players, garbage);
+                    if (ghosts[i].superMutex) {
+                        var player = players[ghosts[i].number];
+                        player.garbagify(players, garbage);
+                        //player.die(engine);
+                        delete ghosts[i];
+                        /*ghosts.splice(i, 1);*/
+                    } else {
+                        /*++i;*/
+                    }
+                    //deletePlayer(ghosts[i].number);
+                    break;
+            }
+        }
+
+    }
+    //ghosts = [];
+
     for (var j = 0; j < players.length; ++j) {
         if (players[j]) {
             try {
@@ -670,34 +793,6 @@ setInterval(function() {
                 console.log('Caught ' + e.name + ': ' + e.message);
             }
         }
-        if (ghosts.length) {
-            for (var i = 0; i < ghosts.length; ++i) {
-                console.log(ghosts[i].inGameType);
-                switch (ghosts[i].inGameType) {
-                    case "p":
-                        deleteProperly(ghosts[i], freeProtons);
-                        break;
-                    case "playerPart":
-                        var parent = ghosts[i].parent;
-                        garbage[ghosts[i].number].die(engine);
-                        delete parent.chemicalChildren[parent.
-                            chemicalChildren.indexOf(ghosts[i])];
-                        deleteProperly(ghosts[i], garbage);
-                        --parent.chemicalBonds;
-                        break;
-                    case "garbage":
-                        garbage[ghosts[i].number].die(engine);
-                        deleteProperly(ghosts[i], garbage);
-                        break;
-                    case "player":
-                        players[ghosts[i].number].ws.send( JSON.stringify({"dead": true}));
-                        players[ghosts[i].number].garbagify(players, garbage);
-                        break;
-                }
-            }
-            ghosts = [];
-        }
-
     }
 }, 1000 / 60);
 

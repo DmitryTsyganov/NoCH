@@ -33,8 +33,10 @@ var Player = function(ws, position, engine, elem) {
 
     var self = this;
 
+    this.body.player = self;
     this.body.realMass = element.mass;
 
+    this.body.superMutex = true;
     this.body.inGameType = "player";
     this.body.chemicalBonds = 0;
 
@@ -207,6 +209,19 @@ Player.prototype = {
         }
     },
 
+    lose: function(engine, playersArray, garbageArray, newPlayerBody) {
+
+        this.ws.send(JSON.stringify({"dead": true}));
+        this.ws.close(1000, "lost");
+        delete (this.ws);
+        if (newPlayerBody) {
+            this.garbagify(playersArray, garbageArray, newPlayerBody);
+        } else {
+            this.garbagify(playersArray, garbageArray);
+            //this.die(engine);
+        }
+    },
+
     //turns player into garbage before appending it to another player
     garbagify: function(playersArray, garbageArray, newPlayerBody) {
         delete (this.body.realRadius);
@@ -214,24 +229,25 @@ Player.prototype = {
         delete (this.body.coefficient);
         delete (this.body.resolution);
 
-        this.ws.close(1000, "lost");
-        if (newPlayerBody !== undefined) delete (this.ws);
         garbageArray.push(this);
         this.body.number = garbageArray.indexOf(this);
         delete playersArray[this.body.playerNumber];
 
         if (newPlayerBody !== undefined) {
 
-            this.traversDST(this.body, function(node) {
+            this.prepareForBond(newPlayerBody);
+            /*this.traversDST(this.body, function(node) {
                 node.collisionFilter.group =
                     newPlayerBody.collisionFilter.group;
                 node.playerNumber = newPlayerBody.playerNumber;
 
-            });
+            });*/
             this.body.inGameType = "playerPart";
         } else {
             this.traversDST(this.body, function(node) {
                 node.inGameType = "garbage";
+                node.playerNumber = - 1;
+                node.collisionFilter.group = 0;
             });
         }
     },
@@ -271,8 +287,12 @@ Player.prototype = {
             this.body.coefficient = this.body.coefficient *
                 Math.sqrt(this.body.previousRadius / newRadius);
             this.body.previousRadius = newRadius;
-            this.ws.send(JSON.stringify( {
-                "coefficient" : this.body.coefficient }));
+            try {
+                this.ws.send(JSON.stringify( {
+                    "coefficient" : this.body.coefficient }));
+            } catch (e) {
+                console.log('Caught ' + e.name + ': ' + e.message);
+            }
         }
     },
 
