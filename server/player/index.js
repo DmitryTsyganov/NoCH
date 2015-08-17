@@ -29,6 +29,13 @@ var Player = function(ws, position, engine, elem) {
 
     this.setElement(elem);
 
+    this.body.bondAngles = [];
+    var angle = 0;
+    for (var i = 0; i < this.body.totalBonds; ++i) {
+        this.body.bondAngles.push({ "angle": angle, "available": true });
+        angle += 2 * Math.PI / this.body.totalBonds;
+    }
+
     World.addBody(engine.world, this.body);
 
     var self = this;
@@ -36,14 +43,15 @@ var Player = function(ws, position, engine, elem) {
     this.body.player = self;
     this.body.realMass = element.mass;
 
-    this.body.superMutex = true;
+    this.body.superMutex = 0;
     this.body.inGameType = "player";
     this.body.chemicalBonds = 0;
 
-    this.body.previousRadius = element.radius;
+    //this.body.previousRadius = element.radius;
     this.body.coefficient = 1;
     this.body.chemicalChildren = [];
     this.body.realRadius = this.body.circleRadius;
+    this.body.multiplier =  Math.sqrt(this.body.realRadius);
     this.resolution = { width: 0, height: 0 };
     this.body.getFreeBonds = function() {
         return self.body.totalBonds - self.body.chemicalBonds;
@@ -72,7 +80,7 @@ Player.prototype = {
         return addMass;
     },
 
-    makeArrayCreator: function() {
+    /*makeArrayCreator: function() {
         function addPos(body) {
             if (body.constraint1) {
                 addPos.bondPositions.push({
@@ -87,7 +95,7 @@ Player.prototype = {
         }
         addPos.bondPositions = [];
         return addPos;
-    },
+    },*/
 
     recalculateMass: function() {
         this.body.realMass = this.calculateMass(this.body);
@@ -99,11 +107,11 @@ Player.prototype = {
         return func.mass;
     },
 
-    getBondsPositions: function() {
+    /*getBondsPositions: function() {
         var func = this.makeArrayCreator();
         this.traversDST(this.body, func);
         return func.bondPositions;
-    },
+    },*/
 
     shoot: function(particle, shotPos, nucleonsArray, engine) {
 
@@ -172,11 +180,10 @@ Player.prototype = {
         this.setElement(elementName);
 
         if (this.body.chemicalBonds > this.body.totalBonds) {
-            --this.body.chemicalBonds;
-
+            //--this.body.chemicalBonds;
 
             var child = { body: null,
-                            mass: 9999999999999 };
+                            mass: Infinity };
 
             for (var i = 0; i < this.body.chemicalChildren.length; ++i) {
                 if (this.body.chemicalChildren[i]) {
@@ -191,18 +198,23 @@ Player.prototype = {
             /*this.body.chemicalChildren.splice(
                 this.body.chemicalChildren.indexOf(child.body), 1);*/
 
-            this.traversDST(child.body, this.free, this.setRandomSpeed, engine);
+            this.traversDST(child.body, this.free, this.letGo, engine);
 
-            this.body.chemicalChildren[
-                this.body.chemicalChildren.indexOf(child.body)] = null;
+            delete this.body.chemicalChildren[
+                this.body.chemicalChildren.indexOf(child.body)];
 
-            this.body.previousAngle = undefined;
+            for (i = 0; i < this.body.bondAngles.length; ++i) {
+                this.body.bondAngles[i].available = true;
+            }
+
+        this.correctBondAngles(engine);
+            /*this.body.previousAngle = undefined;
             for (i = this.body.chemicalChildren.length - 1; i >= 0; --i) {
                 if (this.body.chemicalChildren[i] && !this.body.chemicalChildren
                         [(i + 1) % (this.body.chemicalChildren.length - 1)]) {
                     this.body.previousAngle = this.body.chemicalChildren[i].constraintAngle;
                 }
-            }
+            }*/
 
             if (!this.body.chemicalBonds) this.checkResizeShrink();
             //this.recalculateMass();
@@ -225,7 +237,7 @@ Player.prototype = {
     //turns player into garbage before appending it to another player
     garbagify: function(playersArray, garbageArray, newPlayerBody) {
         delete (this.body.realRadius);
-        delete (this.body.previousRadius);
+        //delete (this.body.previousRadius);
         delete (this.body.coefficient);
         delete (this.body.resolution);
 
@@ -267,9 +279,26 @@ Player.prototype = {
 
         //apply decreased velocity to all parts of the player
 
-        var pos1 = this.body.position;
+        //var pos1 = this.body.position;
 
-        speed *= partsMultiplier;
+        //TODO: finally make the whole thing move
+        /*this.traversDST(this.body, function(body) {
+            body.force = { x: 0, y: 0 };
+            body.torque = 0;
+            var pos2 = body.position;
+            var distance = Math.sqrt((pos1.x - pos2.x) * (pos1.x - pos2.x)
+                + (pos1.y - pos2.y) * (pos1.y - pos2.y));
+            if (!distance) distance = 1;
+            Body.applyForce(body, body.position,
+                /!*Matter.Body.setVelocity(body,*!/ {
+                    x: speed / forceCoefficient / Math.sqrt(distance) *
+                    mx / Math.sqrt(mx * mx + my * my),
+                    y: speed / forceCoefficient / Math.sqrt(distance) *
+                    my / Math.sqrt(mx * mx + my * my)
+                });
+        });*/
+
+        /*speed *= partsMultiplier;*/
 
         //apply regular velocity to player.body only
         this.body.force = { x: 0, y: 0 };
@@ -284,10 +313,13 @@ Player.prototype = {
     checkResizeGrow: function(newRadius) {
         if (newRadius > this.body.realRadius) {
             this.body.realRadius = newRadius;
-            this.body.coefficient = this.body.coefficient *
-                Math.sqrt(this.body.previousRadius / newRadius);
-            this.body.previousRadius = newRadius;
+            this.body.coefficient = /*this.body.coefficient *
+            Math.sqrt(this.body.previousRadius / newRadius)*/
+            this.body.multiplier / Math.sqrt(this.body.realRadius);
+            //this.body.previousRadius = newRadius;
+            if (this.coefficientTimeOut) clearTimeout(this.coefficientTimeOut);
             try {
+                //console.log(this.body.coefficient);
                 this.ws.send(JSON.stringify( {
                     "coefficient" : this.body.coefficient }));
             } catch (e) {
@@ -296,6 +328,7 @@ Player.prototype = {
         }
     },
 
+    //TODO: check for incorrect coefficient calculations
     checkResizeShrink: function() {
         this.body.realRadius = this.body.circleRadius;
 
@@ -310,15 +343,26 @@ Player.prototype = {
             }
         });
 
-        var coefficient = this.body.coefficient *
-            Math.sqrt(this.body.previousRadius / this.body.realRadius);
-        this.body.previousRadius = this.body.realRadius;
-        this.ws.send(JSON.stringify( {
-            "coefficient" : coefficient } ));
+        var coefficient = /*this.body.coefficient *
+            Math.sqrt(this.body.previousRadius / this.body.realRadius);*/
+            this.body.multiplier / Math.sqrt(this.body.realRadius);
+        //this.body.previousRadius = this.body.realRadius;
+
+
+        try {
+            this.ws.send(JSON.stringify({
+                "coefficient" : coefficient }));
+            //console.log(coefficient);
+        } catch (e) {
+            console.log('Coefficient was not sent: '
+                        + coefficient + ' ' +
+                        e.name + ': ' + e.message);
+        }
 
         //console.log(self.body.realRadius);
 
-        setTimeout(function() {
+        if (this.coefficientTimeOut) clearTimeout(this.coefficientTimeOut);
+        this.coefficientTimeOut = setTimeout(function() {
             self.body.coefficient = coefficient;
         }, 1500);
     },

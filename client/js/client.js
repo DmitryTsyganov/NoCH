@@ -429,7 +429,7 @@
                 var dicimalPlacesNumber = 2;
                 this.targetCoefficient = (newData.coefficient).toFixed(
                         dicimalPlacesNumber) * this.coefficientScale;
-                console.log(this.getCoefficient());
+                console.log(this.targetCoefficient);
             }
             if ("c" in newData && "e" in newData) {
                 players[newData.id] = { "color": newData.c,
@@ -484,6 +484,7 @@
     socket.onmessage = function(event) {
         //console.log('got message ' + event.data);
         freshData.updateInput(event.data);
+        console.log(freshData.inputData.player);
         //updateInput(event.data);
     };
 

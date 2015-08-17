@@ -24,9 +24,17 @@ var Garbage = function(position, engine, elem) {
 
     this.setElement(elem);
 
+    this.body.bondAngles = [];
+    var angle = 0;
+    for (var i = 0; i < this.body.totalBonds; ++i) {
+        this.body.bondAngles.push({ "angle": angle, "available": true });
+        angle += 2 * Math.PI / this.body.totalBonds;
+    }
+
     World.addBody(engine.world, this.body);
 
     var self = this;
+    this.body.superMutex = 0;
     this.body.inGameType = "garbage";
     this.body.chemicalBonds = 0;
     this.body.chemicalChildren = [];
@@ -62,16 +70,16 @@ Garbage.prototype = {
 
             if (this.body.chemicalBonds > 1) {
                 var child = this.body.chemicalChildren.pop();
-                this.traversDST(child, this.free, this.setRandomSpeed, engine);
-                --this.body.chemicalBonds;
+                this.traversDST(child, this.free, this.letGo, engine);
+                //--this.body.chemicalBonds;
             } else {
                 this.traversDST(this.body, this.free, null, engine);
             }
-            if (this.body.chemicalBonds == 0) {
+            /*if (this.body.chemicalBonds == 0) {
                 this.body.previousAngle = undefined;
             } else {
                 this.body.previousAngle -= 2 * Math.PI / this.body.totalBonds;
-            }
+            }*/
         }
     }
 };
