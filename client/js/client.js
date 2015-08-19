@@ -1,4 +1,8 @@
 ;(function() {
+
+    var WS_URL = 'ws://localhost:8085'
+    WS_URL = 'ws://nochgame.cloudapp.net:8085'
+
     // Some test
     function validateInputFields(inputField) {
         if (inputField.val() == "") {
@@ -515,7 +519,7 @@
     };
 
     //creating connection
-    var socket = new WebSocket('ws://localhost:8085');
+    var socket = new WebSocket(WS_URL);
 
     //getting data
     socket.onmessage = function(event) {
