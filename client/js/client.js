@@ -1,5 +1,39 @@
 ;(function() {
+    // Some test
+    function validateInputFields(inputField) {
+        if (inputField.val() == "") {
+            inputField.addClass('error__div');
+            return false;
+        } else {
+            inputField.removeClass('error__div');
+            return true;
+        }
+    }
+
+    $('#btn__go').click(function(){
+        var login__input = $('#login__input');
+        var password__input = $('#password__input');
+        var username = $('#username');
+        var element = $('#element');
+
+
+        if (!validateInputFields(login__input)) return;
+        if (!validateInputFields(password__input)) return;
+
+        username.text(login__input.val());
+        element.text('C');
+
+        $('#overlay').hide();
+        $('#characteristic').show();
+        Game.activePlayer = true;
+    })
+
+
+
+
     var Noch = function(canvasId) {
+        this.activePlayer = false;
+
         this.canvas = document.getElementById(canvasId);
         var ctx = this.canvas.getContext('2d');
 
@@ -464,6 +498,7 @@
     var Game = {};
     Game = new Noch('canvas');
 
+
     window.onresize = function() {
         Game.canvas.width = Game.gameSize.x
             = window.innerWidth;
@@ -491,29 +526,30 @@
 
     //sending data
     document.onmousemove = function(event) {
-        /*var message = { "mouseX": event.clientX,
-                        "mouseY": event.clientY };*/
-        freshData.updateOutput(event.clientX, event.clientY);
-        //socket.send(JSON.stringify(message));
-        /*if (Game.isStarted) {
-            socket.send(JSON.stringify(freshData.outputData));
-        }*/
+        if (Game.activePlayer)
+            freshData.updateOutput(event.clientX, event.clientY);
     };
 
     document.onmousedown = function() {
-        freshData.send = true;
+        if (Game.activePlayer) {
+            event.preventDefault();
+            freshData.send = true;
+        }
     };
 
     document.onmouseup = function() {
-        freshData.send = false;
+        if (Game.activePlayer)
+            freshData.send = false;
     };
 
     document.onkeydown = function(event) {
-        if (event.keyCode == 32) {
-            shoot(event, "p");
-        }
-        if (event.keyCode == 78) {
-            shoot(event, "n");
+        if (Game.activePlayer){
+            if (event.keyCode == 32) {
+                shoot(event, "p");
+            }
+            if (event.keyCode == 78) {
+                shoot(event, "n");
+            }
         }
     };
 
