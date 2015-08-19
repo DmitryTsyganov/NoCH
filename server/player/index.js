@@ -103,8 +103,8 @@ Player.prototype = {
             }, this.body.coolDown);
 
             nucleonBody.timerId1 = setTimeout(function() {
-                nucleonBody.collisionFilter.group = 0;
-            }, 1500);
+                nucleonBody.collisionFilter.mask = 0x0001;
+            }, 1000);
 
             nucleonBody.timerId2 = setTimeout(function() {
                 if (nucleonsArray[nucleonBody.number]) {

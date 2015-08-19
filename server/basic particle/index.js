@@ -204,7 +204,7 @@ basicParticle.prototype = {
             this.body.position.y + offset * my
             / Math.sqrt(mx * mx + my * my), element.radius,
             {frictionAir: 0, restitution: 0.99, collisionFilter:
-            { group: this.body.collisionFilter.group }});
+            { mask: 0x0007 }});
 
         nucleonBody.inGameType = nucleonBody.element = particle;
 
