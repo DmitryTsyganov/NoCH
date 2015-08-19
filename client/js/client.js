@@ -521,7 +521,8 @@
     socket.onmessage = function(event) {
         //console.log('got message ' + event.data);
         freshData.updateInput(event.data);
-        console.log(freshData.inputData.player);
+        // console.log(freshData.inputData.player);
+        
         //updateInput(event.data);
     };
 
@@ -537,7 +538,7 @@
 
     document.onmousedown = function() {
         if (Game.activePlayer) {
-            event.preventDefault();
+            // event.preventDefault();
             freshData.send = true;
         }
     };
