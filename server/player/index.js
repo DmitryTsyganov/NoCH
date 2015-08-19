@@ -15,50 +15,20 @@ var Engine = Matter.Engine,
 
 var Player = function(ws, position, engine, elem) {
 
+    basicParticle.call(this, position, engine, elem);
+
     this.ws = ws;
 
-    var group = Body.nextGroup(true);
+    //this.body.collisionFilter.group = Body.nextGroup(true);
 
-    this.CHARGE_RADIUS = 5;
-
-    //creating physics body for player
-    var element = params.getParameter(elem);
-    this.body = Bodies.circle(position.x, position.y,
-        element.radius + this.CHARGE_RADIUS,
-        { restitution: 0.99, collisionFilter: { group: group } });
-
-    this.setElement(elem);
-
-    this.body.bondAngles = [];
-    var angle = 0;
-    for (var i = 0; i < this.body.totalBonds; ++i) {
-        this.body.bondAngles.push({ "angle": angle, "available": true });
-        angle += 2 * Math.PI / this.body.totalBonds;
-    }
-
-    World.addBody(engine.world, this.body);
-
-    var self = this;
-
-    this.body.player = self;
-    this.body.realMass = element.mass;
-
-    this.body.superMutex = 0;
     this.body.inGameType = "player";
-    this.body.chemicalBonds = 0;
 
-    //this.body.previousRadius = element.radius;
+    this.body.player = this;
+    this.body.realMass = 0;
     this.body.coefficient = 1;
-    this.body.chemicalChildren = [];
     this.body.realRadius = this.body.circleRadius;
     this.body.multiplier =  Math.sqrt(this.body.realRadius);
     this.resolution = { width: 0, height: 0 };
-    this.body.getFreeBonds = function() {
-        return self.body.totalBonds - self.body.chemicalBonds;
-    };
-    this.body.getAvailableNeutrons = function() {
-        return self.body.maxNeutrons - self.body.neutrons;
-    };
 };
 
 Player.prototype = {
@@ -113,7 +83,7 @@ Player.prototype = {
         return func.bondPositions;
     },*/
 
-    shoot: function(particle, shotPos, nucleonsArray, engine) {
+    shoot: function(particle, shotPos, nucleonsArray, garbageArray, engine) {
 
         if (particle == "p" && this.body.element == "H") return;
         if (particle == "n" && this.body.neutrons == 0) return;
@@ -123,7 +93,7 @@ Player.prototype = {
 
             var nucleonBody = this.createNucleon(particle, shotPos, nucleonsArray, engine);
 
-            if (particle == "p") this.changeCharge(-1, engine, nucleonsArray);
+            if (particle == "p") this.changeCharge(-1, engine, nucleonsArray, garbageArray);
 
             var self = this;
 
@@ -162,7 +132,28 @@ Player.prototype = {
         }
     },
 
-    changeCharge: function(value, engine, nucleonsArray) {
+    dismountBranch: function(engine) {
+        var child = {
+            body: null,
+            mass: Infinity
+        };
+
+        for (var i = 0; i < this.body.chemicalChildren.length; ++i) {
+            if (this.body.chemicalChildren[i]) {
+                var nextChild = {
+                    body: this.body.chemicalChildren[i],
+                    mass: this.calculateMass(this.body.chemicalChildren[i])
+                };
+                if (nextChild.mass < child.mass) child = nextChild;
+            }
+        }
+
+        this.traversDST(child.body, this.free, this.letGo, engine);
+
+        if (!this.body.chemicalBonds) this.checkResizeShrink();
+    },
+
+    /*changeCharge: function(value, engine, nucleonsArray, garbageArray) {
 
         this.CHARGE_RADIUS = 5;
 
@@ -182,8 +173,10 @@ Player.prototype = {
         if (this.body.chemicalBonds > this.body.totalBonds) {
             //--this.body.chemicalBonds;
 
-            var child = { body: null,
-                            mass: Infinity };
+            var child = {
+                body: null,
+                mass: Infinity
+            };
 
             for (var i = 0; i < this.body.chemicalChildren.length; ++i) {
                 if (this.body.chemicalChildren[i]) {
@@ -195,36 +188,38 @@ Player.prototype = {
                 }
             }
 
-            /*this.body.chemicalChildren.splice(
-                this.body.chemicalChildren.indexOf(child.body), 1);*/
+            /!*this.body.chemicalChildren.splice(
+             this.body.chemicalChildren.indexOf(child.body), 1);*!/
 
             this.traversDST(child.body, this.free, this.letGo, engine);
+        }
+            /!*delete this.body.chemicalChildren[
+                this.body.chemicalChildren.indexOf(child.body)];*!/
 
-            delete this.body.chemicalChildren[
-                this.body.chemicalChildren.indexOf(child.body)];
+        for (i = 0; i < this.body.bondAngles.length; ++i) {
+            this.body.bondAngles[i].available = true;
+        }
 
-            for (i = 0; i < this.body.bondAngles.length; ++i) {
-                this.body.bondAngles[i].available = true;
-            }
-
-        this.correctBondAngles(engine);
-            /*this.body.previousAngle = undefined;
+        this.correctBondAngles(engine, garbageArray);
+            /!*this.body.previousAngle = undefined;
             for (i = this.body.chemicalChildren.length - 1; i >= 0; --i) {
                 if (this.body.chemicalChildren[i] && !this.body.chemicalChildren
                         [(i + 1) % (this.body.chemicalChildren.length - 1)]) {
                     this.body.previousAngle = this.body.chemicalChildren[i].constraintAngle;
                 }
-            }*/
-
-            if (!this.body.chemicalBonds) this.checkResizeShrink();
+            }*!/
+        if (!this.body.chemicalBonds) this.checkResizeShrink();
             //this.recalculateMass();
-        }
-    },
+    },*/
 
     lose: function(engine, playersArray, garbageArray, newPlayerBody) {
 
-        this.ws.send(JSON.stringify({"dead": true}));
-        this.ws.close(1000, "lost");
+        try {
+            this.ws.send(JSON.stringify({"dead": true}));
+            this.ws.close(1000, "lost");
+        } catch(e) {
+            console.log("already closed");
+        }
         delete (this.ws);
         if (newPlayerBody) {
             this.garbagify(playersArray, garbageArray, newPlayerBody);
@@ -268,7 +263,7 @@ Player.prototype = {
         var speed = this.body.nuclearSpeed;
 
         var PERCENT_FULL = 100;
-        var massCoefficient = 0;
+        var massCoefficient = 6;
         var minMultiplier = 20;
         var partsMultiplier = 2;
         var forceCoefficient = 490;
@@ -279,29 +274,30 @@ Player.prototype = {
 
         //apply decreased velocity to all parts of the player
 
-        //var pos1 = this.body.position;
+        var pos1 = this.body.position;
 
         //TODO: finally make the whole thing move
-        /*this.traversDST(this.body, function(body) {
+        this.traversDST(this.body, function(body) {
             body.force = { x: 0, y: 0 };
             body.torque = 0;
             var pos2 = body.position;
-            var distance = Math.sqrt((pos1.x - pos2.x) * (pos1.x - pos2.x)
+            /*var distance = Math.sqrt((pos1.x - pos2.x) * (pos1.x - pos2.x)
                 + (pos1.y - pos2.y) * (pos1.y - pos2.y));
-            if (!distance) distance = 1;
+            if (!distance) distance = 1;*/
             Body.applyForce(body, body.position,
-                /!*Matter.Body.setVelocity(body,*!/ {
-                    x: speed / forceCoefficient / Math.sqrt(distance) *
+                /*Matter.Body.setVelocity(body,*/ {
+                    x: speed / forceCoefficient /*!/ Math.sqrt(distance) */*
                     mx / Math.sqrt(mx * mx + my * my),
-                    y: speed / forceCoefficient / Math.sqrt(distance) *
+                    y: speed / forceCoefficient /*/ Math.sqrt(distance) */*
                     my / Math.sqrt(mx * mx + my * my)
                 });
-        });*/
+        });
 
         /*speed *= partsMultiplier;*/
 
         //apply regular velocity to player.body only
         this.body.force = { x: 0, y: 0 };
+        this.body.torque = 0;
         Body.applyForce(this.body, this.body.position,
         /*Body.setVelocity(this.body,*/ {
             x: speed / forceCoefficient * mx / Math.sqrt(mx * mx + my * my),

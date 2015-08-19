@@ -248,7 +248,9 @@
                     if (pos) {
                         this.drawElement(ctx, pos.x, pos.y,
                                         radius * freshData.getCoefficient(), "white");
-                        this.addLetter(ctx, pos.x, pos.y, stuff,
+                        this.addLetter(ctx, pos.x, pos.y, /*JSON.stringify({ x: pos.x +
+                                        freshData.inputData.player.x, y: pos.y +
+                                        freshData.inputData.player.y })*/stuff,
                                         radius * freshData.getCoefficient());
                     }
                 }

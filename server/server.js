@@ -49,6 +49,8 @@ console.log('The server is running');
 
 webSocketServer.on('connection', function(ws) {
 
+    //if (peekAtAvailablePosition(players > 9)) ws.close();
+
     var mapRadius = params.getParameter("gameDiameter") / 2;
 
     var minAreaRadius = 0;
@@ -114,14 +116,19 @@ webSocketServer.on('connection', function(ws) {
                 x: parsedMessage.shotX - player.getLocalPosition().x,
                 y: parsedMessage.shotY - player.getLocalPosition().y
             };
-            player.shoot(parsedMessage.particle, shotPos, freeProtons, engine);
+            player.shoot(parsedMessage.particle, shotPos, freeProtons, garbage, engine);
             sendEverybody({"id": player.body.id, "ne": player.body.element});
         }
     });
 
     ws.on('close', function(event) {
-        console.log('player exited ' + id);
-        if (event != 1000) prepareToDelete(player.body);
+
+        if (event != 1000) {
+            prepareToDelete(player.body);
+            console.log('player exited ' + id);
+        } else {
+            console.log('player lost ' + id);
+        }
     });
 
     ws.on('error', function() {
@@ -176,6 +183,12 @@ function addToArray(array, obj) {
     var i = 0;
     while(array[i]) ++i;
     array[i] = obj;
+    return i;
+}
+
+function peekAtAvailablePosition(array) {
+    var i = 0;
+    while(array[i]) ++i;
     return i;
 }
 
@@ -301,66 +314,16 @@ function isElement(object) {
     return object.body.element == this;
 }
 
-/*function spotQuarter(pos) {
-    if (pos.x >= 0 && pos.y >= 0) return 1;
-    if (pos.x <= 0 && pos.y >= 0) return 2;
-    if (pos.x <= 0 && pos.y <= 0) return 3;
-    if (pos.x >= 0 && pos.y <= 0) return 4;
-}*/
-
-//returns multipliers for next quarter of coordinate plane
-/*function findNextQuarter(quarter) {
-    switch (quarter) {
-        case 1:
-            return {x: -1, y: 1};
-            break;
-        case 2:
-            return {x: -1, y: -1};
-            break;
-        case 3:
-            return {x: 1, y: -1};
-            break;
-        case 4:
-            return {x: 1, y: 1};
-            break;
-    }
-}*/
-
-//returns position for next element in player's coordinate system
-/*function findAngle(playerPosition, garbagePosition, playerAngle) {
-    var hypotenuse = calculateDistance(playerPosition, garbagePosition);
-        var cathetus = calculateDistance({ x: playerPosition.x, y: garbagePosition.y },
-                                            garbagePosition);
-        var cosine = cathetus / hypotenuse;
-        var angle = Math.acos(cosine);
-
-        var quarter = spotQuarter({ x: garbagePosition.x - playerPosition.x,
-                                    y: garbagePosition.y - playerPosition.y });
-
-        switch (quarter) {
-            case 2:
-                angle = Math.PI - angle;
-                break;
-            case 3:
-                angle = Math.PI + angle;
-                break;
-            case 4:
-                angle = 2 * Math.PI - angle;
-        }
-
-    return (angle - playerAngle) % (2 * Math.PI);
-    /!*{ x: (playerRadius + newRadius) *
-     Math.cos(angle) / Math.cos(playerAngle),
-     y: (playerRadius + newRadius) *
-     Math.sin(angle) / Math.sin(playerAngle) };*!/
-}*/
-
-
 //creates Bond between two elements
 function createBond(playerBody, garbageBody) {
 
-    ++playerBody.superMutex;
-    ++garbageBody.superMutex;
+    /*console.log("Player mutex before " + playerBody.superMutex);
+    console.log("Garbage mutex before " + garbageBody.superMutex);*/
+    /*++playerBody.superMutex;
+    ++garbageBody.superMutex;*/
+
+    getMainObject(playerBody).muteBranch();
+    getMainObject(garbageBody).muteBranch();
 
     ++playerBody.chemicalBonds;
     ++garbageBody.chemicalBonds;
@@ -377,6 +340,7 @@ function createBond(playerBody, garbageBody) {
             y: destination.y + pos1.y - garbageBody.position.y });*/
         var i = 0;
         var N = 15;     // Number of iterations
+        //garbageBody.inGameType = "temporary undefined";
         garbageBody.collisionFilter.mask = 0x0008;      // turn off collisions
         /*var angle = playerBody.previousAngle + 2 * Math.PI / playerBody.totalBonds;*/
         var angle = getMainObject(playerBody).getClosestAngle(Geometry.findAngle(playerBody.position,
@@ -393,11 +357,15 @@ function createBond(playerBody, garbageBody) {
             var pos1 = playerBody.position;
             //var pos2 = prev.position;
 
+            var ADDITIONAL_LENGTH = 20;
+
             var delta = {
-                x: ((playerBody.circleRadius + garbageBody.circleRadius)
+                x: ((playerBody.circleRadius + garbageBody.circleRadius
+                + ADDITIONAL_LENGTH)
                     * Math.cos(angle + playerBody.angle)
                     + pos1.x - garbageBody.position.x) / (N - i),
-                y: ((playerBody.circleRadius + garbageBody.circleRadius)
+                y: ((playerBody.circleRadius + garbageBody.circleRadius
+                + ADDITIONAL_LENGTH)
                     * Math.sin(angle + playerBody.angle)
                     + pos1.y - garbageBody.position.y) / (N - i)
             };
@@ -434,7 +402,7 @@ function createBond(playerBody, garbageBody) {
 
 function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
 
-    garbageBody.collisionFilter.group = playerBody.collisionFilter.group;
+    //garbageBody.collisionFilter.group = playerBody.collisionFilter.group;
 
     //garbageBody.inGameType = "playerPart";
     //garbageBody.playerNumber = playerBody.playerNumber;
@@ -448,7 +416,7 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
 
     World.add(engine.world, [constraintA, constraintB]);
 
-    console.log("Player number in createBond is " + playerBody.playerNumber);
+    //console.log("Player number in createBond is " + playerBody.playerNumber);
     var newRadius = Geometry.calculateDistance(getPlayer(playerBody)
         .body.position, garbageBody.position);
     garbageBody.player = getPlayer(playerBody);
@@ -457,8 +425,16 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
     getPlayer(playerBody).recalculateMass();
     //console.log("final mass = " + getPlayer(playerBody).body.realMass);
 
-    --playerBody.superMutex;
-    --garbageBody.superMutex;
+    /*--playerBody.superMutex;
+    --garbageBody.superMutex;*/
+
+    //getMainObject(playerBody).unmuteBranch();
+    //garbageBody.inGameType = "playerPart";
+    getMainObject(garbageBody).markAsPlayer(playerBody);
+    getMainObject(garbageBody).unmuteBranch();
+
+    /*console.log("Player mutex after " + playerBody.superMutex);
+    console.log("Garbage mutex after " + garbageBody.superMutex);*/
 }
 
 //links parts of a player to form tree structure
@@ -486,11 +462,12 @@ function calculateMomentum(bodyA, bodyB) {
 
 function connectGarbageToPlayer(playerBody, garbageBody) {
     getMainObject(garbageBody).reverse();
-    getMainObject(garbageBody).prepareForBond(playerBody);
+    getMainObject(garbageBody).prepareForBond();
     createBond(playerBody, garbageBody);
 }
 
 function connectPlayers(bodyA, bodyB) {
+
     var massA = getPlayer(bodyA).body.realMass;
     var massB = getPlayer(bodyB).body.realMass;
     /*console.log("first mass = " + massA);
@@ -517,7 +494,7 @@ function connectPlayers(bodyA, bodyB) {
 
 function collideWithProton(elementBody, protonBody) {
     if (!elementBody.superMutex) {
-        getMainObject(elementBody).changeCharge(1, engine, freeProtons);
+        getMainObject(elementBody).changeCharge(1, engine, freeProtons, garbage);
         sendEverybody({"id": elementBody.id, "ne": elementBody.element});
         prepareToDelete(protonBody);
     }
@@ -557,6 +534,7 @@ function collideWithGarbage(playerBody, garbageBody) {
 }
 
 function collidePVP(playerBodyA, playerBodyB) {
+    if (playerBodyA.playerNumber == playerBodyB.playerNumber) return;
     if (playerBodyA.getFreeBonds() && playerBodyB.getFreeBonds()) {
         connectPlayers(playerBodyA, playerBodyB);
     } else {
@@ -574,6 +552,7 @@ function getArray(body) {
     switch (body.inGameType) {
         case "player":
             return players;
+        case "temporary undefined":
         case "playerPart":
         case "garbage":
             return garbage;
@@ -587,6 +566,7 @@ function getMainObject(body) {
     switch (body.inGameType) {
         case "player":
             return players[body.number];
+        case "temporary undefined":
         case "playerPart":
         case "garbage":
             return garbage[body.number];
@@ -752,6 +732,9 @@ setInterval(function() {
                         sendEverybody({ "dp": player.body.id });
                         delete ghosts[i];
                         /*ghosts.splice(i, 1);*/
+                    } else {
+                        console.log("tried to delete player " + ghost.number);
+                        console.log(ghost.superMutex);
                     }
                     break;
             }

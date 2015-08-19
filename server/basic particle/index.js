@@ -13,7 +13,41 @@ var Engine = Matter.Engine,
     Body = Matter.Body,
     Composite = Matter.Composite;
 
-var basicParticle = {};
+var basicParticle = function(position, engine, elem) {
+    this.CHARGE_RADIUS = 5;
+
+    //creating physics body for player
+    var element = params.getParameter(elem);
+    this.body = Bodies.circle(position.x, position.y,
+        element.radius + this.CHARGE_RADIUS,
+        { restitution: 0.99 });
+    this.body.inertia = 0;
+    this.body.inverseInertia = 0;
+
+    this.setElement(elem);
+
+    this.body.bondAngles = [];
+    var angle = 0;
+    for (var i = 0; i < this.body.totalBonds; ++i) {
+        this.body.bondAngles.push({ "angle": angle, "available": true });
+        angle += 2 * Math.PI / this.body.totalBonds;
+    }
+
+    World.addBody(engine.world, this.body);
+
+    var self = this;
+    this.body.superMutex = 0;
+    this.body.chemicalBonds = 0;
+    this.body.chemicalChildren = [];
+
+    this.body.getFreeBonds = function() {
+        return self.body.totalBonds - self.body.chemicalBonds;
+    };
+    this.body.getAvailableNeutrons = function() {
+        return self.body.maxNeutrons - self.body.neutrons;
+    };
+
+};
 
 basicParticle.prototype = {
     traversDST: function(node, visit, visitAgain, engine) {
@@ -44,7 +78,7 @@ basicParticle.prototype = {
             pos = body.parentPosition;
             delete body.parentPosition;
         } else {
-            pos = {x: Math.random(), y: Math.random()};
+            pos = { x: Math.random(), y: Math.random() };
         }
 
         var mx = body.position.x - pos.x;
@@ -203,17 +237,23 @@ basicParticle.prototype = {
         return revertTree;
     },
 
-    prepareForBond: function(newPlayerBody) {
+    prepareForBond: function() {
+        this.traversDST(this.body, function(node) {
+            //if (node.typeTimeout) clearTimeout(node.typeTimeout);
+            node.inGamtype = "temporary undefined";
+            /*node.inGameType = "playerPart";*/
+            //node.playerNumber = newPlayerBody.playerNumber;
+            /*node.collisionFilter.group =
+                newPlayerBody.collisionFilter.group;*/
+
+        });
+    },
+
+    markAsPlayer: function(newPlayerBody) {
         this.traversDST(this.body, function(node) {
             if (node.typeTimeout) clearTimeout(node.typeTimeout);
-            node.inGamtype = "temporary undefined";
-            node.typeTimeout = setTimeout(function() {
-                node.inGameType = "playerPart";
-                node.playerNumber = newPlayerBody.playerNumber;
-            }, 1500);
-            node.collisionFilter.group =
-                newPlayerBody.collisionFilter.group;
-
+            node.inGameType = "playerPart";
+            node.playerNumber = newPlayerBody.playerNumber;
         });
     },
 
@@ -271,13 +311,35 @@ basicParticle.prototype = {
 
     },
 
+    muteBranch: function() {
+        this.changeBranchAvailability(1);
+        //console.log("Mutex before " + this.body.superMutex);
+    },
+
+    unmuteBranch: function() {
+        this.changeBranchAvailability(-1);
+        //console.log("Mutex after " + this.body.superMutex);
+    },
+
+    changeBranchAvailability: function(value) {
+        this.reversDST(this.body, function(node) {
+
+            /*var name = value > 0 ? "mute" : "unmute";
+            console.log("applying func " + name + " to body " +
+                JSON.stringify(node.position) + ", mutex\nbefore: " + node.superMutex);*/
+            node.superMutex += value;
+            //console.log("after: " + node.superMutex);
+        })
+    },
+
+
     reverse: function() {
         var func = this.returnPostRevertTree();
         this.reversDST(this.body, func);
     },
 
     checkDecoupling: function(momentum, engine) {
-        var bondStrength = 2500;
+        var bondStrength = 200;
         if (momentum > bondStrength && this.body.chemicalBonds) {
             this.traversDST(this.body, this.free, this.letGo, engine);
             if (this.body.player) {
@@ -316,9 +378,18 @@ basicParticle.prototype = {
         }
     },
 
+    freeBondAngle: function(body, angle) {
+        for (var i = 0; i < body.bondAngles.length; ++i) {
+            if (body.bondAngles[i].angle == angle) {
+                body.bondAngles[i].available = true;
+            }
+        }
+    },
+
+    //TODO: get rid of recursion
     //TODO: figure out how to prevent branch from disconnecting (reverseDST???)
     //TODO: apply KISS to this function (transport createBond here???)
-    correctBondAngles: function(engine) {
+    correctBondAngles: function(engine, garbageArray) {
         var body = this.body;
         for (var i = 0; i < body.chemicalChildren.length; ++i) {
 
@@ -326,6 +397,7 @@ basicParticle.prototype = {
             if (child) {
 
                 var angle = this.getClosestAngle(child.constraint1.chemicalAngle);
+                this.freeBondAngle(child, child.constraint2.chemicalAngle);
 
                 World.remove(engine.world, child.constraint1);
                 World.remove(engine.world, child.constraint2);
@@ -349,7 +421,7 @@ basicParticle.prototype = {
                 var rotationAngle = Geometry.findAngle(child.position,
                     body.position, child.angle);
 
-                var garbageAngle = this.getClosestAngle(rotationAngle);
+                var garbageAngle = garbageArray[child.number].getClosestAngle(rotationAngle);
 
                 Body.rotate(child, (rotationAngle - garbageAngle));
 
@@ -377,6 +449,33 @@ basicParticle.prototype = {
                 World.add(engine.world, [constraintA, constraintB]);
             }
         }
+    },
+
+    changeCharge: function(value, engine, nucleonsArray, garbageArray) {
+
+        this.CHARGE_RADIUS = 5;
+
+        if (this.body.element == "Ne" && value == 1) {
+            value = -1;
+            this.createNucleon("p", { x: Math.random(), y: Math.random() },
+                nucleonsArray, engine);
+            this.createNucleon("p", { x: Math.random(), y: Math.random() },
+                nucleonsArray, engine);
+        }
+
+        var elementName = elements[elements.indexOf(
+            this.body.element) + value];
+
+        this.setElement(elementName);
+
+        if (this.body.chemicalBonds > this.body.totalBonds) {
+            this.dismountBranch(engine);
+        }
+        for (var i = 0; i < this.body.bondAngles.length; ++i) {
+            this.body.bondAngles[i].available = true;
+        }
+
+        this.correctBondAngles(engine, garbageArray);
     }
 };
 
