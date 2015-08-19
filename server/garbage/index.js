@@ -15,32 +15,25 @@ var Engine = Matter.Engine,
 
 var Garbage = function(position, engine, elem) {
 
-    this.CHARGE_RADIUS = 5;
+    basicParticle.call(this, position, engine, elem);
 
-    var element = params.getParameter(elem);
-    this.body = Bodies.circle(position.x, position.y,
-        element.radius + this.CHARGE_RADIUS,
-        { frictionAir: 0.07, restitution: 0.99 });
+    this.body.frictionAir = 0.003;
 
-    this.setElement(elem);
-
-    World.addBody(engine.world, this.body);
-
-    var self = this;
     this.body.inGameType = "garbage";
-    this.body.chemicalBonds = 0;
-    this.body.chemicalChildren = [];
-    this.body.getFreeBonds = function() {
-        return self.body.totalBonds - self.body.chemicalBonds;
-    };
-    this.body.getAvailableNeutrons = function() {
-        return self.body.maxNeutrons - self.body.neutrons;
-    }
 };
 
 Garbage.prototype = {
 
-    changeCharge: function(value, engine, nucleonsArray) {
+    dismountBranch: function(engine) {
+        if (this.body.chemicalBonds > 1) {
+            var child = this.body.chemicalChildren.pop();
+            this.traversDST(child, this.free, this.letGo, engine);
+        } else {
+            this.traversDST(this.body, this.free, this.letGo, engine);
+        }
+    }
+
+    /*changeCharge: function(value, engine, nucleonsArray) {
 
         this.CHARGE_RADIUS = 5;
 
@@ -57,32 +50,23 @@ Garbage.prototype = {
 
         this.setElement(elementName);
 
-        if (this.body.chemicalBonds > this.body.totalBonds /*&&
-            this.body.composite*/) {
+        if (this.body.chemicalBonds > this.body.totalBonds /!*&&
+            this.body.composite*!/) {
 
             if (this.body.chemicalBonds > 1) {
                 var child = this.body.chemicalChildren.pop();
-                this.traversDST(child, this.free, this.setRandomSpeed, engine);
-                --this.body.chemicalBonds;
+                this.traversDST(child, this.free, this.letGo, engine);
+                //--this.body.chemicalBonds;
             } else {
-                this.traversDST(this.body, this.free, null, engine);
+                this.traversDST(this.body, this.free, this.letGo, engine);
             }
-            if (this.body.chemicalBonds == 0) {
+            /!*if (this.body.chemicalBonds == 0) {
                 this.body.previousAngle = undefined;
             } else {
                 this.body.previousAngle -= 2 * Math.PI / this.body.totalBonds;
-            }
-            return true;
+            }*!/
         }
-        return false;
-    },
-
-    checkDecoupling: function(momentum, engine) {
-        var bondStrength = 250;
-        if (momentum > bondStrength) {
-            this.traversDST(this.body, this.free, null, engine);
-        }
-    }
+    }*/
 };
 
 Garbage.prototype.__proto__ = basicParticle.prototype;
