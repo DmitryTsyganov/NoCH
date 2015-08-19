@@ -1,0 +1,7 @@
+.*
+!.gitignore
+/node_modules
+/server/node_modules/memwatch
+/server/node_modules/ws
+/server/node_modules/matter-js
+
