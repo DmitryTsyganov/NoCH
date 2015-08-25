@@ -21,6 +21,7 @@ var basicParticle = function(position, engine, elem) {
     this.body = Bodies.circle(position.x, position.y,
         element.radius + this.CHARGE_RADIUS,
         { restitution: 0.99 });
+    this.body.energy = 0;
     this.body.inertia = 0;
     this.body.inverseInertia = 0;
 
@@ -98,6 +99,10 @@ basicParticle.prototype = {
         node.inGameType = "temporary undefined";
 
         if (node.chemicalParent) {
+            var bond = params.getParameter(([node.element,
+                node.chemicalParent.element].sort()).join(''));
+            node.energy += bond[node.element];
+            node.chemicalParent.energy += bond[node.chemicalParent.element];
             delete node.chemicalParent.chemicalChildren[
                 node.chemicalParent.chemicalChildren
                     .indexOf(node)];
@@ -153,7 +158,13 @@ basicParticle.prototype = {
     setElement: function(elem) {
         if (elem) {
             var element = params.getParameter(elem);
+            if (this.body.element) {
+                var previousElement = params.getParameter(this.body.element);
+                this.body.energy -= previousElement.energy;
+            }
             this.body.element = elem;
+            console.log(element.energy);
+            this.body.energy += element.energy;
             var coefficient = (element.radius + this.CHARGE_RADIUS)
                 / this.body.circleRadius;
 
@@ -441,6 +452,39 @@ basicParticle.prototype = {
         console.log("correctBondAnglesFinal ended");
     },
 
+    checkBondValidity: function(engine) {
+        for (var i = 0; i < this.body.chemicalChildren.length; ++i) {
+            if (this.body.chemicalChildren[i]) {
+                this.checkSingleBondValidity(this.body.chemicalChildren[i], engine);
+            }
+        }
+        this.checkSingleBondValidity(this.body, engine);
+    },
+
+    checkSingleBondValidity: function(body, engine) {
+        var bond = params.getParameter(([body.element,
+            body.chemicalParent.element].sort()).join(''));
+
+        if (!bond) {
+            this.free(body, engine);
+        }
+    },
+
+    calculateEnergy: function() {
+        var energy = 0;
+        var neighbours = this.body.chemicalChildren.concat([this.body.chemicalParent]);
+        for (var i = 0; i < neighbours.length; ++i) {
+            if (neighbours[i]) {
+                var bond = params.getParameter(([this.body.element,
+                    neighbours[i].element].sort()).join(''));
+                if (bond) {
+                    energy += bond[this.body.element];
+                }
+            }
+        }
+        return energy;
+    },
+
     changeCharge: function(value, engine, nucleonsArray) {
         console.log("changeCharge started");
         console.log("working with " + this.body.element + " at " +
@@ -462,7 +506,14 @@ basicParticle.prototype = {
 
         this.setElement(elementName);
 
-        if (this.body.chemicalBonds > this.body.totalBonds) {
+        this.checkBondValidity(engine);
+
+        /*if (this.body.chemicalBonds > this.body.totalBonds) {
+         this.dismountBranch(engine);
+         }*/
+
+        while (this.body.chemicalBonds > this.body.totalBonds ||
+        this.calculateEnergy > this.body.energy) {
             this.dismountBranch(engine);
         }
         for (var i = 0; i < this.body.bondAngles.length; ++i) {
