@@ -319,85 +319,16 @@ function createBond(playerBody, garbageBody) {
 
     /*console.log("Player mutex before " + playerBody.superMutex);
     console.log("Garbage mutex before " + garbageBody.superMutex);*/
-    /*++playerBody.superMutex;
-    ++garbageBody.superMutex;*/
 
     getMainObject(playerBody).muteBranch();
     getMainObject(garbageBody).muteBranch();
 
     ++playerBody.chemicalBonds;
     ++garbageBody.chemicalBonds;
+    ++playerBody.superMutex;
+    ++garbageBody.superMutex;
 
-    /*if (playerBody.previousAngle !== undefined) {*/
-
-        /*var pos1 = playerBody.position;
-        var pos2 = prev.position;
-        var destination = findAngle(pos1, pos2, playerBody.totalBonds,
-                                        garbageBody.circleRadius, prev.circleRadius);
-
-        Body.translate(garbageBody, {
-            x: destination.x + pos1.x - garbageBody.position.x,
-            y: destination.y + pos1.y - garbageBody.position.y });*/
-        var i = 0;
-        var N = 15;     // Number of iterations
-        //garbageBody.inGameType = "temporary undefined";
-        garbageBody.collisionFilter.mask = 0x0008;      // turn off collisions
-        /*var angle = playerBody.previousAngle + 2 * Math.PI / playerBody.totalBonds;*/
-        var angle = getMainObject(playerBody).getClosestAngle(Geometry.findAngle(playerBody.position,
-                                                garbageBody.position, playerBody.angle));
-        /*var destination = findAngle(playerBody.position, prev.position,
-            playerBody.totalBonds, garbageBody.circleRadius,
-            playerBody.circleRadius, playerBody.angle);*/
-        //playerBody.previousAngle = angle;
-        /*if (playerBody.id == playerBody.playerNumber) {
-            garbageBody.constraintAngle = angle;    //for player/index.js 243
-        }*/
-
-        var intervalID = setInterval(function () {
-            var pos1 = playerBody.position;
-            //var pos2 = prev.position;
-
-            var ADDITIONAL_LENGTH = 20;
-
-            var delta = {
-                x: ((playerBody.circleRadius + garbageBody.circleRadius
-                + ADDITIONAL_LENGTH)
-                    * Math.cos(angle + playerBody.angle)
-                    + pos1.x - garbageBody.position.x) / (N - i),
-                y: ((playerBody.circleRadius + garbageBody.circleRadius
-                + ADDITIONAL_LENGTH)
-                    * Math.sin(angle + playerBody.angle)
-                    + pos1.y - garbageBody.position.y) / (N - i)
-            };
-
-            Body.translate(garbageBody, {
-                x: delta.x,
-                y: delta.y });
-
-            if (++i === N) {
-                clearInterval(intervalID);
-                /*console.log('final:\tx = ' + garbageBody.position.x +
-                            '\ny = ' + garbageBody.position.y);*/
-                garbageBody.collisionFilter.mask = 0x0001;
-                var rotationAngle = Geometry.findAngle(garbageBody.position,
-                    playerBody.position, garbageBody.angle);
-
-                var garbageAngle = getMainObject(garbageBody).getClosestAngle(rotationAngle);
-
-                Body.rotate(garbageBody, (rotationAngle - garbageAngle));
-                /*garbageBody.previousAngle = findAngle(garbageBody.position,
-                    playerBody.position, garbageBody.angle);*/
-                finalCreateBond(playerBody, garbageBody, angle, garbageAngle);
-            }
-        }, 30);
-
-    /*} else {
-        playerBody.previousAngle =
-            findAngle(playerBody.position, garbageBody.position, playerBody.angle);
-        garbageBody.previousAngle =
-            findAngle(garbageBody.position, playerBody.position, garbageBody.angle);
-        finalCreateBond(playerBody, garbageBody);
-    }*/
+    getMainObject(playerBody).connectBody(garbageBody, finalCreateBond);
 }
 
 function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
@@ -416,7 +347,9 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
 
     World.add(engine.world, [constraintA, constraintB]);
 
-    //console.log("Player number in createBond is " + playerBody.playerNumber);
+    console.log("Player number in createBond is " + playerBody.playerNumber);
+    console.log("Currently playerBody is " + playerBody.inGameType);
+
     var newRadius = Geometry.calculateDistance(getPlayer(playerBody)
         .body.position, garbageBody.position);
     garbageBody.player = getPlayer(playerBody);
@@ -432,6 +365,9 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
     //garbageBody.inGameType = "playerPart";
     getMainObject(garbageBody).markAsPlayer(playerBody);
     getMainObject(garbageBody).unmuteBranch();
+    garbageBody.collisionFilter.mask = 0x0001;
+    --playerBody.superMutex;
+    --garbageBody.superMutex;
 
     /*console.log("Player mutex after " + playerBody.superMutex);
     console.log("Garbage mutex after " + garbageBody.superMutex);*/
@@ -494,7 +430,7 @@ function connectPlayers(bodyA, bodyB) {
 
 function collideWithProton(elementBody, protonBody) {
     if (!elementBody.superMutex) {
-        getMainObject(elementBody).changeCharge(1, engine, freeProtons, garbage);
+        getMainObject(elementBody).changeCharge(1, engine, freeProtons);
         sendEverybody({"id": elementBody.id, "ne": elementBody.element});
         prepareToDelete(protonBody);
     }
@@ -565,23 +501,29 @@ function getArray(body) {
 function getMainObject(body) {
     switch (body.inGameType) {
         case "player":
+            //console.log("returning player at " + body.number);
             return players[body.number];
         case "temporary undefined":
         case "playerPart":
         case "garbage":
+            //console.log("returning garbage at " + body.number);
             return garbage[body.number];
         case "n":
         case "p":
+            //console.log("returning freeProtons at " + body.number);
             return freeProtons[body.number];
     }
 }
 
 function getPlayer(body) {
-    try {
-        return players[body.playerNumber];
-    } catch(e) {
+
+    var player = players[body.playerNumber];
+    if (player !== undefined) {
+        return player;
+    } else {
         console.log("No such player! id: " + body.playerNumber);
     }
+
 }
 
 //creates bonds on collision if necessary
@@ -716,7 +658,7 @@ setInterval(function() {
                     /*ghosts.splice(i, 1);*/
                     break;
                 case "garbage":
-                    //garbage[ghost.number].die(engine);
+                    garbage[ghost.number].die(engine);
                     deleteProperly(ghost);
                     delete ghosts[i];
                     /*ghosts.splice(i, 1);*/

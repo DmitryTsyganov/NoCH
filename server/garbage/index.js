@@ -31,42 +31,23 @@ Garbage.prototype = {
         } else {
             this.traversDST(this.body, this.free, this.letGo, engine);
         }
+    },
+
+    correctBondAngles: function(engine) {
+        if (this.body.chemicalParent) {
+            this.freeBondAngle.call({body: this.body.chemicalParent},
+                this.body.constraint1.chemicalAngle);
+            //this.freeBondAngle(this.constraint2.chemicalAngle);
+            var self = {};
+            self.connectBody = this.connectBody;
+            self.freeBondAngle = this.freeBondAngle;
+            self.correctParentBond = this.correctParentBond;
+            self.getClosestAngle = this.getClosestAngle;
+            self.body = this.body.chemicalParent;
+            this.reconnectBond.call(self, this.body, engine);
+        }
+        this.correctBondAnglesFinal(engine);
     }
-
-    /*changeCharge: function(value, engine, nucleonsArray) {
-
-        this.CHARGE_RADIUS = 5;
-
-        if (this.body.element == "Ne" && value == 1) {
-            value = -1;
-            this.createNucleon("p", { x: Math.random(), y: Math.random() },
-                nucleonsArray, engine);
-            this.createNucleon("p", { x: Math.random(), y: Math.random() },
-                nucleonsArray, engine);
-        }
-
-        var elementName = elements[elements.indexOf(
-            this.body.element) + value];
-
-        this.setElement(elementName);
-
-        if (this.body.chemicalBonds > this.body.totalBonds /!*&&
-            this.body.composite*!/) {
-
-            if (this.body.chemicalBonds > 1) {
-                var child = this.body.chemicalChildren.pop();
-                this.traversDST(child, this.free, this.letGo, engine);
-                //--this.body.chemicalBonds;
-            } else {
-                this.traversDST(this.body, this.free, this.letGo, engine);
-            }
-            /!*if (this.body.chemicalBonds == 0) {
-                this.body.previousAngle = undefined;
-            } else {
-                this.body.previousAngle -= 2 * Math.PI / this.body.totalBonds;
-            }*!/
-        }
-    }*/
 };
 
 Garbage.prototype.__proto__ = basicParticle.prototype;
