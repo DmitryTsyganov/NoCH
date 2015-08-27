@@ -352,11 +352,29 @@ basicParticle.prototype = {
     },
 
     checkDecoupling: function(momentum, engine) {
-        var bondStrength = 200;
+        //var bondStrength = 200;
+        for (var i = 0; i < this.body.chemicalChildren.length; ++i) {
+            if (this.body.chemicalChildren[i]) {
+                this.checkSingleDecoupling(this.body,
+                    this.body.chemicalChildren[i], momentum, engine);
+            }
+        }
+        if (this.body.chemicalParent) {
+            this.checkSingleDecoupling(this.body.chemicalParent,
+                                        this.body, momentum, engine);
+        }
+    },
+
+    checkSingleDecoupling: function(bodyA, bodyB, momentum, engine) {
+        var bond = params.getParameter(([bodyA.element, bodyB.element].sort()).join(''));
+        var bondStrength = bond[bodyA.element] + bond[bodyB.element];
+        console.log("Checking " + bodyA.element + " and " + bodyB.element +
+                    ", momentum is " + momentum + ", bondStrength is " +
+                    bondStrength);
         if (momentum > bondStrength && this.body.chemicalBonds) {
-            this.traversDST(this.body, this.free, this.letGo, engine);
-            if (this.body.player) {
-                this.body.player.checkResizeShrink();
+            this.traversDST(bodyB, this.free, this.letGo, engine);
+            if (bodyB.player) {
+                bodyB.player.checkResizeShrink();
             }
         }
     },
@@ -458,7 +476,9 @@ basicParticle.prototype = {
                 this.checkSingleBondValidity(this.body.chemicalChildren[i], engine);
             }
         }
-        this.checkSingleBondValidity(this.body, engine);
+        if (this.body.chemicalParent) {
+            this.checkSingleBondValidity(this.body, engine);
+        }
     },
 
     checkSingleBondValidity: function(body, engine) {
@@ -504,7 +524,9 @@ basicParticle.prototype = {
         var elementName = elements[elements.indexOf(
             this.body.element) + value];
 
+        var previousElement = this.body.element;
         this.setElement(elementName);
+        this.body.element = previousElement; //so free() can work properly
 
         this.checkBondValidity(engine);
 
@@ -516,6 +538,9 @@ basicParticle.prototype = {
         this.calculateEnergy > this.body.energy) {
             this.dismountBranch(engine);
         }
+
+        this.body.element = elementName;
+
         for (var i = 0; i < this.body.bondAngles.length; ++i) {
             this.body.bondAngles[i].available = true;
         }
