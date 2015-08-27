@@ -321,7 +321,9 @@ function createBond(playerBody, garbageBody) {
     console.log("Garbage mutex before " + garbageBody.superMutex);*/
 
     getMainObject(playerBody).muteBranch();
-    getMainObject(garbageBody).muteBranch();
+    //getMainObject(garbageBody).muteBranch();
+    console.log(garbageBody.inGameType);
+    getCore(garbageBody).muteAll();
 
     ++playerBody.chemicalBonds;
     ++garbageBody.chemicalBonds;
@@ -363,8 +365,11 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
 
     //getMainObject(playerBody).unmuteBranch();
     //garbageBody.inGameType = "playerPart";
+    console.log("playerBody inGameType before mark as player " + playerBody.inGameType);
     getMainObject(garbageBody).markAsPlayer(playerBody);
-    getMainObject(garbageBody).unmuteBranch();
+    console.log("playerBody inGameType after mark as player " + playerBody.inGameType);
+    getMainObject(playerBody).unmuteBranch();
+    getMainObject(garbageBody).unmuteAll();
     garbageBody.collisionFilter.mask = 0x0001;
     --playerBody.superMutex;
     --garbageBody.superMutex;
@@ -415,6 +420,9 @@ function connectPlayers(bodyA, bodyB) {
     //console.log("target id = " + getPlayer(garbageBody).playerNumber].body.id);
     var deletedId = getPlayer(garbageBody).body.id;
 
+    //TODO: fix inGameType
+    //TODO: fix incorrect mass
+    //TODO: fix mute/unmute branches
     getPlayer(garbageBody).lose(engine, players, garbage, playerBody);
     getMainObject(garbageBody).reverse();
     sendEverybody({ "dp": deletedId });
@@ -498,14 +506,31 @@ function getArray(body) {
     }
 }
 
+function getCore(body) {
+    switch (body.inGameType) {
+        case "player":
+        case "player temporary undefined":
+        case "playerPart":
+        case "playerPart temporary undefined":
+            return players[body.playerNumber];
+        case "garbage":
+        case "garbage temporary undefined":
+            return garbage[body.number];
+    }
+}
+
 function getMainObject(body) {
+    console.log(body.inGameType);
     switch (body.inGameType) {
         case "player":
             //console.log("returning player at " + body.number);
             return players[body.number];
+        case "player temporary undefined":
         case "temporary undefined":
         case "playerPart":
+        case "playerPart temporary undefined":
         case "garbage":
+        case "garbage temporary undefined":
             //console.log("returning garbage at " + body.number);
             return garbage[body.number];
         case "n":

@@ -238,14 +238,14 @@ basicParticle.prototype = {
         return revertTree;
     },
 
-    prepareForBond: function() {
+    prepareForBond: function(newPlayerBody) {
         this.traversDST(this.body, function(node) {
             //if (node.typeTimeout) clearTimeout(node.typeTimeout);
-            node.inGameType = "temporary undefined";
+            node.inGameType += " temporary undefined";
             /*node.inGameType = "playerPart";*/
-            /*if (newPlayerBody) {
+            if (newPlayerBody) {
                 node.playerNumber = newPlayerBody.playerNumber;
-            }*/
+            }
             /*node.collisionFilter.group =
                 newPlayerBody.collisionFilter.group;*/
 
@@ -312,6 +312,20 @@ basicParticle.prototype = {
         this.reversDST(node.chemicalParent, visit);
         visit(node);
 
+    },
+
+    muteAll: function() {
+        this.changeGeneralAvailability(1);
+    },
+
+    unmuteAll: function() {
+        this.changeGeneralAvailability(-1);
+    },
+
+    changeGeneralAvailability: function(value) {
+        this.traversDST(this.body, function(node) {
+            node.superMutex += value;
+        })
     },
 
     muteBranch: function() {
@@ -389,6 +403,8 @@ basicParticle.prototype = {
         delete child["constraint1"];
         delete child["constraint2"];
 
+        var self = this;
+
         this.connectBody(child, function(playerBody, garbageBody, angle, garbageAngle) {
             var stiffness = 0.05;
 
@@ -415,6 +431,11 @@ basicParticle.prototype = {
             garbageBody.collisionFilter.mask = 0x0001;
             --playerBody.superMutex;
             --garbageBody.superMutex;
+            /*var newSelf = {};
+            newSelf.body = garbageBody;
+            newSelf.changeBranchAvailability = self.changeBranchAvailability;
+            newSelf.reversDST = self.reversDST;
+            self.unmuteBranch.call(newSelf);*/
         });
     },
 

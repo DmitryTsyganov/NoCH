@@ -1,7 +1,8 @@
 ;(function() {
 
-    var WS_URL = 'ws://localhost:8085'
-    // WS_URL = 'ws://nochgame.cloudapp.net:8085'
+    var WS_URL = 'ws://localhost:8085';
+    //var WS_URL = 'ws://10.20.3.4:8085';
+    // WS_URL = 'ws://nochgame.cloudapp.net:8085';
 
     // Some test
     function validateInputFields(inputField) {
