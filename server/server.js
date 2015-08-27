@@ -420,9 +420,6 @@ function connectPlayers(bodyA, bodyB) {
     //console.log("target id = " + getPlayer(garbageBody).playerNumber].body.id);
     var deletedId = getPlayer(garbageBody).body.id;
 
-    //TODO: fix inGameType
-    //TODO: fix incorrect mass
-    //TODO: fix mute/unmute branches
     getPlayer(garbageBody).lose(engine, players, garbage, playerBody);
     getMainObject(garbageBody).reverse();
     sendEverybody({ "dp": deletedId });
