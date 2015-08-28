@@ -491,20 +491,22 @@ basicParticle.prototype = {
         console.log("correctBondAnglesFinal ended");
     },
 
-    checkBondValidity: function(engine) {
+    checkBondValidity: function(newElement, engine) {
         for (var i = 0; i < this.body.chemicalChildren.length; ++i) {
             if (this.body.chemicalChildren[i]) {
-                this.checkSingleBondValidity(this.body.chemicalChildren[i], engine);
+                this.checkSingleBondValidity(newElement, this.body.chemicalChildren[i].element,
+                                                this.body.chemicalChildren[i], engine);
             }
         }
         if (this.body.chemicalParent) {
-            this.checkSingleBondValidity(this.body, engine);
+            this.checkSingleBondValidity(this.body.chemecalParent.element, newElement,
+                                            this.body, engine);
         }
     },
 
-    checkSingleBondValidity: function(body, engine) {
-        var bond = params.getParameter(([body.element,
-            body.chemicalParent.element].sort()).join(''));
+    checkSingleBondValidity: function(parentElement, childElement, body, engine) {
+        var bond = params.getParameter(([childElement,
+            parentElement].sort()).join(''));
 
         if (!bond) {
             this.free(body, engine);
@@ -549,7 +551,7 @@ basicParticle.prototype = {
         this.setElement(elementName);
         this.body.element = previousElement; //so free() can work properly
 
-        this.checkBondValidity(engine);
+        this.checkBondValidity(elementName, engine);
 
         /*if (this.body.chemicalBonds > this.body.totalBonds) {
          this.dismountBranch(engine);
