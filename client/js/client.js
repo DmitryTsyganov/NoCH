@@ -1,8 +1,12 @@
 ;(function() {
 
     var WS_URL = 'ws://localhost:8085';
+<<<<<<< HEAD
     //var WS_URL = 'ws://10.20.3.4:8085';
     // WS_URL = 'ws://nochgame.cloudapp.net:8085';
+=======
+     //WS_URL = 'ws://nochgame.cloudapp.net:8085'
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
 
     // Some test
     function validateInputFields(inputField) {
@@ -31,7 +35,11 @@
         $('#overlay').hide();
         $('#characteristic').show();
         Game.activePlayer = true;
+<<<<<<< HEAD
     })
+=======
+    });
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
 
 
 
@@ -48,22 +56,45 @@
         this.canvas.height = window.innerHeight;
 
         var arrayOfImages = [];
+<<<<<<< HEAD
         var flag_array = 0;
 
+=======
+        this.arrayOfImages1 = [];
+        this.arrayOfImages2 = [];
+        this.arrayOfImages3 = [];
+        this.arrayOfClouds = [];
+        var flag_array = 0;
+
+
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
         this.gameSize = { x: this.canvas.width,
                           y: this.canvas.height };
         console.log(this.gameSize);
 
         this.img_count = 7;
+<<<<<<< HEAD
         this.number_of_objects1 = 65;
         this.number_of_objects2 = 45;
         this.number_of_objects3 = 20;
+=======
+        this.backImageCount1 = 30;
+        this.backImageCount2 = 35;
+        this.backImageCount3 = 30;
+        this.cloudsCount = 29;
+        this.numberOfClouds = 29;
+        this.numberOfObjects1 = 200;
+        this.numberOfObjects2 = 75;
+        this.numberOfObjects3 = 40;
+        this.backGroundOffset = this.gameSize.y / 2;
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
 
         function imageLoaded(){
             flag_array++;
         }
 
         imageLoaded();  // "Костыль тут, ибо без него не работает т.к. убрал fon. см ниже"
+<<<<<<< HEAD
         // var fon;
         // fon = new Image();
         // fon.src = "fon.jpg";
@@ -148,12 +179,156 @@
                     ctx.drawImage(image, -(image.width*kk/6),
                         -(image.height*kk/6), image.width*kk/3
                         * freshData.getCoefficient(), image.height*kk/3
+=======
+
+        //for (var i=1; i<this.img_count+1; i++){
+        //    var img = new Image();
+        //    var path= String(i);
+        //    path+=".png";
+        //
+        //    img.src = path;
+        //    arrayOfImages.push(img);
+        //    img.onload = imageLoaded();
+        //}
+        for (var i = 1; i < this.cloudsCount + 1; i++){
+            var img = new Image();
+            img.src = "clouds/" + String(i) + ".png";
+            this.arrayOfClouds.push(img);
+            img.onload = imageLoaded();
+        }
+
+        for (i = 1; i < this.backImageCount3 + 1; i++){
+            img = new Image();
+            img.src = "3layer/" + "q" + String(i) + ".png";
+            this.arrayOfImages3.push (img);
+            img.onload = imageLoaded();
+        }
+
+        for (i = 1; i < this.backImageCount2 + 1; i++){
+            img = new Image();
+            img.src = "2layer/" + String(i) + ".png";
+            this.arrayOfImages2.push (img);
+            img.onload = imageLoaded();
+        }
+
+        for (i = 1; i < this.backImageCount1 + 1; i++){
+            img = new Image();
+            img.src = "1layer/" + String(i) + ".png";
+            this.arrayOfImages1.push (img);
+            img.onload = imageLoaded();
+        }
+
+
+
+        this.backObjectClass = function (gameSize) {
+            this.rescale = function (point) {
+                point = freshData.Scale (point);
+            };
+            this.check = function (point, speed, vector, trajectory){
+              //  var position = freshData.Scale ({x : point.x, y : point.y});
+                if (point.x > gameSize.x + gameSize.y / 2) {
+                    point.x = - gameSize.y / 2;
+                    point.y = Math.random() * (2 * gameSize.y) - gameSize.y / 2;
+                   // point = freshData.backScale (point);
+
+                }
+                if (point.x < - gameSize.y / 2) {
+                    point.x = gameSize.x + gameSize.y / 2;
+                    point.y = Math.random() * (2 * gameSize.y) - gameSize.y / 2;
+                  //  point = freshData.backScale (point);
+                }
+                if (point.y < - gameSize.y / 2) {
+                    point.x = Math.random() * (gameSize.x + gameSize.y) - gameSize.y / 2;
+                    point.y = 1.5 * gameSize.y;
+                   // point = freshData.backScale (point);
+                }
+                if (point.y > 1.5 * gameSize.y) {
+                    point.x = Math.random() * (gameSize.x + gameSize.y) - gameSize.y / 2;
+                    point.y = - gameSize.y / 2;
+                   // point = freshData.backScale (point);
+                }
+            };
+            this.checkCloud = function (point, image){
+                //var position = freshData.Scale ({x : point.x, y : point.y});
+                if (point.x > gameSize.x + image.width * 3) {
+                    point.x = - image.width * 2.5;
+                    point.y = Math.random() * (2 * gameSize.y) - gameSize.y / 2;
+                  //  point = freshData.backScale (point);
+                }
+                if (point.x < - image.width * 3) {
+                    point.x = gameSize.x + image.width * 2.5;
+                    point.y = Math.random() * (2 * gameSize.y) - gameSize.y / 2;
+                 //   point = freshData.backScale (point);
+                }
+                if (point.y < - image.height * 3) {
+                    point.x = Math.random() * (gameSize.x + gameSize.y) - gameSize.y / 2;
+                    point.y = gameSize.y + image.height * 2.5;
+                   // point = freshData.backScale (point);
+                }
+                if (point.y >  gameSize.y + image.height * 3) {
+                    point.x = Math.random() * (gameSize.x + gameSize.y) - gameSize.y / 2;
+                    point.y = - image.height * 2.5;
+                  //  point = freshData.backScale (point);
+                }
+            };
+            this.move = function (point, speed, vector, angle, trajectory){
+                switch (trajectory % 3){
+                    case 0: // translation
+                        point.x += speed * vector.x * freshData.getCoefficient();
+                        point.y += 0.7 * speed * vector.y * freshData.getCoefficient();
+                        break;
+                    case 1: // rotational motion
+                        angle.value += speed;
+                        point.x +=  1.5 * speed * vector.x * Math.cos (angle.value / 100) * freshData.getCoefficient();
+                        point.y += 1.5 * speed * vector.y * Math.sin (angle.value / 100) * freshData.getCoefficient();
+                        break;
+                    case 2: // compound motion
+                        if (Math.round (speed * 100) % 2 == 0) {
+                            point.x += 0.5 * speed * vector.x * freshData.getCoefficient();
+                            point.y += 0.4 * speed * vector.y * freshData.getCoefficient();
+                        }
+                        angle.value += speed;
+                        break;
+                }
+            };
+            this.drawBO = function (image, point, speed, angle, trajectory, level, ctx){
+                var position = {x:point.x,y:point.y}; //freshData.Scale ({x : point.x, y : point.y});
+                switch (trajectory % 3){
+                    case 0:
+                        ctx.drawImage (image, position.x, position.y,
+                            image.width * level / 3 * freshData.getCoefficient(),
+                            image.height * level / 3 * freshData.getCoefficient());
+                        break;
+
+                    case 1:
+                        ctx.drawImage (image, position.x , position.y,
+                            image.width * level / 3 * freshData.getCoefficient(),
+                            image.height * level / 3 * freshData.getCoefficient());
+                        break;
+                    case 2:
+                        drawRotatedImage (image, position.x, position.y,
+                            angle.value * angle.direction, level);
+                        break;
+                }
+
+                function drawRotatedImage (image, x, y, angle, size) {
+                    var TO_RADIANS = Math.PI / 180;
+
+                    ctx.save();
+                    ctx.translate (x, y);
+                    ctx.rotate (angle * TO_RADIANS );
+
+                    ctx.drawImage (image, -(image.width * size / 6 * freshData.getCoefficient()),
+                        -(image.height * size / 6 * freshData.getCoefficient()), image.width * size / 3
+                        * freshData.getCoefficient(), image.height * size / 3
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
                         * freshData.getCoefficient());
 
                     ctx.restore();
                 }
             }
 
+<<<<<<< HEAD
         }
 
         function BackObject (gameSize, ctx, level, image){
@@ -189,6 +364,54 @@
         for ( i=0;i<this.number_of_objects3;i++){
             this.bObjects3[i] = new BackObject(this.gameSize, ctx, 3, i%this.img_count );
 
+=======
+        };
+        var selff = this;
+
+        this.BackObject = function (gameSize, ctx, level, i, array){
+            selff.backObjectClass.call (this, gameSize, ctx);
+            this.image = array[i];
+            this.point = {x : Math.random() * (gameSize.x + gameSize.y) - gameSize.y/2,
+                y : Math.random() * (2 * gameSize.y) - gameSize.y/2};
+            this.level = level;
+            this.speed = level * 0.05 + Math.random()*0.5;
+            var t1 = Math.random() - 0.5;
+            var t2 = Math.random() - 0.5;
+            this.vector  = {
+                x : t1 / Math.abs (t1),
+                y : t2 / Math.abs (t2)
+            };
+            this.angle = { value : 1, direction : t1 / Math.abs (t1)};
+            this.trajectory = Math.round (Math.random() * 10);
+        };
+        /////
+
+
+        //this.bObjects1 = [];
+        //this.bObjects2 = [];
+        //this.bObjects3 = [];
+
+        this.clouds = [];
+        this.bObjects1 = [];
+        this.bObjects2 = [];
+        this.bObjects3 = [];
+        this.LEVEL_1 = 1;
+        this.LEVEL_2 = 2;
+        this.LEVEL_3 = 3;
+        this.LEVEL_CLOUDS = 0.3;
+
+        for ( i = 0; i < this.numberOfObjects1; i++) {
+            this.bObjects1[i] = new this.BackObject (this.gameSize, ctx, this.LEVEL_1, i % this.backImageCount1, this.arrayOfImages1);
+        }
+        for ( i = 0; i < this.numberOfObjects2; i++) {
+            this.bObjects2[i] = new this.BackObject (this.gameSize, ctx, this.LEVEL_2, i % this.backImageCount2, this.arrayOfImages2);
+        }
+        for ( i = 0; i < this.numberOfObjects3; i++){
+            this.bObjects3[i] = new this.BackObject (this.gameSize, ctx, this.LEVEL_3, i % this.backImageCount3, this.arrayOfImages3);
+        }
+        for ( i = 0; i < this.numberOfClouds; i++){
+            this.clouds[i] = new this.BackObject (this.gameSize, ctx, this.LEVEL_CLOUDS, i % this.cloudsCount, this.arrayOfClouds);
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
         }
 
         var self = this;
@@ -198,21 +421,77 @@
             requestAnimationFrame(gameLoop);
         };
 
+<<<<<<< HEAD
         while(flag_array!=this.img_count +1);
+=======
+       // while(flag_array!=this.img_count +1);
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
         // ctx.drawImage(fon, 0, 0);
 
         gameLoop();
     };
 
+<<<<<<< HEAD
+=======
+
+    var INDI_STATE_FULL = 2,
+        INDI_STATE_IN_PROGRESS = 1,
+        INDI_STATE_NONE = 0;
+    var INDI_NEUTRON_TIME_CARBON = 8,
+        INDI_NEUTRON_TIME_BORON = 12,
+        INDI_NEUTRON_TIME_OXYGEN = 6,
+        INDI_NEUTRON_TIME_NITROGEN = 8,
+        INDI_NEUTRON_TIME_BERYLLIUM = 4,
+        INDI_NEUTRON_TIME_LITHIUM = -1,
+        INDI_NEUTRON_TIME_FLUORINE = 4,
+        INDI_NEUTRON_TIME_HELIUM = -1,
+        INDI_NEUTRON_TIME_NEON = 8;
+    var INDI_PROTON_TIME_CARBON = 20,
+        INDI_PROTON_TIME_BORON = 10,
+        INDI_PROTON_TIME_OXYGEN = 60,
+        INDI_PROTON_TIME_NITROGEN = 10,
+        INDI_PROTON_TIME_BERYLLIUM = 10,
+        INDI_PROTON_TIME_LITHIUM = 15,
+        INDI_PROTON_TIME_FLUORINE = 20,
+        INDI_PROTON_TIME_HELIUM = 20,
+        INDI_PROTON_TIME_NEON = 8;
+    var INDI_PROTON_STATE_ON = 1,
+        INDI_PROTON_STATE_NONE = 0;
+
+    var radiuses = {
+        "N": 31,
+        "F": 36,
+        "Ne": 19,
+        "O": 30,
+        "B": 49,
+        "Be": 56,
+        "Li": 72,
+        "He": 18,
+        "C": 40,
+        "H": 26
+    };
+
+    var radiusesArray = [26, 18, 72, 56, 49, 40, 31, 30, 36, 19];
+
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
     Noch.prototype = {
 
         drawBackground: function(ctx, gameSize ) {
             if (freshData.inputData.player) {
+<<<<<<< HEAD
 
+=======
+                //var RESIZE_1 = 5;
+                //var RESIZE_2 = 2;
+                //var RESIZE_3 = 1;
+                var CLOUD_TRAJECTORY = 3;
+                var CLOUD_SIZE = 5;
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
                 //temporary
                 //this.fillWithLines("x", "y", ctx, gameSize);
                 //this.fillWithLines("y", "x", ctx, gameSize);
 
+<<<<<<< HEAD
                 if (prev_flag == 1 ) {
                     var deltaX = (freshData.inputData.player.x - previousX) / 2;
                     var deltaY = (freshData.inputData.player.y - previousY) / 2;
@@ -244,6 +523,311 @@
             }
         },
         
+=======
+                if (prevFlag == 1) {
+                    if (freshData.coefficient != freshData.targetCoefficient){
+                        for (var i = 0; i < this.numberOfClouds; i++) {
+                            this.clouds[i].rescale(this.clouds[i].point);
+                        }
+                        for ( i = 0; i < this.numberOfObjects1; i++) {
+                            this.bObjects1[i].rescale(this.bObjects1[i].point);
+                        }
+                        for ( i = 0; i < this.numberOfObjects2; i++) {
+                            this.bObjects2[i].rescale(this.bObjects2[i].point);
+                        }
+                        for ( i = 0; i < this.numberOfObjects3; i++) {
+                            this.bObjects3[i].rescale(this.bObjects3[i].point);
+                        }
+                    }
+                    var deltaX = freshData.getCoefficient() * (freshData.inputData.player.x - previousX);
+                    var deltaY = freshData.getCoefficient() * (freshData.inputData.player.y - previousY);
+                    //console.log("1 ",deltaX);
+                    //console.log("2 ",deltaX * freshData.getCoefficient());
+                    //console.log("3 " ,deltaX / freshData.getCoefficient());
+
+                    for ( i = 0; i < this.numberOfClouds; i++) {
+                        // console.log(this.numberOfClouds);
+                        this.clouds[i].point.x -= deltaX  % gameSize.x;
+                        this.clouds[i].point.y -= deltaY  % gameSize.y;
+                        this.clouds[i].move (this.clouds[i].point, this.clouds[i].speed, this.clouds[i].vector, this.clouds[i].angle, CLOUD_TRAJECTORY);
+                        this.clouds[i].checkCloud (this.clouds[i].point, this.clouds[i].image);
+                        this.clouds[i].drawBO (this.clouds[i].image, this.clouds[i].point, this.clouds[i].speed, this.clouds[i].angle, CLOUD_TRAJECTORY, CLOUD_SIZE, ctx);
+                    }
+
+                    //
+                    //for ( i = 0; i < this.numberOfObjects1; i++) {
+                    //    this.bObjects1[i].point.x -= (deltaX) % gameSize.x;
+                    //    this.bObjects1[i].point.y -= (deltaY) % gameSize.y;
+                    //    this.bObjects1[i].move (this.bObjects1[i].point, this.bObjects1[i].speed, this.bObjects1[i].vector, this.bObjects1[i].angle, this.bObjects1[i].trajectory);
+                    //    this.bObjects1[i].check (this.bObjects1[i].point, this.bObjects1[i].speed, this.bObjects1[i].vector, this.bObjects1[i].trajectory);
+                    //    this.bObjects1[i].drawBO (this.bObjects1[i].image, this.bObjects1[i].point, this.bObjects1[i].speed, this.bObjects1[i].angle, this.bObjects1[i].trajectory, this.bObjects1[i].level * RESIZE_1, ctx);
+                    //}
+                    //for (i = 0; i < this.numberOfObjects2; i++) {
+                    //    this.bObjects2[i].point.x -= (deltaX) % gameSize.x;
+                    //    this.bObjects2[i].point.y -= (deltaY) % gameSize.y;
+                    //    this.bObjects2[i].move (this.bObjects2[i].point, this.bObjects2[i].speed, this.bObjects2[i].vector, this.bObjects2[i].angle, this.bObjects2[i].trajectory);
+                    //    this.bObjects2[i].check (this.bObjects2[i].point, this.bObjects2[i].speed, this.bObjects2[i].vector,  this.bObjects2[i].trajectory);
+                    //    this.bObjects2[i].drawBO (this.bObjects2[i].image, this.bObjects2[i].point, this.bObjects2[i].speed, this.bObjects2[i].angle, this.bObjects2[i].trajectory, this.bObjects2[i].level * RESIZE_2, ctx);
+                    //
+                    //}
+                    //for (i = 0; i < this.numberOfObjects3; i++) {
+                    //    this.bObjects3[i].point.x -= deltaX % gameSize.x;
+                    //    this.bObjects3[i].point.y -= deltaY % gameSize.y;
+                    //    this.bObjects3[i].move (this.bObjects3[i].point, this.bObjects3[i].speed, this.bObjects3[i].vector, this.bObjects3[i].angle, this.bObjects3[i].trajectory);
+                    //    this.bObjects3[i].check (this.bObjects3[i].point, this.bObjects3[i].speed, this.bObjects3[i].vector,  this.bObjects3[i].trajectory);
+                    //    this.bObjects3[i].drawBO (this.bObjects3[i].image, this.bObjects3[i].point, this.bObjects3[i].speed, this.bObjects3[i].angle, this.bObjects3[i].trajectory, this.bObjects3[i].level * RESIZE_3, ctx);
+                    //}
+                    for ( i = 1; i < 4; ++i) {
+                        this.drawObjects (i, deltaX, deltaY, gameSize, ctx);
+                    }
+
+                } else prevFlag = 1;
+                //console.log (freshData.coefficient, " ", freshData.targetCoefficient);
+                previousX = freshData.inputData.player.x;
+                previousY = freshData.inputData.player.y;
+                scaleFlag = 0;
+                if (freshData.coefficient != freshData.targetCoefficient){
+
+                    if (scaleFlag) {
+                        scaleFlag = false;
+                        var relativeCoef = freshData.coefficient / freshData.targetCoefficient;
+                        // console.log(relativeCoef);
+                        if (relativeCoef > 1) this.addObjects(relativeCoef, gameSize, ctx);
+                        else this.deleteObjects(relativeCoef, gameSize);
+
+                    }
+                }
+                else scaleFlag = true;
+                //console.log(gameSize);
+            }
+        },
+
+        addObjects : function (relativeCoef, gameSize, ctx){
+            var OBJECTS_COEFFICIENT = 1;
+            for (var i = this.numberOfObjects1; i < OBJECTS_COEFFICIENT * relativeCoef * this.numberOfObjects1; i++) {
+                // console.log ("gg");
+                this.bObjects1[i] = new this.BackObject (gameSize, ctx, this.LEVEL_1, i % this.backImageCount1, this.arrayOfImages1);
+                this.choosePoint(this.bObjects1[i], i, relativeCoef, gameSize);
+            }
+            this.numberOfObjects1 = i;
+
+            for (i = this.numberOfObjects2; i <  OBJECTS_COEFFICIENT * relativeCoef * this.numberOfObjects2; i++) {
+                this.bObjects2[i] = new this.BackObject (gameSize, ctx, this.LEVEL_2, i % this.backImageCount2, this.arrayOfImages2);
+                this.choosePoint(this.bObjects2[i], i, relativeCoef, gameSize);
+            }
+            this.numberOfObjects2 = i;
+
+            for (i = this.numberOfObjects3; i <  OBJECTS_COEFFICIENT * relativeCoef * this.numberOfObjects3; i++){
+                this.bObjects3[i] = new this.BackObject (gameSize, ctx, this.LEVEL_3, i % this.backImageCount3, this.arrayOfImages3);
+                this.choosePoint(this.bObjects3[i], i, relativeCoef, gameSize);
+            }
+            this.numberOfObjects3 = i;
+
+            for (i = this.numberOfClouds; i <  OBJECTS_COEFFICIENT * relativeCoef * this.numberOfClouds; i++){
+                this.clouds[i] = new this.BackObject (gameSize, ctx, this.LEVEL_CLOUDS, i % this.cloudsCount, this.arrayOfClouds);
+                this.choosePoint(this.clouds[i], i, relativeCoef, gameSize);
+                //console.log (this.clouds[i]);
+            }
+
+            this.numberOfClouds = i;
+            //console.log (this.clouds[this.numberOfClouds - 2]);
+        },
+
+        deleteObjects : function (relativeCoef, gameSize){
+            for (var i = 0; i < this.numberOfObjects1; i++){
+                if (this.checkPoint (this.bObjects1[i], relativeCoef, gameSize)){
+                    this.bObjects1.splice (i, 1);
+                    i--;
+                    this.numberOfObjects1--;
+                }
+            }
+            for (i = 0; i < this.numberOfObjects2; i++){
+                if (this.checkPoint (this.bObjects2[i], relativeCoef, gameSize)){
+                    this.bObjects2.splice (i, 1);
+                    i--;
+                    this.numberOfObjects2--;
+                }
+            }
+            for (i = 0; i < this.numberOfObjects3; i++){
+                if (this.checkPoint (this.bObjects3[i], relativeCoef, gameSize)){
+                    this.bObjects3.splice (i, 1);
+                    i--;
+                    this.numberOfObjects3--;
+                }
+            }
+            for (i = 0; i < this.numberOfClouds; i++){
+                if (this.checkPoint (this.clouds[i], relativeCoef, gameSize)){
+                    this.clouds.splice (i, 1);
+                    i--;
+                    this.numberOfClouds--;
+                }
+            }
+        },
+
+        choosePoint : function (object, i, relativeCoef, gameSize){
+            var difference = relativeCoef * this.backGroundOffset - this.backGroundOffset;
+            var summ = this.backGroundOffset + relativeCoef * this.backGroundOffset;
+            switch (i % 4){
+                case 0 ://left
+                    object.point.x = Math.random() * (-difference) - this.backGroundOffset;
+                    object.point.y = Math.random() * (gameSize.y + summ) - relativeCoef * this.backGroundOffset;
+                    object.point = freshData.Scale(object.point);
+                    break;
+                case 1 : //up
+                    object.point.x = Math.random() * (gameSize.x + summ) - this.backGroundOffset;
+                    object.point.y = Math.random() * difference - relativeCoef * this.backGroundOffset;
+                    object.point = freshData.Scale(object.point);
+                    break;
+                case 2 : //rigth
+                    object.point.x = Math.random() * difference + gameSize.x + this.backGroundOffset;
+                    object.point.y = Math.random() * (gameSize.y + summ) - this.backGroundOffset;
+                    object.point = freshData.Scale(object.point);
+                    break;
+                case 3 : //down
+                    object.point.x = Math.random() * (gameSize.x + summ) - relativeCoef * this.backGroundOffset;
+                    object.point.y = Math.random() * (difference) + gameSize.y + this.backGroundOffset;
+                    object.point = freshData.Scale(object.point);
+                    break;
+            }
+        },
+
+        checkPoint : function (object, relativeCoef, gameSize){
+            // var x = object.point.x;
+            //var y = object.point.y;
+            var position = freshData.Scale ({x : object.point.x, y : object.point.y});
+            var newOffset = relativeCoef * this.backGroundOffset;
+            return (position.x < - newOffset || position.x > gameSize.x + newOffset
+            || position.y < - newOffset || position.y > gameSize.y + newOffset);
+        },
+
+        drawObjects: function (number, deltaX, deltaY, gameSize, ctx) {
+            var RESIZE = [1, 5, 2, 1];
+
+            for (var i = 0; i < this["numberOfObjects" + number]; i++) {
+                this["bObjects" + number][i].point.x -= deltaX % gameSize.x;
+                this["bObjects" + number][i].point.y -= deltaY % gameSize.y;
+                this["bObjects" + number][i].move (this["bObjects" + number][i].point,
+                    this["bObjects" + number][i].speed, this["bObjects" + number][i].vector,
+                    this["bObjects" + number][i].angle, this["bObjects" + number][i].trajectory);
+                this["bObjects" + number][i].check (this["bObjects" + number][i].point,
+                    this["bObjects" + number][i].speed, this["bObjects" + number][i].vector,
+                    this["bObjects" + number][i].trajectory);
+                this["bObjects" + number][i].drawBO (this["bObjects" + number][i].image,
+                    this["bObjects" + number][i].point, this["bObjects" + number][i].speed,
+                    this["bObjects" + number][i].angle, this["bObjects" + number][i].trajectory,
+                    this["bObjects" + number][i].level * RESIZE[number], ctx);
+            }
+        },
+
+        indicatorProton : {
+            state : INDI_PROTON_STATE_ON,
+            color : 'white',
+            time : 0,
+            radius : 5,
+            sizeCoefficient : 0.5,
+            size : 20,
+            number : 6,
+            shiftX : 20,
+            shiftY : 5,
+            duration : INDI_PROTON_TIME_CARBON * 1000,
+            startTime : 0,
+
+            draw : function (x, y, radius, ctx){
+                if (this.state) {
+                    this.color = 'white';
+                    this.drawNumber (x, y, radius, ctx);
+                }
+                else {
+                    this.color = 'grey';
+                    this.time = (new Date().getTime() - this.startTime) / this.duration;
+                    if (this.time < 1) this.drawNumber (x, y, radius, ctx);
+                    else {
+                        this.state = INDI_PROTON_STATE_ON;
+                        this.radius -= 1;
+                    }
+                }
+            },
+
+
+            changeState : function (){
+                this.state = (this.state + 1) % 2;
+            },
+
+            drawNumber : function (x, y, radius, ctx){
+                ctx.save();
+                ctx.fillStyle = this.color;
+                var fontSize = this.size * freshData.getCoefficient();
+                ctx.font = "bold " + fontSize + "px tellural_altbold";
+                ctx.fillText (this.number, x + radius * 0.5 * freshData.getCoefficient(),
+                    y - radius * 0.2 * freshData.getCoefficient());
+                ctx.restore();
+            }
+        },
+
+        indicator : {
+            radius : radiusesArray[5],
+            counterClockwise : false,
+            state : INDI_STATE_FULL,
+            currentAngle : Math.PI / 2,
+            startAngle : Math.PI / 2,
+            endAngle : 2.5 * Math.PI,
+            speed :  2 * Math.PI / (INDI_NEUTRON_TIME_CARBON * 45),
+            color : 'rgba(204,0,65,1)',
+            width : 10,
+            time : 0,
+            startTime : 0,
+            duration : INDI_NEUTRON_TIME_CARBON * 1000,
+
+            draw : function (x, y, radius, color, ctx) {
+                this.drawDefault (x, y, radius, ctx);
+                switch (this.state){
+                    case INDI_STATE_FULL :
+                        //console.log("k");
+                        this.drawFull (x, y, radius, color, ctx);
+                        break;
+                    case INDI_STATE_IN_PROGRESS :
+                        //console.log("kk");
+                        this.drawProgress (x, y, radius, color, ctx);
+                        break;
+                    case INDI_STATE_NONE :
+                        this.state = INDI_STATE_IN_PROGRESS;
+                        this.currentAngle = Math.PI / 2;
+                        break;
+                }
+            },
+            drawFull : function (x, y, radius, color, ctx) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.lineWidth = this.width * freshData.getCoefficient();
+                ctx.arc (x, y, radius * freshData.getCoefficient(), this.startAngle, this.endAngle, this.counterClockwise);
+                ctx.strokeStyle = color;
+                ctx.stroke();
+                ctx.restore();
+            },
+            drawProgress : function (x, y, radius, color, ctx) {
+                ctx.save();
+                this.time = (new Date().getTime() - this.startTime);
+                this.currentAngle = this.startAngle + (this.endAngle - this.startAngle) * this.time / this.duration;
+                ctx.beginPath();
+                ctx.lineWidth = this.width * freshData.getCoefficient();
+                ctx.arc (x, y, radius * freshData.getCoefficient(), this.startAngle, this.currentAngle, this.counterClockwise);
+                ctx.strokeStyle = color;
+                ctx.stroke();
+                if (this.time > this.duration) this.state = INDI_STATE_FULL;
+                ctx.restore();
+            },
+            drawDefault : function (x, y, radius, ctx){
+                ctx.save();
+                ctx.beginPath();
+                ctx.lineWidth = this.width * freshData.getCoefficient();
+                ctx.arc (x, y, radius * freshData.getCoefficient(), 0, 2 * Math.PI);
+                ctx.strokeStyle = 'grey';
+                ctx.stroke();
+                ctx.restore();
+            }
+        },
+
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
         start: function() {
             this.started = true;
         },
@@ -268,10 +852,17 @@
         drawElement: function(ctx, x, y, radius, color) {
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, 2 * Math.PI);
+<<<<<<< HEAD
             ctx.lineWidth = 1;
             ctx.strokeStyle = "black";
             ctx.stroke();
             ctx.fillStyle = color;
+=======
+            ctx.lineWidth = 7 * freshData.getCoefficient();
+            ctx.strokeStyle = color;//"white";
+            ctx.stroke();
+            ctx.fillStyle = "black";//color;
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
             ctx.fill();
         },
 
@@ -286,11 +877,19 @@
 
                     if (pos) {
                         this.drawElement(ctx, pos.x, pos.y,
+<<<<<<< HEAD
                                         radius * freshData.getCoefficient(), "white");
                         this.addLetter(ctx, pos.x, pos.y, /*JSON.stringify({ x: pos.x +
                                         freshData.inputData.player.x, y: pos.y +
                                         freshData.inputData.player.y })*/stuff,
                                         radius * freshData.getCoefficient());
+=======
+                            radius * freshData.getCoefficient(), "white");
+                        this.addLetter(ctx, pos.x, pos.y, /*JSON.stringify({ x: pos.x +
+                             freshData.inputData.player.x, y: pos.y +
+                             freshData.inputData.player.y })*/stuff,
+                            radius * freshData.getCoefficient());
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
                     }
                 }
             }
@@ -320,6 +919,7 @@
                 for (var i = 0; i < _players.length; i += 3) {
                     if (players[_players[i]]) {
                         var pos = freshData.Scale({x: _players[i + 1], y: _players[i + 2]});
+<<<<<<< HEAD
                         this.drawElement(ctx, pos.x, pos.y,
                             radiuses[players[_players[i]].element]
                             * freshData.getCoefficient(),
@@ -328,11 +928,28 @@
                             players[_players[i]].element,
                             radiuses[players[_players[i]].element]
                             * freshData.getCoefficient());
+=======
+                        this.drawElement (ctx, pos.x, pos.y,
+                            radiuses[players[_players[i]].element]
+                            * freshData.getCoefficient(),
+                            players[_players[i]].color);
+                        this.addLetter (ctx, pos.x, pos.y,
+                            players[_players[i]].element,
+                            radiuses[players[_players[i]].element]
+                            * freshData.getCoefficient());
+                        this.indicatorProton.draw (pos.x, pos.y, radiuses[players[_players[i]].element], ctx);
+                        this.indicator.draw (pos.x, pos.y, radiuses[players[_players[i]].element],
+                            players[_players[i]].color, ctx);
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
                     }
                 }
             }
         },
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
         drawBorder: function(ctx) {
             if (freshData.inputData.border) {
                 var border = freshData.inputData.border;
@@ -376,7 +993,11 @@
         },
 
         addLetter: function(ctx, x, y, letter, radius) {
+<<<<<<< HEAD
             ctx.fillStyle = 'red';
+=======
+            ctx.fillStyle = 'white';
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
 
             //letter += '+\n' + x + '+\n' + y;
             var length = (letter.split('')).length;
@@ -387,13 +1008,22 @@
 
             var xReducer = 5,
                 yReducer = 6;
+<<<<<<< HEAD
             
             ctx.font = "bold " + fontSize + "px Arial";
+=======
+
+            ctx.font = "bold " + fontSize + "px tellural_altbold";
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
             ctx.fillText(letter, x - radius / 2 - (length - 1) * radius / xReducer,
                 y + radius / 2 + - (length - 1) * radius / yReducer);
         },
 
+<<<<<<< HEAD
         fillWithLines: function(mainAxis, secondAxis, ctx, gameSize) {
+=======
+        fillWithLines: function (mainAxis, secondAxis, ctx, gameSize) {
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
             var squareSide = 30;
             ctx.strokeStyle = 'white';
 
@@ -441,6 +1071,7 @@
 
     var players = {};
 
+<<<<<<< HEAD
     var radiuses = {
         "N": 31,
         "F": 36,
@@ -453,6 +1084,9 @@
         "C": 40,
         "H": 26
     };
+=======
+
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
 
     var freshData = {
         previousRadius: 50,
@@ -557,9 +1191,23 @@
         if (Game.activePlayer){
             if (event.keyCode == 32) {
                 shoot(event, "p");
+<<<<<<< HEAD
             }
             if (event.keyCode == 78) {
                 shoot(event, "n");
+=======
+                //if (Game.indicatorProton.state == INDI_PROTON_STATE_ON){
+                //    Game.indicatorProton.state = INDI_PROTON_STATE_NONE;
+                //    Game.indicatorProton.startTime = new Date().getTime();
+                //}
+            }
+            if (event.keyCode == 78) {
+                shoot(event, "n");
+                //if (Game.indicator.state == INDI_STATE_FULL){
+                //    Game.indicator.state = INDI_STATE_NONE;
+                //    Game.indicator.startTime = new Date().getTime();
+                //}
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
             }
         }
     };
@@ -600,6 +1248,11 @@
         alert("Error " + error.message);
     };
     //////////////////////////////////////////////
+<<<<<<< HEAD
     var previousX,previousY,prev_flag=0;
+=======
+    var previousX, previousY, prevFlag = 0;
+    var scaleFlag = true;
+>>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
 
 })();

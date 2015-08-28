@@ -129,9 +129,10 @@ Player.prototype = {
                         nucleonBody.element = "p";
                 }, element.protonMorphing);
             }
+
             //debugging
-            nucleonBody.inGameType =
-                nucleonBody.element = "p";
+            /*nucleonBody.inGameType =
+                nucleonBody.element = "p";*/
         }
     },
 

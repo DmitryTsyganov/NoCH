@@ -1,7 +1,9 @@
 var WebSocketServer = new require('ws');
 
 var Geometry = require("geometry");
+
 var memwatch = require("memwatch");
+
 var params = require("db");
 params.connect();
 
@@ -365,6 +367,7 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
 
     //getMainObject(playerBody).unmuteBranch();
     //garbageBody.inGameType = "playerPart";
+
     console.log("playerBody inGameType before mark as player " + playerBody.inGameType);
     getMainObject(garbageBody).markAsPlayer(playerBody);
     console.log("playerBody inGameType after mark as player " + playerBody.inGameType);
@@ -435,6 +438,7 @@ function connectPlayers(bodyA, bodyB) {
 
 function collideWithProton(elementBody, protonBody) {
     if (!elementBody.superMutex) {
+
         getMainObject(elementBody).changeCharge(1, engine, freeProtons);
         sendEverybody({"id": elementBody.id, "ne": elementBody.element});
         prepareToDelete(protonBody);
@@ -545,7 +549,6 @@ function getPlayer(body) {
     } else {
         console.log("No such player! id: " + body.playerNumber);
     }
-
 }
 
 //creates bonds on collision if necessary
@@ -680,6 +683,7 @@ setInterval(function() {
                     /*ghosts.splice(i, 1);*/
                     break;
                 case "garbage":
+
                     garbage[ghost.number].die(engine);
                     deleteProperly(ghost);
                     delete ghosts[i];
