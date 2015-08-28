@@ -19,6 +19,7 @@ var elements = params.getParameter("elements");
 var engine = Engine.create();
 
 engine.world.gravity.y = 0;
+engine.enableSleeping = true;
 
 //parts of the border
 var border = [];
@@ -662,6 +663,11 @@ function deleteProperly(body) {
 //main loop
 setInterval(function() {
     Matter.Engine.update(engine, engine.timing.delta);
+    for (var i = 0; i < garbage.length; ++i) {
+        if (garbage[i].body.inGameType == "garbage") {
+            console.log(garbage[i].body.isSleeping);
+        }
+    }
     for (var i = 0; i < ghosts.length; ++i) {
         if (ghosts[i]) {
             var ghost = ghosts[i];
