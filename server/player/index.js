@@ -24,7 +24,7 @@ var Player = function(ws, position, engine, elem) {
     this.body.inGameType = "player";
 
     this.body.player = this;
-    this.body.realMass = 0;
+    this.body.realMass = this.body.mass;
     this.body.coefficient = 1;
     this.body.realRadius = this.body.circleRadius;
     this.body.multiplier =  Math.sqrt(this.body.realRadius);
@@ -100,7 +100,7 @@ Player.prototype = {
             this["timeLimit" + particle] = true;
             setTimeout(function() {
                 self["timeLimit" + particle] = false;
-            }, this.body.coolDown);
+            }, 100/*this.body.coolDown*/);
 
             nucleonBody.timerId1 = setTimeout(function() {
                 nucleonBody.collisionFilter.mask = 0x0001;
@@ -187,7 +187,7 @@ Player.prototype = {
 
         if (newPlayerBody !== undefined) {
 
-            this.prepareForBond();
+            this.prepareForBond(newPlayerBody);
             /*this.traversDST(this.body, function(node) {
                 node.collisionFilter.group =
                     newPlayerBody.collisionFilter.group;
