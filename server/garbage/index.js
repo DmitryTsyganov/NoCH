@@ -17,6 +17,8 @@ var Garbage = function(position, engine, elem) {
 
     basicParticle.call(this, position, engine, elem);
 
+    this.body.playersWhoSee = [];
+
     this.body.frictionAir = 0.003;
 
     this.body.inGameType = "garbage";
@@ -35,7 +37,7 @@ Garbage.prototype = {
 
     correctBondAngles: function(engine) {
         if (this.body.chemicalParent) {
-            this.freeBondAngle.call({body: this.body.chemicalParent},
+            this.freeBondAngle.call({ body: this.body.chemicalParent },
                 this.body.constraint1.chemicalAngle);
             //this.freeBondAngle(this.constraint2.chemicalAngle);
             var self = {};

@@ -33,6 +33,7 @@ var players = [];
 //free elements
 var Garbage = require("./garbage");
 var garbage = [];
+var garbageActive = [];
 var garbageDensity = 0.000005;
 
 createFullBorder(params.getParameter("gameDiameter") / 2);
@@ -293,15 +294,16 @@ function parseCoordinates(array) {
 /**
  * @return {boolean}
  */
-function inScreen(object) {
-    return (object.body.position.x - object.body.circleRadius <
-        this.body.position.x + this.resolution.width / this.body.coefficient / 2 &&
-        object.body.position.x + object.body.circleRadius >
-        this.body.position.x - this.resolution.width / this.body.coefficient / 2 &&
-        object.body.position.y - object.body.circleRadius <
-        this.body.position.y + this.resolution.height / this.body.coefficient / 2 &&
-        object.body.position.y + object.body.circleRadius >
-        this.body.position.y - this.resolution.height / this.body.coefficient / 2);
+function inScreen(object, tolerance) {
+    if (!tolerance) tolerance = 0;
+    return (object.body.position.x - object.body.circleRadius < this.body.position.x +
+        this.resolution.width / this.body.coefficient / 2 + tolerance &&
+        object.body.position.x + object.body.circleRadius > this.body.position.x -
+        this.resolution.width / this.body.coefficient / 2 - tolerance &&
+        object.body.position.y - object.body.circleRadius < this.body.position.y +
+        this.resolution.height / this.body.coefficient / 2 + tolerance &&
+        object.body.position.y + object.body.circleRadius > this.body.position.y -
+        this.resolution.height / this.body.coefficient / 2 - tolerance);
 }
 
 function dotInScreen(dot) {
@@ -660,14 +662,51 @@ function deleteProperly(body) {
     delete getArray(body)[body.number];
 }
 
+/*function checkGarbageVisibility() {
+    for (var i = 0; i < garbage.length; ++i) {
+        for (var j = 0; i < players.length; ++i) {
+            if (inScreen.call(players[j], garbage[i], 500) &&
+                garbage.body.playersWhoSee.indexOf(players[j].id) == -1) {
+                garbage.body.playersWhoSee.push(players[j].id);
+                try {
+                    players[j].ws.send(JSON.stringify({
+                        "ng": garbage[i].body.position,
+                        "e": garbage[i].body.element}));
+                } catch (e) {
+                    console.log('Caught ' + e.name + ': ' + e.message);
+                }
+            }
+        }
+        var playersWhoSee = garbage[i].body.playersWhoSee;
+        for (i = 0; i < garbage[i].body.playersWhoSee.length; ++i) {
+
+        }
+    }
+}*/
+
+for (var i = 0; i < garbage.length; i++) {
+    Matter.Events.on(garbage[i].body, 'sleepStart', function(event) {
+        var body = this;
+        garbageActive.splice(garbageActive.indexOf(body), 1);
+        console.log("right now there is " + garbageActive.length + " active garbage");
+        console.log('garbage body id ' + body.id + " at " + this.position,
+                    'sleeping: ' + body.isSleeping + " went to bed.");
+    });
+
+    Matter.Events.on(garbage[i].body, 'sleepEnd', function(event) {
+        var body = this;
+        garbageActive.push(body);
+        console.log("right now there is " + garbageActive.length + " active garbage");
+        console.log('garbage body id ' + body.id + " at " + this.position,
+            'sleeping: ' + body.isSleeping + " woke up!");
+    });
+}
+
+//setInterval()
+
 //main loop
 setInterval(function() {
     Matter.Engine.update(engine, engine.timing.delta);
-    for (var i = 0; i < garbage.length; ++i) {
-        if (garbage[i].body.inGameType == "garbage") {
-            console.log(garbage[i].body.isSleeping);
-        }
-    }
     for (var i = 0; i < ghosts.length; ++i) {
         if (ghosts[i]) {
             var ghost = ghosts[i];
