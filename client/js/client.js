@@ -1,12 +1,8 @@
 ;(function() {
 
     var WS_URL = 'ws://localhost:8085';
-<<<<<<< HEAD
     //var WS_URL = 'ws://10.20.3.4:8085';
     // WS_URL = 'ws://nochgame.cloudapp.net:8085';
-=======
-     //WS_URL = 'ws://nochgame.cloudapp.net:8085'
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
 
     // Some test
     function validateInputFields(inputField) {
@@ -35,14 +31,7 @@
         $('#overlay').hide();
         $('#characteristic').show();
         Game.activePlayer = true;
-<<<<<<< HEAD
-    })
-=======
     });
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
-
-
-
 
     var Noch = function(canvasId) {
         this.activePlayer = false;
@@ -56,28 +45,17 @@
         this.canvas.height = window.innerHeight;
 
         var arrayOfImages = [];
-<<<<<<< HEAD
-        var flag_array = 0;
-
-=======
         this.arrayOfImages1 = [];
         this.arrayOfImages2 = [];
         this.arrayOfImages3 = [];
         this.arrayOfClouds = [];
         var flag_array = 0;
 
-
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
         this.gameSize = { x: this.canvas.width,
                           y: this.canvas.height };
         console.log(this.gameSize);
 
         this.img_count = 7;
-<<<<<<< HEAD
-        this.number_of_objects1 = 65;
-        this.number_of_objects2 = 45;
-        this.number_of_objects3 = 20;
-=======
         this.backImageCount1 = 30;
         this.backImageCount2 = 35;
         this.backImageCount3 = 30;
@@ -87,99 +65,12 @@
         this.numberOfObjects2 = 75;
         this.numberOfObjects3 = 40;
         this.backGroundOffset = this.gameSize.y / 2;
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
 
         function imageLoaded(){
             flag_array++;
         }
 
         imageLoaded();  // "Костыль тут, ибо без него не работает т.к. убрал fon. см ниже"
-<<<<<<< HEAD
-        // var fon;
-        // fon = new Image();
-        // fon.src = "fon.jpg";
-        // fon.onload = imageLoaded();
-
-        for (var i=1; i<this.img_count+1; i++){
-            var img = new Image();
-            var path= String(i);
-            path+=".png";
-
-            img.src = path;
-            arrayOfImages.push(img);
-            img.onload = imageLoaded();
-        }
-
-
-        function backObjectClass (gameSize) {
-            this.check = function (point, speed, vector, traectory){
-                if(point.X > gameSize.x + gameSize.y/2) {
-                    point.X = - gameSize.y/2;
-                    point.Y = Math.random() * (2 * gameSize.y) - gameSize.y/2;
-
-                }
-                if(point.X < - gameSize.y/2) {
-                    point.X = gameSize.x + gameSize.y/2;
-                    point.Y = Math.random() * (2 * gameSize.y) - gameSize.y/2;
-                }
-                if(point.Y < - gameSize.y/2) {
-                    point.X = Math.random() * (gameSize.x + gameSize.y) - gameSize.y/2;
-                    point.Y = 1.5 * gameSize.y;
-                }
-                if(point.Y > 1.5 * gameSize.y) {
-                    point.X = Math.random() * (gameSize.x + gameSize.y) - gameSize.y/2;
-                    point.Y = - gameSize.y/2;
-                }
-            };
-            this.move = function (point, speed, vector, angle, traectory){
-                switch (traectory % 3){
-                    case 0: // translation
-                        point.X += speed * vector.X;
-                        point.Y += 0.7 * speed * vector.Y;
-                        break;
-                    case 1: // rotational motion
-                        angle.a += speed;
-                        point.X +=  1.5 * speed * vector.X * Math.cos(angle.a / 100);
-                        point.Y += 1.5 * speed * vector.Y * Math.sin(angle.a / 100);
-                        break;
-                    case 2: // compound motion
-                        if (Math.round(speed * 100) % 2 == 0) {
-                            point.X += 0.5 * speed * vector.X;
-                            point.Y += 0.4 * speed * vector.Y;
-                        }
-                        angle.angle+=speed;
-                        break;
-                }
-            };
-            this.drawBO = function (image, point, speed, angle, traectory, level, ctx){
-                switch (traectory % 3){
-                    case 0:
-                        ctx.drawImage(image, point.X, point.Y,
-                            image.width*level / 3 * freshData.getCoefficient(),
-                            image.height*level / 3 * freshData.getCoefficient());
-                        break;
-                    case 1:
-                        ctx.drawImage(image, point.X , point.Y,
-                            image.width*level / 3 * freshData.getCoefficient(),
-                            image.height*level / 3 * freshData.getCoefficient());
-                        break;
-                    case 2:
-                        drawRotatedImage (image, point.X, point.Y,
-                            angle.a * angle.v, level);
-                        break;
-                }
-
-                function drawRotatedImage(image, xx, yy, angle, kk) {
-                    var TO_RADIANS = Math.PI / 180;
-
-                    ctx.save();
-                    ctx.translate(xx, yy);
-                    ctx.rotate(angle * TO_RADIANS );
-
-                    ctx.drawImage(image, -(image.width*kk/6),
-                        -(image.height*kk/6), image.width*kk/3
-                        * freshData.getCoefficient(), image.height*kk/3
-=======
 
         //for (var i=1; i<this.img_count+1; i++){
         //    var img = new Image();
@@ -321,50 +212,12 @@
                     ctx.drawImage (image, -(image.width * size / 6 * freshData.getCoefficient()),
                         -(image.height * size / 6 * freshData.getCoefficient()), image.width * size / 3
                         * freshData.getCoefficient(), image.height * size / 3
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
                         * freshData.getCoefficient());
 
                     ctx.restore();
                 }
             }
 
-<<<<<<< HEAD
-        }
-
-        function BackObject (gameSize, ctx, level, image){
-            backObjectClass.call(this, gameSize, ctx);
-            this.image = arrayOfImages[image];
-            this.point = {X : Math.random() * (gameSize.x + gameSize.y) - gameSize.y/2,
-                         Y : Math.random() * (2 * gameSize.y) - gameSize.y/2};
-            this.level = level;
-            this.speed = level * 0.05 + Math.random();
-            var t1 = Math.random() - 0.5;
-            var t2 = Math.random() - 0.5;
-            this.vector  = {
-                X : t1/Math.abs(t1),
-                Y : t2/Math.abs(t2)
-            };
-            this.angle = { a:1, v: t1/Math.abs(t1)};
-            this.traectory = Math.round(Math.random()*10);
-        }
-        /////
-
-
-        this.bObjects1 = [];
-        this.bObjects2 = [];
-        this.bObjects3 = [];
-        //var backObject = new BackObject(this.gameSize, 3, i%this.img_count);
-        //console.log( "s ", backObject.speed  );
-        for ( i=0; i<this.number_of_objects1; i++) {
-            this.bObjects1[i] = new BackObject(this.gameSize, ctx, 1, i % this.img_count);
-        }
-        for ( i=0;i<this.number_of_objects2;i++) {
-            this.bObjects2[i] = new BackObject(this.gameSize, ctx, 2, i % this.img_count);
-        }
-        for ( i=0;i<this.number_of_objects3;i++){
-            this.bObjects3[i] = new BackObject(this.gameSize, ctx, 3, i%this.img_count );
-
-=======
         };
         var selff = this;
 
@@ -411,7 +264,6 @@
         }
         for ( i = 0; i < this.numberOfClouds; i++){
             this.clouds[i] = new this.BackObject (this.gameSize, ctx, this.LEVEL_CLOUDS, i % this.cloudsCount, this.arrayOfClouds);
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
         }
 
         var self = this;
@@ -421,18 +273,11 @@
             requestAnimationFrame(gameLoop);
         };
 
-<<<<<<< HEAD
-        while(flag_array!=this.img_count +1);
-=======
        // while(flag_array!=this.img_count +1);
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
         // ctx.drawImage(fon, 0, 0);
 
         gameLoop();
     };
-
-<<<<<<< HEAD
-=======
 
     var INDI_STATE_FULL = 2,
         INDI_STATE_IN_PROGRESS = 1,
@@ -473,57 +318,19 @@
 
     var radiusesArray = [26, 18, 72, 56, 49, 40, 31, 30, 36, 19];
 
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
     Noch.prototype = {
 
         drawBackground: function(ctx, gameSize ) {
             if (freshData.inputData.player) {
-<<<<<<< HEAD
-
-=======
                 //var RESIZE_1 = 5;
                 //var RESIZE_2 = 2;
                 //var RESIZE_3 = 1;
                 var CLOUD_TRAJECTORY = 3;
                 var CLOUD_SIZE = 5;
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
                 //temporary
                 //this.fillWithLines("x", "y", ctx, gameSize);
                 //this.fillWithLines("y", "x", ctx, gameSize);
 
-<<<<<<< HEAD
-                if (prev_flag == 1 ) {
-                    var deltaX = (freshData.inputData.player.x - previousX) / 2;
-                    var deltaY = (freshData.inputData.player.y - previousY) / 2;
-
-                    for (var i = 1; i < 4; ++i) {
-                        this.drawObjects(i, deltaX, deltaY, gameSize, ctx);
-                    }
-
-                } else prev_flag = 1;
-                previousX = freshData.inputData.player.x;
-                previousY = freshData.inputData.player.y;
-            }
-        },
-
-        drawObjects: function(number, deltaX, deltaY, gameSize, ctx) {
-            for (var i = 0; i < this["number_of_objects" + number]; i++) {
-                this["bObjects" + number][i].point.X -= deltaX % gameSize.x;
-                this["bObjects" + number][i].point.Y -= deltaY % gameSize.y;
-                this["bObjects" + number][i].move(this["bObjects" + number][i].point,
-                    this["bObjects" + number][i].speed, this["bObjects" + number][i].vector,
-                    this["bObjects" + number][i].angle, this["bObjects" + number][i].traectory);
-                this["bObjects" + number][i].check(this["bObjects" + number][i].point,
-                    this["bObjects" + number][i].speed, this["bObjects" + number][i].vector,
-                    this["bObjects" + number][i].traectory);
-                this["bObjects" + number][i].drawBO(this["bObjects" + number][i].image,
-                    this["bObjects" + number][i].point, this["bObjects" + number][i].speed,
-                    this["bObjects" + number][i].angle, this["bObjects" + number][i].traectory,
-                    this["bObjects" + number][i].level, ctx);
-            }
-        },
-        
-=======
                 if (prevFlag == 1) {
                     if (freshData.coefficient != freshData.targetCoefficient){
                         for (var i = 0; i < this.numberOfClouds; i++) {
@@ -827,7 +634,6 @@
             }
         },
 
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
         start: function() {
             this.started = true;
         },
@@ -852,17 +658,10 @@
         drawElement: function(ctx, x, y, radius, color) {
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, 2 * Math.PI);
-<<<<<<< HEAD
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = "black";
-            ctx.stroke();
-            ctx.fillStyle = color;
-=======
             ctx.lineWidth = 7 * freshData.getCoefficient();
             ctx.strokeStyle = color;//"white";
             ctx.stroke();
             ctx.fillStyle = "black";//color;
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
             ctx.fill();
         },
 
@@ -877,19 +676,11 @@
 
                     if (pos) {
                         this.drawElement(ctx, pos.x, pos.y,
-<<<<<<< HEAD
-                                        radius * freshData.getCoefficient(), "white");
-                        this.addLetter(ctx, pos.x, pos.y, /*JSON.stringify({ x: pos.x +
-                                        freshData.inputData.player.x, y: pos.y +
-                                        freshData.inputData.player.y })*/stuff,
-                                        radius * freshData.getCoefficient());
-=======
                             radius * freshData.getCoefficient(), "white");
                         this.addLetter(ctx, pos.x, pos.y, /*JSON.stringify({ x: pos.x +
                              freshData.inputData.player.x, y: pos.y +
                              freshData.inputData.player.y })*/stuff,
                             radius * freshData.getCoefficient());
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
                     }
                 }
             }
@@ -919,16 +710,6 @@
                 for (var i = 0; i < _players.length; i += 3) {
                     if (players[_players[i]]) {
                         var pos = freshData.Scale({x: _players[i + 1], y: _players[i + 2]});
-<<<<<<< HEAD
-                        this.drawElement(ctx, pos.x, pos.y,
-                            radiuses[players[_players[i]].element]
-                            * freshData.getCoefficient(),
-                            players[_players[i]].color);
-                        this.addLetter(ctx, pos.x, pos.y,
-                            players[_players[i]].element,
-                            radiuses[players[_players[i]].element]
-                            * freshData.getCoefficient());
-=======
                         this.drawElement (ctx, pos.x, pos.y,
                             radiuses[players[_players[i]].element]
                             * freshData.getCoefficient(),
@@ -940,16 +721,11 @@
                         this.indicatorProton.draw (pos.x, pos.y, radiuses[players[_players[i]].element], ctx);
                         this.indicator.draw (pos.x, pos.y, radiuses[players[_players[i]].element],
                             players[_players[i]].color, ctx);
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
                     }
                 }
             }
         },
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
         drawBorder: function(ctx) {
             if (freshData.inputData.border) {
                 var border = freshData.inputData.border;
@@ -993,11 +769,7 @@
         },
 
         addLetter: function(ctx, x, y, letter, radius) {
-<<<<<<< HEAD
-            ctx.fillStyle = 'red';
-=======
             ctx.fillStyle = 'white';
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
 
             //letter += '+\n' + x + '+\n' + y;
             var length = (letter.split('')).length;
@@ -1008,22 +780,13 @@
 
             var xReducer = 5,
                 yReducer = 6;
-<<<<<<< HEAD
-            
-            ctx.font = "bold " + fontSize + "px Arial";
-=======
 
             ctx.font = "bold " + fontSize + "px tellural_altbold";
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
             ctx.fillText(letter, x - radius / 2 - (length - 1) * radius / xReducer,
                 y + radius / 2 + - (length - 1) * radius / yReducer);
         },
 
-<<<<<<< HEAD
-        fillWithLines: function(mainAxis, secondAxis, ctx, gameSize) {
-=======
         fillWithLines: function (mainAxis, secondAxis, ctx, gameSize) {
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
             var squareSide = 30;
             ctx.strokeStyle = 'white';
 
@@ -1070,23 +833,6 @@
     };
 
     var players = {};
-
-<<<<<<< HEAD
-    var radiuses = {
-        "N": 31,
-        "F": 36,
-        "Ne": 19,
-        "O": 30,
-        "B": 49,
-        "Be": 56,
-        "Li": 72,
-        "He": 18,
-        "C": 40,
-        "H": 26
-    };
-=======
-
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
 
     var freshData = {
         previousRadius: 50,
@@ -1191,11 +937,6 @@
         if (Game.activePlayer){
             if (event.keyCode == 32) {
                 shoot(event, "p");
-<<<<<<< HEAD
-            }
-            if (event.keyCode == 78) {
-                shoot(event, "n");
-=======
                 //if (Game.indicatorProton.state == INDI_PROTON_STATE_ON){
                 //    Game.indicatorProton.state = INDI_PROTON_STATE_NONE;
                 //    Game.indicatorProton.startTime = new Date().getTime();
@@ -1207,7 +948,6 @@
                 //    Game.indicator.state = INDI_STATE_NONE;
                 //    Game.indicator.startTime = new Date().getTime();
                 //}
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
             }
         }
     };
@@ -1248,11 +988,7 @@
         alert("Error " + error.message);
     };
     //////////////////////////////////////////////
-<<<<<<< HEAD
-    var previousX,previousY,prev_flag=0;
-=======
     var previousX, previousY, prevFlag = 0;
     var scaleFlag = true;
->>>>>>> 583c6fe9daa19f0295a54efdf4ddf6887ff50f6e
 
 })();
