@@ -35,6 +35,7 @@ var players = [];
 //free elements
 var Garbage = require("./garbage");
 var garbage = [];
+var garbageActive = [];
 
 var garbageDensity = 0.000008;
 
@@ -665,37 +666,38 @@ function deleteProperly(body) {
     delete getArray(body)[body.number];
 }
 
-/*function checkGarbageVisibility() {
+function checkGarbageVisibility() {
     for (var i = 0; i < garbage.length; ++i) {
         for (var j = 0; i < players.length; ++i) {
             if (inScreen.call(players[j], garbage[i], 500) &&
                 garbage.body.playersWhoSee.indexOf(players[j].id) == -1) {
-                garbage.body.playersWhoSee.push(players[j].id);
+                garbage.body.playersWhoSee.push(players[j].playerNumber);
                 try {
                     players[j].ws.send(JSON.stringify({
-                        "ng": garbage[i].body.position,
-                        "e": garbage[i].body.element}));
+                        "ng": garbage[i].body.id,
+                        "p": garbage[i].body.position,
+                        "e": garbage[i].body.element }));
                 } catch (e) {
                     console.log('Caught ' + e.name + ': ' + e.message);
                 }
             }
         }
         var playersWhoSee = garbage[i].body.playersWhoSee;
-        for (i = 0; i < garbage[i].body.playersWhoSee.length; ++i) {
-
+        for (i = 0; i < playersWhoSee.length; ++i) {
+            if (!inScreen.call(players[j], garbage[i], 500)) {
+                playersWhoSee.splice(playersWhoSee.indexOf(garbage[i]));
+                try {
+                    players[playersWhoSee[j]].ws.send(JSON.stringify({
+                        "dg": garbage[i].body.id }));
+                } catch (e) {
+                    console.log('Caught ' + e.name + ': ' + e.message);
+                }
+            }
         }
     }
-}*/
+}
 
 for (var i = 0; i < garbage.length; i++) {
-    Matter.Events.on(garbage[i].body, 'sleepStart', function(event) {
-        var body = this;
-        garbageActive.splice(garbageActive.indexOf(body), 1);
-        console.log("right now there is " + garbageActive.length + " active garbage");
-        console.log('garbage body id ' + body.id + " at " + this.position,
-                    'sleeping: ' + body.isSleeping + " went to bed.");
-    });
-
     Matter.Events.on(garbage[i].body, 'sleepEnd', function(event) {
         var body = this;
         garbageActive.push(body);
@@ -703,9 +705,17 @@ for (var i = 0; i < garbage.length; i++) {
         console.log('garbage body id ' + body.id + " at " + this.position,
             'sleeping: ' + body.isSleeping + " woke up!");
     });
+
+    Matter.Events.on(garbage[i].body, 'sleepStart', function(event) {
+        var body = this;
+        garbageActive.splice(garbageActive.indexOf(body), 1);
+        console.log("right now there is " + garbageActive.length + " active garbage");
+        console.log('garbage body id ' + body.id + " at " + this.position,
+                    'sleeping: ' + body.isSleeping + " went to bed.");
+    });
 }
 
-//setInterval()
+setInterval(checkGarbageVisibility(), 1000);
 
 //main loop
 setInterval(function() {
