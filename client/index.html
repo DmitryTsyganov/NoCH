@@ -1,48 +1,142 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>N-o-C-H</title>
-         <link rel="stylesheet" href="style.css">
-         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-	</head>
-	<body>
-	    <div id="main">
-            <div id="overlay">
-                <div id="overlay_opacity">
+<head>
+    <title>N-o-C-H</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+</head>
+<style>
+    img{
+        float:left;
+        width: 20%;
+    }
+    .menu_selection{
+        width: 100%;
+        height: 100%;
+    // background-color: #120B05;
 
-                </div>
-                <div id="menu">
-                    <h1>NOCH</h1>
-                    <h3>ITS GETTING DARKER</h3>
-                    <ul>
-                        <li>
-                            <input name="login" id="login__input" placeholder="LOGIN">
-                        </li>
-                        <li>
-                            <input name="password" id="password__input" placeholder="PASSWORD">
-                        <select>
-                            <option disabled>Color</option>
-                            <option value="1" >Red</option>
-                            <option value="2" >Blue</option>
-                            <option value="3" >Green</option>
-                        </select>
-                        <div id="btn__go">
-                            <h2>GO</h2>
-                        </div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <div id="gameArea">
-                <div id="characteristic" style="display: none;">
-                    <div id="username"></div>
-                    <div id="element"></div>
-                </div>
-            </div>
-            <canvas id="canvas"></canvas>
+    }
+    #game_menu{
+        padding-top:6px;padding-bottom:6px;
+
+    }
+    .select_div{
+        float:left; background-color: #23b022; width: 75%;
+    }
+    .select_div select {
+        background-color: #120B05;
+    }
+</style>
+<script>
+    $( document ).ready(function() {
+        document.getElementById('game_menu').style.height = document.getElementById("tools_image").height;
+        var m_s = document.getElementsByClassName('menu_selection');
+        for (var i = 0; i< m_s.length; i++){
+            m_s[i].style.height = String(document.getElementById("tools_image").height)+'px';
+        }
+
+    });
+
+</script>
+<body>
+<div id="game_menu" style="width: 100%; position: absolute; top: 0px; left: 0px; background-color: #4D4A49; margin: 0;">
+    <div style="float:left; width: 15%; margin-left: 5%;">
+        <img id="tools_image" src="menu/tools.png" />
+        <div class="select_div">
+            <select class="menu_selection" >
+                <option disabled>RUS</option>
+                <option value="1" >RUS</option>
+                <option value="2" >ENG</option>
+            </select>
         </div>
 
-    <script type="text/javascript" src="client.js"></script>
-	</body>
-	<div id="logs"></div>
+    </div>
+    <div style="float:left;width: 15%; ">
+        <img src="menu/connections.png" />
+        <div class="select_div">
+            <select class="menu_selection">
+                <option disabled>RUS</option>
+                <option value="1" >RUS</option>
+                <option value="2" >ENG</option>
+            </select>
+        </div>
+    </div>
+    <div style="float:left;width: 15%; ">
+        <img src="menu/shop.png" />
+        <div class="select_div">
+            <select class="menu_selection">
+                <option disabled>RUS</option>
+                <option value="1" >RUS</option>
+                <option value="2" >ENG</option>
+            </select>
+        </div>
+    </div>
+    <div style="float:left;width: 15%; "> <img src="menu/money.png" />
+        <div class="select_div">
+            <select class="menu_selection">
+                <option disabled>RUS</option>
+                <option value="1" >RUS</option>
+                <option value="2" >ENG</option>
+            </select>
+        </div>
+    </div>
+    <div style="float:left;width: 15%; "> <img src="menu/server.png" />
+        <div class="select_div">
+            <select class="menu_selection">
+                <option disabled>RUS</option>
+                <option value="1" >RUS</option>
+                <option value="2" >ENG</option>
+            </select>
+        </div>
+    </div>
+    <div style="float:left;width:15%; margin-right: 5%;"> <img src="menu/rating.png" />
+        <div class="select_div">
+            <select class="menu_selection">
+                <option disabled>RUS</option>
+                <option value="1" >RUS</option>
+                <option value="2" >ENG</option>
+            </select>
+        </div>
+    </div>
+
+</div>
+<div id="main">
+    <div id="overlay">
+        <div id="overlay_opacity">
+
+        </div>
+        <div id="menu">
+            <h1>NOCH</h1>
+            <h3>ITS GETTING DARKER</h3>
+            <ul>
+                <li>
+                    <input name="login" id="login__input" placeholder="LOGIN">
+                </li>
+                <li>
+                    <input name="password" id="password__input" placeholder="PASSWORD">
+                    <select>
+                        <option disabled>Color</option>
+                        <option value="1" >Red</option>
+                        <option value="2" >Blue</option>
+                        <option value="3" >Green</option>
+                    </select>
+                    <div id="btn__go">
+                        <h2>GO</h2>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div id="gameArea">
+        <div id="characteristic" style="display: none;">
+            <div id="username"></div>
+            <div id="element"></div>
+        </div>
+    </div>
+    <canvas id="canvas"></canvas>
+</div>
+
+<script type="text/javascript" src="client.js"></script>
+</body>
+<div id="logs"></div>
 </html>

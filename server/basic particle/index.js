@@ -91,7 +91,6 @@ basicParticle.prototype = {
         });
     },
 
-    //TODO: mark begin and end of functions to see where to put mutexes
     //first part of disconnecting body from player
     free: function(node, engine, breakConstraints) {
 
@@ -394,7 +393,6 @@ basicParticle.prototype = {
     },
 
     getClosestAngle: function(angle) {
-        //if (angle < 0) angle = 2 * Math.PI + angle;
         //console.log("given angle " + angle);
         var bondAngles = this.body.bondAngles;
         var difference = this.body.bondAngles.map(function(obj) {
