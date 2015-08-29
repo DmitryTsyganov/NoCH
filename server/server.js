@@ -34,7 +34,7 @@ var players = [];
 //free elements
 var Garbage = require("./garbage");
 var garbage = [];
-var garbageDensity = 0.000005;
+var garbageDensity = 0.000008;
 
 createFullBorder(params.getParameter("gameDiameter") / 2);
 createGarbage(params.getParameter("gameDiameter") *
@@ -56,7 +56,7 @@ webSocketServer.on('connection', function(ws) {
     var mapRadius = params.getParameter("gameDiameter") / 2;
 
     var minAreaRadius = 0;
-    var maxAreaRadius = 240;
+    var maxAreaRadius = 850;
 
     var defaultPosition = getRandomPositionInside(mapRadius,
                                 minAreaRadius, maxAreaRadius);
@@ -149,7 +149,7 @@ function createGarbage(quantity) {
         var element = elements[Math.ceil(getRandomArbitrary(-1, 9))];
 
         var OFFSET_BORDER = 40;
-        var OFFSET_PLAYER = 400;
+        var OFFSET_PLAYER = 1000;
         var position = getRandomPositionInside(diameter / 2, OFFSET_PLAYER,
                                                 diameter / 2 - OFFSET_BORDER);
 
