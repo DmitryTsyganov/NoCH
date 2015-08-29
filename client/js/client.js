@@ -170,8 +170,10 @@
                         break;
                     case 1: // rotational motion
                         angle.value += speed;
-                        point.x +=  1.5 * speed * vector.x * Math.cos (angle.value / 100) * freshData.getCoefficient();
-                        point.y += 1.5 * speed * vector.y * Math.sin (angle.value / 100) * freshData.getCoefficient();
+                        point.x +=  1.5 * speed * vector.x * Math.cos (angle.value / 100)
+                                                            * freshData.getCoefficient();
+                        point.y += 1.5 * speed * vector.y * Math.sin (angle.value / 100)
+                                                            * freshData.getCoefficient();
                         break;
                     case 2: // compound motion
                         if (Math.round (speed * 100) % 2 == 0) {
