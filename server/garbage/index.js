@@ -17,8 +17,6 @@ var Garbage = function(position, engine, elem) {
 
     basicParticle.call(this, position, engine, elem);
 
-    this.body.playersWhoSee = [];
-
     this.body.frictionAir = 0.003;
 
     this.body.inGameType = "garbage";

@@ -75,10 +75,6 @@ webSocketServer.on('connection', function(ws) {
     console.log('new player ' + id +
      ', players total ' + players.length);
 
-    /*player.ws.emit("np", JSON.stringify({ "id": player.body.id,
-                                            "c": "white",
-                                            "e": player.body.element}));*/
-
     var colors = ["green", "blue", "yellow", "purple", "orange"];
     player.color = colors[Math.ceil(Math.random() * 4)];
 
@@ -121,8 +117,16 @@ webSocketServer.on('connection', function(ws) {
                 x: parsedMessage.shotX - player.getLocalPosition().x,
                 y: parsedMessage.shotY - player.getLocalPosition().y
             };
-            player.shoot(parsedMessage.particle, shotPos, freeProtons, garbage, engine);
-            sendEverybody({"id": player.body.id, "ne": player.body.element});
+            if (player.shoot(parsedMessage.particle, shotPos, freeProtons, garbage, engine)) {
+                switch (parsedMessage.particle) {
+                    case 'p':
+                        sendEverybody({ "id": player.body.id, "ne": player.body.element });
+                        break;
+                    case 'n':
+                        sendEverybody({ "sh": player.body.id });
+                        break;
+                }
+            }
         }
     });
 
@@ -175,13 +179,6 @@ function getRandomPositionInside(mapRadius, areaRadiusMin, areaRadiusMax) {
             y: mapRadius + radius * Math.cos(angle)
     };
 }
-
-/*
-function calculateDistance(pos1, pos2) {
-    return Math.sqrt((pos1.x - pos2.x) * (pos1.x - pos2.x)
-                    + (pos1.y - pos2.y) * (pos1.y - pos2.y));
-}
-*/
 
 //inserts obj in first available position in array. returns position
 function addToArray(array, obj) {
@@ -667,35 +664,54 @@ function deleteProperly(body) {
 }
 
 function checkGarbageVisibility() {
-    for (var i = 0; i < garbage.length; ++i) {
-        for (var j = 0; i < players.length; ++i) {
-            if (inScreen.call(players[j], garbage[i], 500) &&
-                garbage.body.playersWhoSee.indexOf(players[j].id) == -1) {
-                garbage.body.playersWhoSee.push(players[j].playerNumber);
+    //console.log(1);
+    var legitGarbage = garbage.filter(function(obj) {
+       return obj;
+    });
+    for (var i = 0; i < legitGarbage.length; ++i) {
+        //console.log(2);
+        for (var j = 0; j < players.length; ++j) {
+            //console.log(3);
+            if (players[j] && inScreen.call(players[j], legitGarbage[i], 500) &&
+                legitGarbage[i].body.playersWhoSee.indexOf(players[j].body.playerNumber) == -1) {
+                legitGarbage[i].body.playersWhoSee.push(j);
                 try {
                     players[j].ws.send(JSON.stringify({
-                        "ng": garbage[i].body.id,
-                        "p": garbage[i].body.position,
-                        "e": garbage[i].body.element }));
+                        "ng": legitGarbage[i].body.id,
+                        "p": legitGarbage[i].body.position,
+                        "e": legitGarbage[i].body.element }));
                 } catch (e) {
                     console.log('Caught ' + e.name + ': ' + e.message);
                 }
             }
         }
-        var playersWhoSee = garbage[i].body.playersWhoSee;
-        for (i = 0; i < playersWhoSee.length; ++i) {
-            if (!inScreen.call(players[j], garbage[i], 500)) {
-                playersWhoSee.splice(playersWhoSee.indexOf(garbage[i]));
+        var playersWhoSee = legitGarbage[i].body.playersWhoSee;
+        for (j = 0; j < playersWhoSee.length; ++j) {
+            //console.log(4);
+
+            if (!players[playersWhoSee[j]]) {
+                playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
+            } else if (!inScreen.call(players[playersWhoSee[j]], legitGarbage[i], 500)) {
                 try {
+                    console.log(j);
+                    console.log(playersWhoSee[j]);
+                    console.log("sending dg to " + players[playersWhoSee[j]]);
                     players[playersWhoSee[j]].ws.send(JSON.stringify({
-                        "dg": garbage[i].body.id }));
+                        "dg": legitGarbage[i].body.id }));
                 } catch (e) {
                     console.log('Caught ' + e.name + ': ' + e.message);
                 }
+                playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
             }
         }
     }
 }
+
+function updateActiveGarbage() {
+
+}
+
+setInterval(checkGarbageVisibility, 1000);
 
 for (var i = 0; i < garbage.length; i++) {
     Matter.Events.on(garbage[i].body, 'sleepEnd', function(event) {
@@ -714,8 +730,6 @@ for (var i = 0; i < garbage.length; i++) {
                     'sleeping: ' + body.isSleeping + " went to bed.");
     });
 }
-
-setInterval(checkGarbageVisibility(), 1000);
 
 //main loop
 setInterval(function() {

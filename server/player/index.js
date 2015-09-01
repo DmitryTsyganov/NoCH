@@ -85,8 +85,8 @@ Player.prototype = {
 
     shoot: function(particle, shotPos, nucleonsArray, garbageArray, engine) {
 
-        if (particle == "p" && this.body.element == "H") return;
-        if (particle == "n" && this.body.neutrons == 0) return;
+        if (particle == "p" && this.body.element == "H") return false;
+        if (particle == "n" && this.body.neutrons == 0) return false;
 
         if (!this["timeLimit" + particle]) {
             var element = params.getParameter(particle);
@@ -133,7 +133,9 @@ Player.prototype = {
             //debugging
             /*nucleonBody.inGameType =
                 nucleonBody.element = "p";*/
+            return true;
         }
+        return false;
     },
 
     dismountBranch: function(engine) {

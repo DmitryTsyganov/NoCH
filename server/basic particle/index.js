@@ -36,6 +36,7 @@ var basicParticle = function(position, engine, elem) {
     World.addBody(engine.world, this.body);
 
     var self = this;
+    this.body.playersWhoSee = [];
     this.body.superMutex = 0;
     this.body.chemicalBonds = 0;
     this.body.chemicalChildren = [];
