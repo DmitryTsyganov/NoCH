@@ -477,7 +477,7 @@
                     break;
                 case 1 : //up
                     object.point.x = Math.random() * newSize.x;
-                    object.point.y = Math.random() * this.backGroundOffset;
+                    object.point.y = - this.backGroundOffset;
                     object.rescaleBack(object.point);
                     break;
                 case 2 : //right
