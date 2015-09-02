@@ -321,7 +321,7 @@
     var INDI_STATE_FULL = 2,
         INDI_STATE_IN_PROGRESS = 1,
         INDI_STATE_NONE = 0;
-    /*var INDI_NEUTRON_TIME_CARBON = 8,
+    /*var indiNeutronTime['C'] = 8,
         INDI_NEUTRON_TIME_BORON = 12,
         INDI_NEUTRON_TIME_OXYGEN = 6,
         INDI_NEUTRON_TIME_NITROGEN = 8,
@@ -531,7 +531,7 @@
             number : 6,
             shiftX : 20,
             shiftY : 5,
-            duration : INDI_PROTON_TIME_CARBON * 1000,
+            duration : indiProtonTime['C'] * 1000,
             startTime : 0,
 
             draw : function (x, y, radius, ctx){
@@ -573,12 +573,12 @@
             currentAngle : Math.PI / 2,
             startAngle : Math.PI / 2,
             endAngle : 2.5 * Math.PI,
-            speed :  2 * Math.PI / (INDI_NEUTRON_TIME_CARBON * 45),
+            speed :  2 * Math.PI / (indiNeutronTime['C'] * 45),
             color : 'rgba(204,0,65,1)',
             width : 10,
             time : 0,
             startTime : 0,
-            duration : INDI_NEUTRON_TIME_CARBON * 1000,
+            duration : indiNeutronTime['C'] * 1000,
 
             draw : function (x, y, radius, color, ctx) {
                 this.drawDefault (x, y, radius, ctx);
