@@ -477,7 +477,7 @@
                     break;
                 case 1 : //up
                     object.point.x = Math.random() * newSize.x;
-                    object.point.y = Math.random() * this.backGroundOffset;
+                    object.point.y = /*Math.random() **/ (-this.backGroundOffset);
                     object.rescaleBack(object.point);
                     break;
                 case 2 : //right
@@ -491,6 +491,8 @@
                     object.rescaleBack(object.point);
                     break;
             }
+            console.log("point x is " + object.point.x);
+            console.log("point x is " + object.point.y);
         },
 
         checkPoint: function (object, gameSize){
