@@ -323,15 +323,24 @@ function createBond(playerBody, garbageBody) {
     /*console.log("Player mutex before " + playerBody.superMutex);
     console.log("Garbage mutex before " + garbageBody.superMutex);*/
 
-    getMainObject(playerBody).muteBranch();
+    //getMainObject(playerBody).muteBranch();
     //getMainObject(garbageBody).muteBranch();
     console.log(garbageBody.inGameType);
-    getCore(garbageBody).muteAll();
+    //getCore(garbageBody).muteAll();
 
     ++playerBody.chemicalBonds;
     ++garbageBody.chemicalBonds;
     ++playerBody.superMutex;
     ++garbageBody.superMutex;
+
+    link(garbageBody, playerBody/*, constraintA, constraintB, angle1, angle2*/);
+
+    var newRadius = Geometry.calculateDistance(getPlayer(playerBody)
+        .body.position, garbageBody.position);
+    garbageBody.player = getPlayer(playerBody);
+    getPlayer(playerBody).checkResizeGrow(newRadius);
+    //console.log("mass = " + getPlayer(playerBody).body.realMass);
+    getPlayer(playerBody).recalculateMass();
 
     getMainObject(playerBody).connectBody(garbageBody, finalCreateBond);
 }
@@ -348,19 +357,25 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
     var constraintA = createBondConstraint(playerBody, garbageBody, bondStiffness);
     var constraintB = createBondConstraint(garbageBody, playerBody, bondStiffness);
 
-    link(garbageBody, playerBody, constraintA, constraintB, angle1, angle2);
+    garbageBody.constraint1 = constraintA;
+    garbageBody.constraint2 = constraintB;
+
+    garbageBody.constraint1.chemicalAngle = angle1;
+    garbageBody.constraint2.chemicalAngle = angle2;
+
+    //link(garbageBody, playerBody, constraintA, constraintB, angle1, angle2);
 
     World.add(engine.world, [constraintA, constraintB]);
 
-    console.log("Player number in createBond is " + playerBody.playerNumber);
-    console.log("Currently playerBody is " + playerBody.inGameType);
+    //console.log("Player number in createBond is " + playerBody.playerNumber);
+    //console.log("Currently playerBody is " + playerBody.inGameType);
 
-    var newRadius = Geometry.calculateDistance(getPlayer(playerBody)
+    /*var newRadius = Geometry.calculateDistance(getPlayer(playerBody)
         .body.position, garbageBody.position);
     garbageBody.player = getPlayer(playerBody);
     getPlayer(playerBody).checkResizeGrow(newRadius);
     //console.log("mass = " + getPlayer(playerBody).body.realMass);
-    getPlayer(playerBody).recalculateMass();
+    getPlayer(playerBody).recalculateMass();*/
     //console.log("final mass = " + getPlayer(playerBody).body.realMass);
 
     /*--playerBody.superMutex;
@@ -369,11 +384,11 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
     //getMainObject(playerBody).unmuteBranch();
     //garbageBody.inGameType = "playerPart";
 
-    console.log("playerBody inGameType before mark as player " + playerBody.inGameType);
+    /*console.log("playerBody inGameType before mark as player " + playerBody.inGameType);
     getMainObject(garbageBody).markAsPlayer(playerBody);
-    console.log("playerBody inGameType after mark as player " + playerBody.inGameType);
-    getMainObject(playerBody).unmuteBranch();
-    getMainObject(garbageBody).unmuteAll();
+    console.log("playerBody inGameType after mark as player " + playerBody.inGameType);*/
+    /*getMainObject(playerBody).unmuteBranch();
+    getMainObject(garbageBody).unmuteAll();*/
     garbageBody.collisionFilter.mask = 0x0001;
     --playerBody.superMutex;
     --garbageBody.superMutex;
@@ -383,12 +398,10 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
 }
 
 //links parts of a player to form tree structure
-function link(child, parent, constraint1, constraint2, angle1, angle2) {
+function link(child, parent/*, constraint1, constraint2, angle1, angle2*/) {
     addToArray(parent.chemicalChildren, child);
-    child.constraint1 = constraint1;
-    child.constraint1.chemicalAngle = angle1;
-    child.constraint2 = constraint2;
-    child.constraint2.chemicalAngle = angle2;
+    //child.constraint1 = constraint1;
+    //child.constraint2 = constraint2;
     child.chemicalParent = parent;
 }
 

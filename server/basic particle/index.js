@@ -95,16 +95,10 @@ basicParticle.prototype = {
     free: function(node, engine, breakConstraints) {
 
         if (node.typeTimeout) clearTimeout(node.typeTimeout);
+        if (node.intervalID) clearInterval(node.intervalID);
         node.inGameType = "temporary undefined";
 
-        if (node.chemicalParent) {
-            delete node.chemicalParent.chemicalChildren[
-                node.chemicalParent.chemicalChildren
-                    .indexOf(node)];
-            /*node.chemicalParent.previousAngle -= 2 * Math.PI / node.chemicalParent.totalBonds;*/
-
-            //console.log("angle to free " + node.constraint1.chemicalAngle);
-
+        if (node.constraint1) {
             for (var i = 0; i < node.bondAngles.length; ++i) {
                 if (node.bondAngles[i].angle ==
                     node.constraint2.chemicalAngle) {
@@ -119,6 +113,20 @@ basicParticle.prototype = {
                     node.chemicalParent.bondAngles[i].available = true;
                 }
             }
+
+            World.remove(engine.world, node.constraint1);
+            World.remove(engine.world, node.constraint2);
+            delete node["constraint1"];
+            delete node["constraint2"];
+        }
+
+        if (node.chemicalParent) {
+            delete node.chemicalParent.chemicalChildren[
+                node.chemicalParent.chemicalChildren
+                    .indexOf(node)];
+            /*node.chemicalParent.previousAngle -= 2 * Math.PI / node.chemicalParent.totalBonds;*/
+
+            //console.log("angle to free " + node.constraint1.chemicalAngle);
 
             if (node.chemicalParent.chemicalBonds) {
                 --node.chemicalParent.chemicalBonds;
@@ -135,12 +143,6 @@ basicParticle.prototype = {
             //console.log(" - " + node.mass + " = " + node.player.body.realMass);
         }
 
-        if (node.constraint1) {
-            World.remove(engine.world, node.constraint1);
-            World.remove(engine.world, node.constraint2);
-            delete node["constraint1"];
-            delete node["constraint2"];
-        }
         node.collisionFilter.group = 0;
         --node.chemicalBonds;
 
@@ -355,7 +357,7 @@ basicParticle.prototype = {
     },
 
     checkDecoupling: function(momentum, engine) {
-        var bondStrength = 200;
+        var bondStrength = 2;
         if (momentum > bondStrength && this.body.chemicalBonds) {
             this.traversDST(this.body, this.free, this.letGo, engine);
             if (this.body.player) {
@@ -439,7 +441,6 @@ basicParticle.prototype = {
     },
 
     //TODO: get rid of recursion
-    //TODO: apply KISS to this function (transport createBond here???)
     correctBondAnglesFinal: function(engine) {
         console.log("working with " + this.body.element + " at " +
             JSON.stringify(this.body.position));
@@ -523,7 +524,7 @@ basicParticle.prototype = {
         //console.log("step =" + step);
 
         var self = this;
-        var intervalID = setInterval(function () {
+        garbageBody.intervalID = setInterval(function () {
             var pos1 = self.body.position;
             //var pos2 = prev.position;
 
@@ -545,7 +546,7 @@ basicParticle.prototype = {
                 y: delta.y });
 
             if (i++ === N) {
-                clearInterval(intervalID);
+                clearInterval(garbageBody.intervalID);
                 /*console.log('final:\tx = ' + garbageBody.position.x +
                  '\ny = ' + garbageBody.position.y);*/
 
