@@ -24,7 +24,7 @@ var Player = function(ws, position, engine, elem) {
     this.body.inGameType = "player";
 
     this.body.player = this;
-    this.body.realMass = 0;
+    this.body.realMass = this.body.mass;
     this.body.coefficient = 1;
     this.body.realRadius = this.body.circleRadius;
     this.body.multiplier =  Math.sqrt(this.body.realRadius);
@@ -85,8 +85,8 @@ Player.prototype = {
 
     shoot: function(particle, shotPos, nucleonsArray, garbageArray, engine) {
 
-        if (particle == "p" && this.body.element == "H") return;
-        if (particle == "n" && this.body.neutrons == 0) return;
+        if (particle == "p" && this.body.element == "H") return false;
+        if (particle == "n" && this.body.neutrons == 0) return false;
 
         if (!this["timeLimit" + particle]) {
             var element = params.getParameter(particle);
@@ -100,7 +100,7 @@ Player.prototype = {
             this["timeLimit" + particle] = true;
             setTimeout(function() {
                 self["timeLimit" + particle] = false;
-            }, this.body.coolDown);
+            }, 100/*this.body.coolDown*/);
 
             nucleonBody.timerId1 = setTimeout(function() {
                 nucleonBody.collisionFilter.mask = 0x0001;
@@ -129,7 +129,13 @@ Player.prototype = {
                         nucleonBody.element = "p";
                 }, element.protonMorphing);
             }
+
+            //debugging
+            /*nucleonBody.inGameType =
+                nucleonBody.element = "p";*/
+            return true;
         }
+        return false;
     },
 
     dismountBranch: function(engine) {
@@ -153,64 +159,9 @@ Player.prototype = {
         if (!this.body.chemicalBonds) this.checkResizeShrink();
     },
 
-    /*changeCharge: function(value, engine, nucleonsArray, garbageArray) {
-
-        this.CHARGE_RADIUS = 5;
-
-        if (this.body.element == "Ne" && value == 1) {
-            value = -1;
-            this.createNucleon("p", { x: Math.random(), y: Math.random() },
-                                nucleonsArray, engine);
-            this.createNucleon("p", { x: Math.random(), y: Math.random() },
-                                nucleonsArray, engine);
-        }
-
-        var elementName = elements[elements.indexOf(
-                        this.body.element) + value];
-
-        this.setElement(elementName);
-
-        if (this.body.chemicalBonds > this.body.totalBonds) {
-            //--this.body.chemicalBonds;
-
-            var child = {
-                body: null,
-                mass: Infinity
-            };
-
-            for (var i = 0; i < this.body.chemicalChildren.length; ++i) {
-                if (this.body.chemicalChildren[i]) {
-                    var nextChild = {
-                        body: this.body.chemicalChildren[i],
-                        mass: this.calculateMass(this.body.chemicalChildren[i])
-                    };
-                    if (nextChild.mass < child.mass) child = nextChild;
-                }
-            }
-
-            /!*this.body.chemicalChildren.splice(
-             this.body.chemicalChildren.indexOf(child.body), 1);*!/
-
-            this.traversDST(child.body, this.free, this.letGo, engine);
-        }
-            /!*delete this.body.chemicalChildren[
-                this.body.chemicalChildren.indexOf(child.body)];*!/
-
-        for (i = 0; i < this.body.bondAngles.length; ++i) {
-            this.body.bondAngles[i].available = true;
-        }
-
-        this.correctBondAngles(engine, garbageArray);
-            /!*this.body.previousAngle = undefined;
-            for (i = this.body.chemicalChildren.length - 1; i >= 0; --i) {
-                if (this.body.chemicalChildren[i] && !this.body.chemicalChildren
-                        [(i + 1) % (this.body.chemicalChildren.length - 1)]) {
-                    this.body.previousAngle = this.body.chemicalChildren[i].constraintAngle;
-                }
-            }*!/
-        if (!this.body.chemicalBonds) this.checkResizeShrink();
-            //this.recalculateMass();
-    },*/
+    correctBondAngles: function(engine) {
+        this.correctBondAnglesFinal(engine);
+    },
 
     lose: function(engine, playersArray, garbageArray, newPlayerBody) {
 
@@ -231,14 +182,11 @@ Player.prototype = {
 
     //turns player into garbage before appending it to another player
     garbagify: function(playersArray, garbageArray, newPlayerBody) {
-        delete (this.body.realRadius);
-        //delete (this.body.previousRadius);
-        delete (this.body.coefficient);
-        delete (this.body.resolution);
+
+        var playerNumber = this.body.playerNumber;
 
         garbageArray.push(this);
         this.body.number = garbageArray.indexOf(this);
-        delete playersArray[this.body.playerNumber];
 
         if (newPlayerBody !== undefined) {
 
@@ -249,14 +197,20 @@ Player.prototype = {
                 node.playerNumber = newPlayerBody.playerNumber;
 
             });*/
-            this.body.inGameType = "playerPart";
         } else {
             this.traversDST(this.body, function(node) {
                 node.inGameType = "garbage";
                 node.playerNumber = - 1;
-                node.collisionFilter.group = 0;
+                //node.collisionFilter.group = 0;
             });
         }
+
+        delete (this.body.realRadius);
+        //delete (this.body.previousRadius);
+        delete (this.body.coefficient);
+        delete (this.body.resolution);
+
+        delete playersArray[playerNumber];
     },
 
     applyVelocity: function(mx, my) {
@@ -293,7 +247,7 @@ Player.prototype = {
                 });
         });
 
-        /*speed *= partsMultiplier;*/
+        speed *= partsMultiplier;
 
         //apply regular velocity to player.body only
         this.body.force = { x: 0, y: 0 };
@@ -360,11 +314,7 @@ Player.prototype = {
         if (this.coefficientTimeOut) clearTimeout(this.coefficientTimeOut);
         this.coefficientTimeOut = setTimeout(function() {
             self.body.coefficient = coefficient;
-        }, 1500);
-    },
-
-    checkDecoupling: function(momentum) {
-
+        }, 2000);
     }
 };
 

@@ -1,7 +1,9 @@
 var WebSocketServer = new require('ws');
 
 var Geometry = require("geometry");
+
 //var memwatch = require("memwatch");
+
 var params = require("db");
 params.connect();
 
@@ -19,6 +21,7 @@ var elements = params.getParameter("elements");
 var engine = Engine.create();
 
 engine.world.gravity.y = 0;
+engine.enableSleeping = true;
 
 //parts of the border
 var border = [];
@@ -32,7 +35,9 @@ var players = [];
 //free elements
 var Garbage = require("./garbage");
 var garbage = [];
-var garbageDensity = 0.000005;
+var garbageActive = [];
+
+var garbageDensity = 0.000008;
 
 createFullBorder(params.getParameter("gameDiameter") / 2);
 createGarbage(params.getParameter("gameDiameter") *
@@ -54,7 +59,7 @@ webSocketServer.on('connection', function(ws) {
     var mapRadius = params.getParameter("gameDiameter") / 2;
 
     var minAreaRadius = 0;
-    var maxAreaRadius = 240;
+    var maxAreaRadius = 850;
 
     var defaultPosition = getRandomPositionInside(mapRadius,
                                 minAreaRadius, maxAreaRadius);
@@ -69,10 +74,6 @@ webSocketServer.on('connection', function(ws) {
 
     console.log('new player ' + id +
      ', players total ' + players.length);
-
-    /*player.ws.emit("np", JSON.stringify({ "id": player.body.id,
-                                            "c": "white",
-                                            "e": player.body.element}));*/
 
     var colors = ["green", "blue", "yellow", "purple", "orange"];
     player.color = colors[Math.ceil(Math.random() * 4)];
@@ -116,8 +117,16 @@ webSocketServer.on('connection', function(ws) {
                 x: parsedMessage.shotX - player.getLocalPosition().x,
                 y: parsedMessage.shotY - player.getLocalPosition().y
             };
-            player.shoot(parsedMessage.particle, shotPos, freeProtons, garbage, engine);
-            sendEverybody({"id": player.body.id, "ne": player.body.element});
+            if (player.shoot(parsedMessage.particle, shotPos, freeProtons, garbage, engine)) {
+                switch (parsedMessage.particle) {
+                    case 'p':
+                        sendEverybody({ "id": player.body.id, "ne": player.body.element });
+                        break;
+                    case 'n':
+                        sendEverybody({ "sh": player.body.id });
+                        break;
+                }
+            }
         }
     });
 
@@ -147,7 +156,7 @@ function createGarbage(quantity) {
         var element = elements[Math.ceil(getRandomArbitrary(-1, 9))];
 
         var OFFSET_BORDER = 40;
-        var OFFSET_PLAYER = 400;
+        var OFFSET_PLAYER = 1000;
         var position = getRandomPositionInside(diameter / 2, OFFSET_PLAYER,
                                                 diameter / 2 - OFFSET_BORDER);
 
@@ -170,13 +179,6 @@ function getRandomPositionInside(mapRadius, areaRadiusMin, areaRadiusMax) {
             y: mapRadius + radius * Math.cos(angle)
     };
 }
-
-/*
-function calculateDistance(pos1, pos2) {
-    return Math.sqrt((pos1.x - pos2.x) * (pos1.x - pos2.x)
-                    + (pos1.y - pos2.y) * (pos1.y - pos2.y));
-}
-*/
 
 //inserts obj in first available position in array. returns position
 function addToArray(array, obj) {
@@ -292,15 +294,16 @@ function parseCoordinates(array) {
 /**
  * @return {boolean}
  */
-function inScreen(object) {
-    return (object.body.position.x - object.body.circleRadius <
-        this.body.position.x + this.resolution.width / this.body.coefficient / 2 &&
-        object.body.position.x + object.body.circleRadius >
-        this.body.position.x - this.resolution.width / this.body.coefficient / 2 &&
-        object.body.position.y - object.body.circleRadius <
-        this.body.position.y + this.resolution.height / this.body.coefficient / 2 &&
-        object.body.position.y + object.body.circleRadius >
-        this.body.position.y - this.resolution.height / this.body.coefficient / 2);
+function inScreen(object, tolerance) {
+    if (!tolerance) tolerance = 0;
+    return (object.body.position.x - object.body.circleRadius < this.body.position.x +
+        this.resolution.width / this.body.coefficient / 2 + tolerance &&
+        object.body.position.x + object.body.circleRadius > this.body.position.x -
+        this.resolution.width / this.body.coefficient / 2 - tolerance &&
+        object.body.position.y - object.body.circleRadius < this.body.position.y +
+        this.resolution.height / this.body.coefficient / 2 + tolerance &&
+        object.body.position.y + object.body.circleRadius > this.body.position.y -
+        this.resolution.height / this.body.coefficient / 2 - tolerance);
 }
 
 function dotInScreen(dot) {
@@ -319,85 +322,18 @@ function createBond(playerBody, garbageBody) {
 
     /*console.log("Player mutex before " + playerBody.superMutex);
     console.log("Garbage mutex before " + garbageBody.superMutex);*/
-    /*++playerBody.superMutex;
-    ++garbageBody.superMutex;*/
 
     getMainObject(playerBody).muteBranch();
-    getMainObject(garbageBody).muteBranch();
+    //getMainObject(garbageBody).muteBranch();
+    console.log(garbageBody.inGameType);
+    getCore(garbageBody).muteAll();
 
     ++playerBody.chemicalBonds;
     ++garbageBody.chemicalBonds;
+    ++playerBody.superMutex;
+    ++garbageBody.superMutex;
 
-    /*if (playerBody.previousAngle !== undefined) {*/
-
-        /*var pos1 = playerBody.position;
-        var pos2 = prev.position;
-        var destination = findAngle(pos1, pos2, playerBody.totalBonds,
-                                        garbageBody.circleRadius, prev.circleRadius);
-
-        Body.translate(garbageBody, {
-            x: destination.x + pos1.x - garbageBody.position.x,
-            y: destination.y + pos1.y - garbageBody.position.y });*/
-        var i = 0;
-        var N = 15;     // Number of iterations
-        //garbageBody.inGameType = "temporary undefined";
-        garbageBody.collisionFilter.mask = 0x0008;      // turn off collisions
-        /*var angle = playerBody.previousAngle + 2 * Math.PI / playerBody.totalBonds;*/
-        var angle = getMainObject(playerBody).getClosestAngle(Geometry.findAngle(playerBody.position,
-                                                garbageBody.position, playerBody.angle));
-        /*var destination = findAngle(playerBody.position, prev.position,
-            playerBody.totalBonds, garbageBody.circleRadius,
-            playerBody.circleRadius, playerBody.angle);*/
-        //playerBody.previousAngle = angle;
-        /*if (playerBody.id == playerBody.playerNumber) {
-            garbageBody.constraintAngle = angle;    //for player/index.js 243
-        }*/
-
-        var intervalID = setInterval(function () {
-            var pos1 = playerBody.position;
-            //var pos2 = prev.position;
-
-            var ADDITIONAL_LENGTH = 20;
-
-            var delta = {
-                x: ((playerBody.circleRadius + garbageBody.circleRadius
-                + ADDITIONAL_LENGTH)
-                    * Math.cos(angle + playerBody.angle)
-                    + pos1.x - garbageBody.position.x) / (N - i),
-                y: ((playerBody.circleRadius + garbageBody.circleRadius
-                + ADDITIONAL_LENGTH)
-                    * Math.sin(angle + playerBody.angle)
-                    + pos1.y - garbageBody.position.y) / (N - i)
-            };
-
-            Body.translate(garbageBody, {
-                x: delta.x,
-                y: delta.y });
-
-            if (++i === N) {
-                clearInterval(intervalID);
-                /*console.log('final:\tx = ' + garbageBody.position.x +
-                            '\ny = ' + garbageBody.position.y);*/
-                garbageBody.collisionFilter.mask = 0x0001;
-                var rotationAngle = Geometry.findAngle(garbageBody.position,
-                    playerBody.position, garbageBody.angle);
-
-                var garbageAngle = getMainObject(garbageBody).getClosestAngle(rotationAngle);
-
-                Body.rotate(garbageBody, (rotationAngle - garbageAngle));
-                /*garbageBody.previousAngle = findAngle(garbageBody.position,
-                    playerBody.position, garbageBody.angle);*/
-                finalCreateBond(playerBody, garbageBody, angle, garbageAngle);
-            }
-        }, 30);
-
-    /*} else {
-        playerBody.previousAngle =
-            findAngle(playerBody.position, garbageBody.position, playerBody.angle);
-        garbageBody.previousAngle =
-            findAngle(garbageBody.position, playerBody.position, garbageBody.angle);
-        finalCreateBond(playerBody, garbageBody);
-    }*/
+    getMainObject(playerBody).connectBody(garbageBody, finalCreateBond);
 }
 
 function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
@@ -416,7 +352,9 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
 
     World.add(engine.world, [constraintA, constraintB]);
 
-    //console.log("Player number in createBond is " + playerBody.playerNumber);
+    console.log("Player number in createBond is " + playerBody.playerNumber);
+    console.log("Currently playerBody is " + playerBody.inGameType);
+
     var newRadius = Geometry.calculateDistance(getPlayer(playerBody)
         .body.position, garbageBody.position);
     garbageBody.player = getPlayer(playerBody);
@@ -430,8 +368,15 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
 
     //getMainObject(playerBody).unmuteBranch();
     //garbageBody.inGameType = "playerPart";
+
+    console.log("playerBody inGameType before mark as player " + playerBody.inGameType);
     getMainObject(garbageBody).markAsPlayer(playerBody);
-    getMainObject(garbageBody).unmuteBranch();
+    console.log("playerBody inGameType after mark as player " + playerBody.inGameType);
+    getMainObject(playerBody).unmuteBranch();
+    getMainObject(garbageBody).unmuteAll();
+    garbageBody.collisionFilter.mask = 0x0001;
+    --playerBody.superMutex;
+    --garbageBody.superMutex;
 
     /*console.log("Player mutex after " + playerBody.superMutex);
     console.log("Garbage mutex after " + garbageBody.superMutex);*/
@@ -494,7 +439,8 @@ function connectPlayers(bodyA, bodyB) {
 
 function collideWithProton(elementBody, protonBody) {
     if (!elementBody.superMutex) {
-        getMainObject(elementBody).changeCharge(1, engine, freeProtons, garbage);
+
+        getMainObject(elementBody).changeCharge(1, engine, freeProtons);
         sendEverybody({"id": elementBody.id, "ne": elementBody.element});
         prepareToDelete(protonBody);
     }
@@ -562,24 +508,46 @@ function getArray(body) {
     }
 }
 
-function getMainObject(body) {
+function getCore(body) {
     switch (body.inGameType) {
         case "player":
+        case "player temporary undefined":
+        case "playerPart":
+        case "playerPart temporary undefined":
+            return players[body.playerNumber];
+        case "garbage":
+        case "garbage temporary undefined":
+            return garbage[body.number];
+    }
+}
+
+function getMainObject(body) {
+    console.log(body.inGameType);
+    switch (body.inGameType) {
+        case "player":
+            //console.log("returning player at " + body.number);
             return players[body.number];
+        case "player temporary undefined":
         case "temporary undefined":
         case "playerPart":
+        case "playerPart temporary undefined":
         case "garbage":
+        case "garbage temporary undefined":
+            //console.log("returning garbage at " + body.number);
             return garbage[body.number];
         case "n":
         case "p":
+            //console.log("returning freeProtons at " + body.number);
             return freeProtons[body.number];
     }
 }
 
 function getPlayer(body) {
-    try {
-        return players[body.playerNumber];
-    } catch(e) {
+
+    var player = players[body.playerNumber];
+    if (player !== undefined) {
+        return player;
+    } else {
         console.log("No such player! id: " + body.playerNumber);
     }
 }
@@ -695,6 +663,74 @@ function deleteProperly(body) {
     delete getArray(body)[body.number];
 }
 
+function checkGarbageVisibility() {
+    //console.log(1);
+    var legitGarbage = garbage.filter(function(obj) {
+       return obj;
+    });
+    for (var i = 0; i < legitGarbage.length; ++i) {
+        //console.log(2);
+        for (var j = 0; j < players.length; ++j) {
+            //console.log(3);
+            if (players[j] && inScreen.call(players[j], legitGarbage[i], 500) &&
+                legitGarbage[i].body.playersWhoSee.indexOf(players[j].body.playerNumber) == -1) {
+                legitGarbage[i].body.playersWhoSee.push(j);
+                try {
+                    players[j].ws.send(JSON.stringify({
+                        "ng": legitGarbage[i].body.id,
+                        "p": legitGarbage[i].body.position,
+                        "e": legitGarbage[i].body.element }));
+                } catch (e) {
+                    console.log('Caught ' + e.name + ': ' + e.message);
+                }
+            }
+        }
+        var playersWhoSee = legitGarbage[i].body.playersWhoSee;
+        for (j = 0; j < playersWhoSee.length; ++j) {
+            //console.log(4);
+
+            if (!players[playersWhoSee[j]]) {
+                playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
+            } else if (!inScreen.call(players[playersWhoSee[j]], legitGarbage[i], 500)) {
+                try {
+                    console.log(j);
+                    console.log(playersWhoSee[j]);
+                    console.log("sending dg to " + players[playersWhoSee[j]]);
+                    players[playersWhoSee[j]].ws.send(JSON.stringify({
+                        "dg": legitGarbage[i].body.id }));
+                } catch (e) {
+                    console.log('Caught ' + e.name + ': ' + e.message);
+                }
+                playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
+            }
+        }
+    }
+}
+
+function updateActiveGarbage() {
+
+}
+
+setInterval(checkGarbageVisibility, 1000);
+
+for (var i = 0; i < garbage.length; i++) {
+    Matter.Events.on(garbage[i].body, 'sleepEnd', function(event) {
+        var body = this;
+        garbageActive.push(body);
+        console.log("right now there is " + garbageActive.length + " active garbage");
+        console.log('garbage body id ' + body.id + " at " + this.position,
+            'sleeping: ' + body.isSleeping + " woke up!");
+    });
+
+    Matter.Events.on(garbage[i].body, 'sleepStart', function(event) {
+        var body = this;
+        garbageActive.splice(garbageActive.indexOf(body), 1);
+        console.log("right now there is " + garbageActive.length + " active garbage");
+        console.log('garbage body id ' + body.id + " at " + this.position,
+                    'sleeping: ' + body.isSleeping + " went to bed.");
+    });
+}
+
 //main loop
 setInterval(function() {
     Matter.Engine.update(engine, engine.timing.delta);
@@ -716,7 +752,8 @@ setInterval(function() {
                     /*ghosts.splice(i, 1);*/
                     break;
                 case "garbage":
-                    //garbage[ghost.number].die(engine);
+
+                    garbage[ghost.number].die(engine);
                     deleteProperly(ghost);
                     delete ghosts[i];
                     /*ghosts.splice(i, 1);*/
