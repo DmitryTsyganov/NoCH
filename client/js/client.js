@@ -321,26 +321,8 @@
     var INDI_STATE_FULL = 2,
         INDI_STATE_IN_PROGRESS = 1,
         INDI_STATE_NONE = 0;
-    /*var indiNeutronTime['C'] = 8,
-        INDI_NEUTRON_TIME_BORON = 12,
-        INDI_NEUTRON_TIME_OXYGEN = 6,
-        INDI_NEUTRON_TIME_NITROGEN = 8,
-        INDI_NEUTRON_TIME_BERYLLIUM = 4,
-        INDI_NEUTRON_TIME_LITHIUM = -1,
-        INDI_NEUTRON_TIME_FLUORINE = 4,
-        INDI_NEUTRON_TIME_HELIUM = -1,
-        INDI_NEUTRON_TIME_NEON = 8;
-    var INDI_PROTON_TIME_CARBON = 20,
-        INDI_PROTON_TIME_BORON = 10,
-        INDI_PROTON_TIME_OXYGEN = 60,
-        INDI_PROTON_TIME_NITROGEN = 10,
-        INDI_PROTON_TIME_BERYLLIUM = 10,
-        INDI_PROTON_TIME_LITHIUM = 15,
-        INDI_PROTON_TIME_FLUORINE = 20,
-        INDI_PROTON_TIME_HELIUM = 20,
-        INDI_PROTON_TIME_NEON = 8;*/
-    var INDI_PROTON_STATE_ON = 1,
         INDI_PROTON_STATE_NONE = 0;
+        INDI_PROTON_STATE_ON = 1;
 
     var radiuses = {
         "N": 31,
@@ -568,6 +550,8 @@
             }
         },
 
+/*
+<<<<<<< HEAD
         indicator : {
             radius : radiuses["C"],
             counterClockwise : false,
@@ -629,7 +613,70 @@
                 ctx.stroke();
                 ctx.restore();
             }
+=======
+*/
+
+
+        drawIndicatorNeutron : function (x, y, radius, color, id, ctx) {
+            var currentAngle,
+                shift = 2 * Math.PI / (60 * indiNeutronTime[players[id].element]),
+                counterClockwise = false,
+                startAngle = Math.PI / 2,
+                width = 10;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.lineWidth = width * freshData.getCoefficient();
+            ctx.arc(x, y, radius * freshData.getCoefficient(), 0, 2 * Math.PI);
+            ctx.strokeStyle = 'grey';
+            ctx.stroke();
+            ctx.closePath();
+            if (players[id].angle < 2 * Math.PI)
+                players[id].angle += shift;
+            currentAngle = players[id].angle + startAngle;
+            ctx.beginPath();
+            ctx.arc(x, y, radius * freshData.getCoefficient(), startAngle, currentAngle,
+                counterClockwise);
+            ctx.strokeStyle = color;
+            ctx.stroke();
+            ctx.restore();
         },
+            //drawFull : function (x, y, radius, color, ctx) {
+            //    ctx.save();
+            //    ctx.beginPath();
+            //    ctx.lineWidth = this.width * freshData.getCoefficient();
+            //    ctx.arc (x, y, radius * freshData.getCoefficient(), this.startAngle, this.endAngle,
+            //        this.counterClockwise);
+            //    ctx.strokeStyle = color;
+            //    ctx.stroke();
+            //    ctx.restore();
+            //},
+            //drawProgress : function (x, y, radius, color, id, ctx) {
+            //    var currentAngle,
+            //        shift = 2 * Math.PI / (60 * indiNeutronTime[players[id].element]);
+            //    ctx.save();
+            //    if (players[id].angle < 2 * Math.PI)
+            //        players[id].angle += shift;
+            //    currentAngle = players[id].angle + this.startAngle;
+            //    ctx.beginPath();
+            //    ctx.lineWidth = this.width * freshData.getCoefficient();
+            //    ctx.arc (x, y, radius * freshData.getCoefficient(), this.startAngle, currentAngle,
+            //        this.counterClockwise);
+            //    ctx.strokeStyle = color;
+            //    ctx.stroke();
+            //  //  if (players[id].angle > 2 * Math.PI) this.state = INDI_STATE_FULL;
+            //    ctx.restore();
+            //},
+            //drawDefault : function (x, y, radius, ctx){
+            //    ctx.save();
+            //    ctx.beginPath();
+            //    ctx.lineWidth = this.width * freshData.getCoefficient();
+            //    ctx.arc (x, y, radius * freshData.getCoefficient(), 0, 2 * Math.PI);
+            //    ctx.strokeStyle = 'grey';
+            //    ctx.stroke();
+            //    ctx.restore();
+            //}
+
 
         start: function() {
             this.started = true;
@@ -736,9 +783,9 @@
                             players[_players[i]].element,
                             radiuses[players[_players[i]].element]
                             * freshData.getCoefficient());
-                        this.indicatorProton.draw (pos.x, pos.y, radiuses[players[_players[i]].element], ctx);
-                        this.indicator.draw (pos.x, pos.y, radiuses[players[_players[i]].element],
-                            players[_players[i]].color, ctx);
+                        //this.indicatorProton.draw (pos.x, pos.y, radiuses[players[_players[i]].element], ctx);
+                        this.drawIndicatorNeutron (pos.x, pos.y, radiuses[players[_players[i]].element],
+                            players[_players[i]].color, _players[i], ctx);
                     }
                 }
             }
@@ -939,7 +986,12 @@
             }
             if ("c" in newData && "e" in newData) {
                 players[newData.id] = { "color": newData.c,
-                                        "element": newData.e};
+                                        "element": newData.e,
+                                        "angle" : 2 * Math.PI};
+            }
+            if ('sh' in newData) {
+                players[newData.sh]["angle"] = 0;
+                //the player who shot is players[newData.sh]
             }
             if ('sh' in newData) {
                 //the player who shot is players[newData.sh]

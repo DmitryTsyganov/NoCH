@@ -346,7 +346,6 @@ function createBond(playerBody, garbageBody) {
     //console.log("mass = " + getPlayer(playerBody).body.realMass);
     getPlayer(playerBody).recalculateMass();
     getMainObject(garbageBody).markAsPlayer(playerBody);
-
     getMainObject(playerBody).connectBody(garbageBody, finalCreateBond);
 }
 
@@ -729,6 +728,7 @@ function checkGarbageVisibility() {
             if (!players[playersWhoSee[j]]) {
                 playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
             } else if (!inScreen.call(players[playersWhoSee[j]], legitGarbage[i], 500)) {
+
                 tryToSend({
                     "dg": legitGarbage[i].body.id }, players[playersWhoSee[j]]);
                 /*try {
