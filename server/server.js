@@ -118,13 +118,16 @@ webSocketServer.on('connection', function(ws) {
                 y: parsedMessage.shotY - player.getLocalPosition().y
             };
             if (player.shoot(parsedMessage.particle, shotPos, freeProtons, garbage, engine)) {
+                var respounce = {};
+                respounce["sh" + parsedMessage.particle] = player.body.id;
+                sendEverybody(respounce/*{ key: player.body.id }*/);
                 switch (parsedMessage.particle) {
                     case 'p':
                         sendEverybody({ "id": player.body.id, "ne": player.body.element });
                         break;
-                    case 'n':
+                    /*case 'n':
                         sendEverybody({ "sh": player.body.id });
-                        break;
+                        break;*/
                 }
             }
         }
