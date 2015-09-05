@@ -209,10 +209,14 @@ function createMessage(id) {
 
     var response = {};
 
-    response["player"] = {
-        x: Math.ceil(players[id].body.position.x),
-        y: Math.ceil(players[id].body.position.y)
-    };
+    if (Math.abs(players[id].previousPosition.x - players[id].body.position.x) > 1 &&
+        Math.abs(players[id].previousPosition.y - players[id].body.position.y) > 1) {
+        response["player"] = {
+            x: Math.ceil(players[id].body.position.x),
+            y: Math.ceil(players[id].body.position.y)
+        };
+    }
+
 
     /*var bonds = [];
     players.map(function(player) {
@@ -268,7 +272,7 @@ function createMessage(id) {
                     angle: wall.body.angle.toFixed(3) };
     }));
 
-    return JSON.stringify(response);
+    return /*JSON.stringify(*/response/*)*/;
 }
 
 function addElements(id, object, array, elementName) {
@@ -323,16 +327,25 @@ function createBond(playerBody, garbageBody) {
     /*console.log("Player mutex before " + playerBody.superMutex);
     console.log("Garbage mutex before " + garbageBody.superMutex);*/
 
-    getMainObject(playerBody).muteBranch();
+    //getMainObject(playerBody).muteBranch();
     //getMainObject(garbageBody).muteBranch();
     console.log(garbageBody.inGameType);
-    getCore(garbageBody).muteAll();
+    //getCore(garbageBody).muteAll();
 
     ++playerBody.chemicalBonds;
     ++garbageBody.chemicalBonds;
     ++playerBody.superMutex;
     ++garbageBody.superMutex;
 
+    link(garbageBody, playerBody/*, constraintA, constraintB, angle1, angle2*/);
+
+    var newRadius = Geometry.calculateDistance(getPlayer(playerBody)
+        .body.position, garbageBody.position);
+    garbageBody.player = getPlayer(playerBody);
+    getPlayer(playerBody).checkResizeGrow(newRadius);
+    //console.log("mass = " + getPlayer(playerBody).body.realMass);
+    getPlayer(playerBody).recalculateMass();
+    getMainObject(garbageBody).markAsPlayer(playerBody);
     getMainObject(playerBody).connectBody(garbageBody, finalCreateBond);
 }
 
@@ -348,19 +361,25 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
     var constraintA = createBondConstraint(playerBody, garbageBody, bondStiffness);
     var constraintB = createBondConstraint(garbageBody, playerBody, bondStiffness);
 
-    link(garbageBody, playerBody, constraintA, constraintB, angle1, angle2);
+    garbageBody.constraint1 = constraintA;
+    garbageBody.constraint2 = constraintB;
+
+    garbageBody.constraint1.chemicalAngle = angle1;
+    garbageBody.constraint2.chemicalAngle = angle2;
+
+    //link(garbageBody, playerBody, constraintA, constraintB, angle1, angle2);
 
     World.add(engine.world, [constraintA, constraintB]);
 
-    console.log("Player number in createBond is " + playerBody.playerNumber);
-    console.log("Currently playerBody is " + playerBody.inGameType);
+    //console.log("Player number in createBond is " + playerBody.playerNumber);
+    //console.log("Currently playerBody is " + playerBody.inGameType);
 
-    var newRadius = Geometry.calculateDistance(getPlayer(playerBody)
+    /*var newRadius = Geometry.calculateDistance(getPlayer(playerBody)
         .body.position, garbageBody.position);
     garbageBody.player = getPlayer(playerBody);
     getPlayer(playerBody).checkResizeGrow(newRadius);
     //console.log("mass = " + getPlayer(playerBody).body.realMass);
-    getPlayer(playerBody).recalculateMass();
+    getPlayer(playerBody).recalculateMass();*/
     //console.log("final mass = " + getPlayer(playerBody).body.realMass);
 
     /*--playerBody.superMutex;
@@ -369,26 +388,27 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
     //getMainObject(playerBody).unmuteBranch();
     //garbageBody.inGameType = "playerPart";
 
-    console.log("playerBody inGameType before mark as player " + playerBody.inGameType);
+    /*console.log("playerBody inGameType before mark as player " + playerBody.inGameType);
     getMainObject(garbageBody).markAsPlayer(playerBody);
-    console.log("playerBody inGameType after mark as player " + playerBody.inGameType);
-    getMainObject(playerBody).unmuteBranch();
-    getMainObject(garbageBody).unmuteAll();
+    console.log("playerBody inGameType after mark as player " + playerBody.inGameType);*/
+    /*getMainObject(playerBody).unmuteBranch();
+    getMainObject(garbageBody).unmuteAll();*/
     garbageBody.collisionFilter.mask = 0x0001;
     --playerBody.superMutex;
     --garbageBody.superMutex;
 
     /*console.log("Player mutex after " + playerBody.superMutex);
     console.log("Garbage mutex after " + garbageBody.superMutex);*/
+
+    console.log(playerBody);
+    console.log(garbageBody);
 }
 
 //links parts of a player to form tree structure
-function link(child, parent, constraint1, constraint2, angle1, angle2) {
+function link(child, parent/*, constraint1, constraint2, angle1, angle2*/) {
     addToArray(parent.chemicalChildren, child);
-    child.constraint1 = constraint1;
-    child.constraint1.chemicalAngle = angle1;
-    child.constraint2 = constraint2;
-    child.constraint2.chemicalAngle = angle2;
+    //child.constraint1 = constraint1;
+    //child.constraint2 = constraint2;
     child.chemicalParent = parent;
 }
 
@@ -630,12 +650,21 @@ function createFullBorder(radius) {
 function sendEverybody(message) {
     for (var i = 0; i < players.length; ++i) {
         if (players[i]) {
-            try {
+            tryToSend(message, players[i]);
+            /*try {
                 players[i].ws.send(JSON.stringify(message));
             } catch (e) {
                 console.log('Caught ' + e.name + ': ' + e.message);
-            }
+            }*/
         }
+    }
+}
+
+function tryToSend(message, player) {
+    try {
+        player.ws.send(JSON.stringify(message));
+    } catch(e) {
+        console.log('Unable to send ' + message + ' to player number ' + player.id);
     }
 }
 
@@ -675,14 +704,21 @@ function checkGarbageVisibility() {
             if (players[j] && inScreen.call(players[j], legitGarbage[i], 500) &&
                 legitGarbage[i].body.playersWhoSee.indexOf(players[j].body.playerNumber) == -1) {
                 legitGarbage[i].body.playersWhoSee.push(j);
-                try {
+
+                tryToSend({
+                    "ng": legitGarbage[i].body.id,
+                    "p": legitGarbage[i].body.position,
+                    "e": legitGarbage[i].body.element,
+                    "ms": legitGarbage[i].body.mass }, players[j]);
+                /*try {
                     players[j].ws.send(JSON.stringify({
                         "ng": legitGarbage[i].body.id,
                         "p": legitGarbage[i].body.position,
-                        "e": legitGarbage[i].body.element }));
+                        "e": legitGarbage[i].body.element,
+                        "ms": legitGarbage[i].body.mass}));
                 } catch (e) {
                     console.log('Caught ' + e.name + ': ' + e.message);
-                }
+                }*/
             }
         }
         var playersWhoSee = legitGarbage[i].body.playersWhoSee;
@@ -692,15 +728,18 @@ function checkGarbageVisibility() {
             if (!players[playersWhoSee[j]]) {
                 playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
             } else if (!inScreen.call(players[playersWhoSee[j]], legitGarbage[i], 500)) {
-                try {
-                    console.log(j);
+
+                tryToSend({
+                    "dg": legitGarbage[i].body.id }, players[playersWhoSee[j]]);
+                /*try {
+                    /!*console.log(j);
                     console.log(playersWhoSee[j]);
-                    console.log("sending dg to " + players[playersWhoSee[j]]);
+                    console.log("sending dg to " + players[playersWhoSee[j]]);*!/
                     players[playersWhoSee[j]].ws.send(JSON.stringify({
                         "dg": legitGarbage[i].body.id }));
                 } catch (e) {
                     console.log('Caught ' + e.name + ': ' + e.message);
-                }
+                }*/
                 playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
             }
         }
@@ -708,32 +747,50 @@ function checkGarbageVisibility() {
 }
 
 function updateActiveGarbage() {
-
+    for (var i = 0; i < garbageActive.length; ++i) {
+        var playersWhoSee = garbageActive[i].playersWhoSee;
+        for (var j = 0; j < playersWhoSee.length; ++j) {
+            /*console.log("sending x " + garbageActive[i].position.x +
+                        ", y " + garbageActive[i].position.y);
+            console.log("velocity x is " + garbageActive[i].velocity.x +
+                        ", y " + garbageActive[i].velocity.y);
+            console.log("frictionAir " + garbageActive[i].frictionAir);*/
+            players[playersWhoSee[j]]
+                .ws.send(JSON.stringify({ "m": garbageActive[i].id,
+                                        "v": garbageActive[i].positionPrev,
+                                        "p": garbageActive[i].position,
+                                        "f": garbageActive[i].force }));
+        }
+    }
 }
 
+setInterval(updateActiveGarbage, 1000 / 3);
 setInterval(checkGarbageVisibility, 1000);
 
 for (var i = 0; i < garbage.length; i++) {
     Matter.Events.on(garbage[i].body, 'sleepEnd', function(event) {
         var body = this;
         garbageActive.push(body);
-        console.log("right now there is " + garbageActive.length + " active garbage");
+        /*console.log("right now there is " + garbageActive.length + " active garbage");
         console.log('garbage body id ' + body.id + " at " + this.position,
-            'sleeping: ' + body.isSleeping + " woke up!");
+            'sleeping: ' + body.isSleeping + " woke up!");*/
     });
 
     Matter.Events.on(garbage[i].body, 'sleepStart', function(event) {
         var body = this;
         garbageActive.splice(garbageActive.indexOf(body), 1);
-        console.log("right now there is " + garbageActive.length + " active garbage");
+        /*console.log("right now there is " + garbageActive.length + " active garbage");
         console.log('garbage body id ' + body.id + " at " + this.position,
-                    'sleeping: ' + body.isSleeping + " went to bed.");
+                    'sleeping: ' + body.isSleeping + " went to bed.");*/
     });
 }
 
 //main loop
 setInterval(function() {
     Matter.Engine.update(engine, engine.timing.delta);
+    /*for (var i = 0; i < garbageActive.length; ++i) {
+        console.log(garbageActive[i].position);
+    }*/
     for (var i = 0; i < ghosts.length; ++i) {
         if (ghosts[i]) {
             var ghost = ghosts[i];
@@ -782,11 +839,12 @@ setInterval(function() {
 
     for (var j = 0; j < players.length; ++j) {
         if (players[j]) {
-            try {
+            tryToSend(createMessage(j), players[j]);
+            /*try {
                 players[j].ws.send(createMessage(j));
             } catch (e) {
                 console.log('Caught ' + e.name + ': ' + e.message);
-            }
+            }*/
         }
     }
 }, 1000 / 60);

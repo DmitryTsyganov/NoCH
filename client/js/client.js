@@ -321,26 +321,8 @@
     var INDI_STATE_FULL = 2,
         INDI_STATE_IN_PROGRESS = 1,
         INDI_STATE_NONE = 0;
-    /*var indiNeutronTime['C'] = 8,
-        INDI_NEUTRON_TIME_BORON = 12,
-        INDI_NEUTRON_TIME_OXYGEN = 6,
-        INDI_NEUTRON_TIME_NITROGEN = 8,
-        INDI_NEUTRON_TIME_BERYLLIUM = 4,
-        INDI_NEUTRON_TIME_LITHIUM = -1,
-        INDI_NEUTRON_TIME_FLUORINE = 4,
-        INDI_NEUTRON_TIME_HELIUM = -1,
-        INDI_NEUTRON_TIME_NEON = 8;
-    var INDI_PROTON_TIME_CARBON = 20,
-        INDI_PROTON_TIME_BORON = 10,
-        INDI_PROTON_TIME_OXYGEN = 60,
-        INDI_PROTON_TIME_NITROGEN = 10,
-        INDI_PROTON_TIME_BERYLLIUM = 10,
-        INDI_PROTON_TIME_LITHIUM = 15,
-        INDI_PROTON_TIME_FLUORINE = 20,
-        INDI_PROTON_TIME_HELIUM = 20,
-        INDI_PROTON_TIME_NEON = 8;*/
-    var INDI_PROTON_STATE_ON = 1,
         INDI_PROTON_STATE_NONE = 0;
+        INDI_PROTON_STATE_ON = 1;
 
     var radiuses = {
         "N": 31,
@@ -409,7 +391,7 @@
         },
 
         addObject: function(number, gameSize, ctx) {
-            var additionalObjects = 2;
+            var additionalObjects = 1;
             for (var i = this['numberOfObjects' + number]; i <
                 this['numberOfObjects' + number] + additionalObjects; ++i) {
                     this['bObjects' + number][i] = new this.BackObject(gameSize, ctx, this['LEVEL_' + number],
@@ -491,6 +473,8 @@
                     object.rescaleBack(object.point);
                     break;
             }
+            console.log("point x is " + object.point.x);
+            console.log("point x is " + object.point.y);
         },
 
         checkPoint: function (object, gameSize){
@@ -566,6 +550,8 @@
             }
         },
 
+/*
+<<<<<<< HEAD
         indicator : {
             radius : radiuses["C"],
             counterClockwise : false,
@@ -627,7 +613,70 @@
                 ctx.stroke();
                 ctx.restore();
             }
+=======
+*/
+
+
+        drawIndicatorNeutron : function (x, y, radius, color, id, ctx) {
+            var currentAngle,
+                shift = 2 * Math.PI / (60 * indiNeutronTime[players[id].element]),
+                counterClockwise = false,
+                startAngle = Math.PI / 2,
+                width = 10;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.lineWidth = width * freshData.getCoefficient();
+            ctx.arc(x, y, radius * freshData.getCoefficient(), 0, 2 * Math.PI);
+            ctx.strokeStyle = 'grey';
+            ctx.stroke();
+            ctx.closePath();
+            if (players[id].angle < 2 * Math.PI)
+                players[id].angle += shift;
+            currentAngle = players[id].angle + startAngle;
+            ctx.beginPath();
+            ctx.arc(x, y, radius * freshData.getCoefficient(), startAngle, currentAngle,
+                counterClockwise);
+            ctx.strokeStyle = color;
+            ctx.stroke();
+            ctx.restore();
         },
+            //drawFull : function (x, y, radius, color, ctx) {
+            //    ctx.save();
+            //    ctx.beginPath();
+            //    ctx.lineWidth = this.width * freshData.getCoefficient();
+            //    ctx.arc (x, y, radius * freshData.getCoefficient(), this.startAngle, this.endAngle,
+            //        this.counterClockwise);
+            //    ctx.strokeStyle = color;
+            //    ctx.stroke();
+            //    ctx.restore();
+            //},
+            //drawProgress : function (x, y, radius, color, id, ctx) {
+            //    var currentAngle,
+            //        shift = 2 * Math.PI / (60 * indiNeutronTime[players[id].element]);
+            //    ctx.save();
+            //    if (players[id].angle < 2 * Math.PI)
+            //        players[id].angle += shift;
+            //    currentAngle = players[id].angle + this.startAngle;
+            //    ctx.beginPath();
+            //    ctx.lineWidth = this.width * freshData.getCoefficient();
+            //    ctx.arc (x, y, radius * freshData.getCoefficient(), this.startAngle, currentAngle,
+            //        this.counterClockwise);
+            //    ctx.strokeStyle = color;
+            //    ctx.stroke();
+            //  //  if (players[id].angle > 2 * Math.PI) this.state = INDI_STATE_FULL;
+            //    ctx.restore();
+            //},
+            //drawDefault : function (x, y, radius, ctx){
+            //    ctx.save();
+            //    ctx.beginPath();
+            //    ctx.lineWidth = this.width * freshData.getCoefficient();
+            //    ctx.arc (x, y, radius * freshData.getCoefficient(), 0, 2 * Math.PI);
+            //    ctx.strokeStyle = 'grey';
+            //    ctx.stroke();
+            //    ctx.restore();
+            //}
+
 
         start: function() {
             this.started = true;
@@ -646,6 +695,9 @@
             }
             if (freshData.targetCoefficient > freshData.coefficient) {
                 freshData.coefficient += 10;
+            }
+            for (var key in garbageAll) {
+                garbageAll[key].checkMovement();
             }
 
         },
@@ -706,13 +758,13 @@
         },
 
         drawGarbage: function(ctx) {
-            for (var key in garbage) {
-                var pos = freshData.Scale({ x: garbage[key].position.x +
+            for (var key in garbageAll) {
+                var pos = freshData.Scale({ x: garbageAll[key].position.x +
                             Game.gameSize.x / 2 - freshData.inputData.player.x,
-                            y: garbage[key].position.y +
+                            y: garbageAll[key].position.y +
                             Game.gameSize.y / 2 - freshData.inputData.player.y });
                 this.drawRedDot(ctx, pos);
-                this.addLetter(ctx, pos.x, pos.y, garbage[key].element, 10);
+                this.addLetter(ctx, pos.x, pos.y, garbageAll[key].element, 10);
             }
         },
 
@@ -731,9 +783,9 @@
                             players[_players[i]].element,
                             radiuses[players[_players[i]].element]
                             * freshData.getCoefficient());
-                        this.indicatorProton.draw (pos.x, pos.y, radiuses[players[_players[i]].element], ctx);
-                        this.indicator.draw (pos.x, pos.y, radiuses[players[_players[i]].element],
-                            players[_players[i]].color, ctx);
+                        //this.indicatorProton.draw (pos.x, pos.y, radiuses[players[_players[i]].element], ctx);
+                        this.drawIndicatorNeutron (pos.x, pos.y, radiuses[players[_players[i]].element],
+                            players[_players[i]].color, _players[i], ctx);
                     }
                 }
             }
@@ -848,7 +900,71 @@
     };
 
     var players = {};
-    var garbage = {};
+    var garbageAll = {};
+    var Garbage = function(mass, position, element) {
+        this.force = { x: 0, y: 0 };
+        this.mass = mass;
+        this.STEPS_TOTAL = 20;
+        this.position = this.positionPrev = position;
+        this.element = element;
+        this.isInMotion = false;
+        this.stepCounter = 0;
+        this.frictionAir = 0.003;
+        this.speed = {};
+    };
+    Garbage.prototype = {
+        setInMotion: function(force, speed, position) {
+            this.force = force;
+            this.position = position;
+            this.positionPrev.x = /*position.x -*/ speed.x;
+            this.positionPrev.y = /*position.y - */speed.y;
+            //this.positionPrev = this.position;
+            this.stepCounter = 0;
+            //this.speed = speed;
+            this.isInMotion = true;
+        },
+        checkMovement: function() {
+            if (this.isInMotion) {
+                this.move();
+                this.checkStop();
+            }
+        },
+        checkStop: function() {
+            if (++this.stepCounter == this.STEPS_TOTAL) {
+                this.stepCounter = 0;
+                this.isInMotion = false;
+            }
+        },
+        move11: function() {
+            this.position.x += this.speed.x;
+            this.position.y += this.speed.y;
+        },
+        move: function(/*deltaTime, timeScale, correction*/) {
+            var deltaTime = 1000 / 60;
+            var timeScale = 1;
+            var correction = 1;
+            var deltaTimeSquared = Math.pow(deltaTime * timeScale * timeScale, 2);
+
+            // from the previous step
+            var frictionAir = 1 - this.frictionAir * timeScale * timeScale,
+                speedPrevX = this.position.x - this.positionPrev.x,
+                speedPrevY = this.position.y - this.positionPrev.y;
+
+            // update speed with Verlet integration
+            this.speed.x = (speedPrevX * frictionAir * correction) +
+                            (this.force.x / this.mass) * deltaTimeSquared;
+            this.speed.y = (speedPrevY * frictionAir * correction) +
+                            (this.force.y / this.mass) * deltaTimeSquared;
+
+            if (!this.stepCounter) console.log('velocity x ' + this.speed.x + ', y ' + this.speed.y);
+
+            this.positionPrev.x = this.position.x;
+            this.positionPrev.y = this.position.y;
+            this.position.x += this.speed.x;
+            this.position.y += this.speed.y;
+            console.log(this.position);
+        }
+    };
 
     var freshData = {
         previousRadius: 50,
@@ -870,7 +986,12 @@
             }
             if ("c" in newData && "e" in newData) {
                 players[newData.id] = { "color": newData.c,
-                                        "element": newData.e};
+                                        "element": newData.e,
+                                        "angle" : 2 * Math.PI};
+            }
+            if ('sh' in newData) {
+                players[newData.sh]["angle"] = 0;
+                //the player who shot is players[newData.sh]
             }
             if ('sh' in newData) {
                 //the player who shot is players[newData.sh]
@@ -886,11 +1007,17 @@
                 //console.log("you're dead lol");
             }
             if ("ng" in newData) {
-                garbage[newData.ng] = { "position": newData.p,
-                                        "element": newData.e }
+                garbageAll[newData.ng] = new Garbage(newData.ms, newData.p, newData.e);
             }
             if ("dg" in newData) {
-                delete garbage[newData.dg];
+                delete garbageAll[newData.dg];
+            }
+            if ("m" in newData) {
+                garbageAll[newData.m].setInMotion(newData.f,
+                                                    { x: newData.v.x/* * 1.18*/,
+                                                    y: newData.v.y/* * 1.18*/},
+                                                    newData.p);
+                console.log("got x " + newData.p.x + ", y " + newData.p.y);
             }
         },
         updateOutput: function(mouseX, mouseY) {

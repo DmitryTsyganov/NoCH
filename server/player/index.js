@@ -18,11 +18,12 @@ var Player = function(ws, position, engine, elem) {
     basicParticle.call(this, position, engine, elem);
 
     this.ws = ws;
+    console.log(this.body);
 
     //this.body.collisionFilter.group = Body.nextGroup(true);
 
+    this.previousPosition = { x: 0, y: 0 };
     this.body.inGameType = "player";
-
     this.body.player = this;
     this.body.realMass = this.body.mass;
     this.body.coefficient = 1;
