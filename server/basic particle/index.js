@@ -21,6 +21,7 @@ var basicParticle = function(position, engine, elem) {
     this.body = Bodies.circle(position.x, position.y,
         element.radius + this.CHARGE_RADIUS,
         { restitution: 0.99 });
+
     this.body.inertia = 0;
     this.body.inverseInertia = 0;
 
