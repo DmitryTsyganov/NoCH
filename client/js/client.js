@@ -989,12 +989,12 @@
                                         "element": newData.e,
                                         "angle" : 2 * Math.PI};
             }
-            if ('sh' in newData) {
-                players[newData.sh]["angle"] = 0;
-                //the player who shot is players[newData.sh]
+            if ('shn' in newData) {
+                players[newData.shn]["angle"] = 0;
+                //the player who shot neutron is players[newData.shn]
             }
-            if ('sh' in newData) {
-                //the player who shot is players[newData.sh]
+            if ('shp' in newData) {
+                //the player who shot proton is players[newData.shp]
             }
             if ("ne" in newData && players[newData.id]) {
                 players[newData.id]["element"] = newData.ne;
