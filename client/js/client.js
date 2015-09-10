@@ -391,7 +391,7 @@
         },
 
         addObject: function(number, gameSize, ctx) {
-            var additionalObjects = 2;
+            var additionalObjects = 1;
             for (var i = this['numberOfObjects' + number]; i <
                 this['numberOfObjects' + number] + additionalObjects; ++i) {
                     this['bObjects' + number][i] = new this.BackObject(gameSize, ctx, this['LEVEL_' + number],
@@ -473,6 +473,8 @@
                     object.rescaleBack(object.point);
                     break;
             }
+            console.log("point x is " + object.point.x);
+            console.log("point x is " + object.point.y);
         },
 
         checkPoint: function (object, gameSize){
@@ -503,51 +505,128 @@
             }
         },
 
-        indicatorProton : {
-            state : INDI_PROTON_STATE_ON,
-            color : 'white',
-            time : 0,
-            radius : 5,
-            sizeCoefficient : 0.5,
-            size : 20,
-            number : 6,
-            shiftX : 20,
-            shiftY : 5,
-            duration : indiProtonTime['C'] * 1000,
-            startTime : 0,
+        //indicatorProton : {
+        //    state : INDI_PROTON_STATE_ON,
+        //    color : 'white',
+        //    time : 0,
+        //    radius : 5,
+        //    sizeCoefficient : 0.5,
+        //    size : 20,
+        //    number : 6,
+        //    shiftX : 20,
+        //    shiftY : 5,
+        //    duration : indiProtonTime['C'] * 1000,
+        //    startTime : 0,
+        //
+        //    draw : function (x, y, radius, ctx){
+        //        if (this.state) {
+        //            this.color = 'white';
+        //            this.drawNumber (x, y, radius, ctx);
+        //        }
+        //        else {
+        //            this.color = 'grey';
+        //            this.time = (new Date().getTime() - this.startTime) / this.duration;
+        //            if (this.time < 1) this.drawNumber (x, y, radius, ctx);
+        //            else {
+        //                this.state = INDI_PROTON_STATE_ON;
+        //                this.radius -= 1;
+        //            }
+        //        }
+        //    },
+        //
+        //    drawNumber : function (x, y, radius, ctx){
+        //        ctx.save();
+        //        ctx.fillStyle = this.color;
+        //        var fontSize = this.size * freshData.getCoefficient();
+        //        ctx.font = "bold " + fontSize + "px tellural_altbold";
+        //        ctx.fillText (this.number, x + radius * 0.5 * freshData.getCoefficient(),
+        //            y - radius * 0.2 * freshData.getCoefficient());
+        //        ctx.restore();
+        //    }
+        //},
 
-            draw : function (x, y, radius, ctx){
-                if (this.state) {
-                    this.color = 'white';
-                    this.drawNumber (x, y, radius, ctx);
-                }
-                else {
-                    this.color = 'grey';
-                    this.time = (new Date().getTime() - this.startTime) / this.duration;
-                    if (this.time < 1) this.drawNumber (x, y, radius, ctx);
-                    else {
-                        this.state = INDI_PROTON_STATE_ON;
-                        this.radius -= 1;
-                    }
-                }
-            },
-
-
-            changeState : function (){
-                this.state = (this.state + 1) % 2;
-            },
-
-            drawNumber : function (x, y, radius, ctx){
+            drawIndicatorProton : function (x, y, radius, id, ctx){
+                var timeShift = 1 / (60 * indiProtonTime[players[id].element]),
+                    fontSize = 20 * freshData.getCoefficient(),
+                    textShiftX = radius * 0.5 * freshData.getCoefficient(),
+                    textShiftY = radius * 0.2 * freshData.getCoefficient();
                 ctx.save();
-                ctx.fillStyle = this.color;
-                var fontSize = this.size * freshData.getCoefficient();
+                if (players[id].protonTime < 1){
+                    ctx.fillStyle = "grey";
+                    players[id].protonTime += timeShift;
+                }
+                else ctx.fillStyle = "white";
                 ctx.font = "bold " + fontSize + "px tellural_altbold";
-                ctx.fillText (this.number, x + radius * 0.5 * freshData.getCoefficient(),
-                    y - radius * 0.2 * freshData.getCoefficient());
+                ctx.fillText (players[id].protonNumber, x + textShiftX, y - textShiftY);
+                ctx.restore();
+            },
+
+
+/*
+<<<<<<< HEAD
+        indicator : {
+            radius : radiuses["C"],
+            counterClockwise : false,
+            state : INDI_STATE_FULL,
+            currentAngle : Math.PI / 2,
+            startAngle : Math.PI / 2,
+            endAngle : 2.5 * Math.PI,
+            speed :  2 * Math.PI / (indiNeutronTime['C'] * 45),
+            color : 'rgba(204,0,65,1)',
+            width : 10,
+            time : 0,
+            startTime : 0,
+            duration : indiNeutronTime['C'] * 1000,
+
+            draw : function (x, y, radius, color, ctx) {
+                this.drawDefault (x, y, radius, ctx);
+                switch (this.state){
+                    case INDI_STATE_FULL :
+                        //console.log("k");
+                        this.drawFull (x, y, radius, color, ctx);
+                        break;
+                    case INDI_STATE_IN_PROGRESS :
+                        //console.log("kk");
+                        this.drawProgress (x, y, radius, color, ctx);
+                        break;
+                    case INDI_STATE_NONE :
+                        this.state = INDI_STATE_IN_PROGRESS;
+                        this.currentAngle = Math.PI / 2;
+                        break;
+                }
+            },
+            drawFull : function (x, y, radius, color, ctx) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.lineWidth = this.width * freshData.getCoefficient();
+                ctx.arc (x, y, radius * freshData.getCoefficient(), this.startAngle, this.endAngle, this.counterClockwise);
+                ctx.strokeStyle = color;
+                ctx.stroke();
+                ctx.restore();
+            },
+            drawProgress : function (x, y, radius, color, ctx) {
+                ctx.save();
+                this.time = (new Date().getTime() - this.startTime);
+                this.currentAngle = this.startAngle + (this.endAngle - this.startAngle) * this.time / this.duration;
+                ctx.beginPath();
+                ctx.lineWidth = this.width * freshData.getCoefficient();
+                ctx.arc (x, y, radius * freshData.getCoefficient(), this.startAngle, this.currentAngle, this.counterClockwise);
+                ctx.strokeStyle = color;
+                ctx.stroke();
+                if (this.time > this.duration) this.state = INDI_STATE_FULL;
+                ctx.restore();
+            },
+            drawDefault : function (x, y, radius, ctx){
+                ctx.save();
+                ctx.beginPath();
+                ctx.lineWidth = this.width * freshData.getCoefficient();
+                ctx.arc (x, y, radius * freshData.getCoefficient(), 0, 2 * Math.PI);
+                ctx.strokeStyle = 'grey';
+                ctx.stroke();
                 ctx.restore();
             }
-        },
-
+=======
+*/
 
 
         drawIndicatorNeutron : function (x, y, radius, color, id, ctx) {
@@ -629,6 +708,9 @@
             if (freshData.targetCoefficient > freshData.coefficient) {
                 freshData.coefficient += 10;
             }
+            for (var key in garbageAll) {
+                garbageAll[key].checkMovement();
+            }
 
         },
 
@@ -688,13 +770,13 @@
         },
 
         drawGarbage: function(ctx) {
-            for (var key in garbage) {
-                var pos = freshData.Scale({ x: garbage[key].position.x +
+            for (var key in garbageAll) {
+                var pos = freshData.Scale({ x: garbageAll[key].position.x +
                             Game.gameSize.x / 2 - freshData.inputData.player.x,
-                            y: garbage[key].position.y +
+                            y: garbageAll[key].position.y +
                             Game.gameSize.y / 2 - freshData.inputData.player.y });
-             //   this.drawRedDot(ctx, pos);
-               // this.addLetter(ctx, pos.x, pos.y, garbage[key].element, 10);
+               // this.drawRedDot(ctx, pos);
+               // this.addLetter(ctx, pos.x, pos.y, garbageAll[key].element, 10);
             }
         },
 
@@ -713,7 +795,8 @@
                             players[_players[i]].element,
                             radiuses[players[_players[i]].element]
                             * freshData.getCoefficient());
-                        //this.indicatorProton.draw (pos.x, pos.y, radiuses[players[_players[i]].element], ctx);
+                        this.drawIndicatorProton (pos.x, pos.y, radiuses[players[_players[i]].element],
+                            _players[i], ctx);
                         this.drawIndicatorNeutron (pos.x, pos.y, radiuses[players[_players[i]].element],
                             players[_players[i]].color, _players[i], ctx);
                     }
@@ -830,7 +913,71 @@
     };
 
     var players = {};
-    var garbage = {};
+    var garbageAll = {};
+    var Garbage = function(mass, position, element) {
+        this.force = { x: 0, y: 0 };
+        this.mass = mass;
+        this.STEPS_TOTAL = 20;
+        this.position = this.positionPrev = position;
+        this.element = element;
+        this.isInMotion = false;
+        this.stepCounter = 0;
+        this.frictionAir = 0.003;
+        this.speed = {};
+    };
+    Garbage.prototype = {
+        setInMotion: function(force, speed, position) {
+            this.force = force;
+            this.position = position;
+            this.positionPrev.x = /*position.x -*/ speed.x;
+            this.positionPrev.y = /*position.y - */speed.y;
+            //this.positionPrev = this.position;
+            this.stepCounter = 0;
+            //this.speed = speed;
+            this.isInMotion = true;
+        },
+        checkMovement: function() {
+            if (this.isInMotion) {
+                this.move();
+                this.checkStop();
+            }
+        },
+        checkStop: function() {
+            if (++this.stepCounter == this.STEPS_TOTAL) {
+                this.stepCounter = 0;
+                this.isInMotion = false;
+            }
+        },
+        move11: function() {
+            this.position.x += this.speed.x;
+            this.position.y += this.speed.y;
+        },
+        move: function(/*deltaTime, timeScale, correction*/) {
+            var deltaTime = 1000 / 60;
+            var timeScale = 1;
+            var correction = 1;
+            var deltaTimeSquared = Math.pow(deltaTime * timeScale * timeScale, 2);
+
+            // from the previous step
+            var frictionAir = 1 - this.frictionAir * timeScale * timeScale,
+                speedPrevX = this.position.x - this.positionPrev.x,
+                speedPrevY = this.position.y - this.positionPrev.y;
+
+            // update speed with Verlet integration
+            this.speed.x = (speedPrevX * frictionAir * correction) +
+                            (this.force.x / this.mass) * deltaTimeSquared;
+            this.speed.y = (speedPrevY * frictionAir * correction) +
+                            (this.force.y / this.mass) * deltaTimeSquared;
+
+            if (!this.stepCounter) console.log('velocity x ' + this.speed.x + ', y ' + this.speed.y);
+
+            this.positionPrev.x = this.position.x;
+            this.positionPrev.y = this.position.y;
+            this.position.x += this.speed.x;
+            this.position.y += this.speed.y;
+            console.log(this.position);
+        }
+    };
 
     var freshData = {
         previousRadius: 50,
@@ -853,11 +1000,18 @@
             if ("c" in newData && "e" in newData) {
                 players[newData.id] = { "color": newData.c,
                                         "element": newData.e,
-                                        "angle" : 2 * Math.PI};
+                                        "angle" : 2 * Math.PI,
+                                        "protonNumber" : 6,
+                                        "protonTime" : 1};
             }
-            if ('sh' in newData) {
-                players[newData.sh]["angle"] = 0;
-                //the player who shot is players[newData.sh]
+            if ('shn' in newData) {
+                players[newData.shn]["angle"] = 0;
+                //the player who shot neutron is players[newData.shn]
+            }
+            if ('shp' in newData) {
+                -- players[newData.shp]["protonNumber"];
+                players[newData.shp]["protonTime"] = 0;
+                //the player who shot proton is players[newData.shp]
             }
             if ("ne" in newData && players[newData.id]) {
                 players[newData.id]["element"] = newData.ne;
@@ -870,11 +1024,17 @@
                 //console.log("you're dead lol");
             }
             if ("ng" in newData) {
-                garbage[newData.ng] = { "position": newData.p,
-                                        "element": newData.e }
+                garbageAll[newData.ng] = new Garbage(newData.ms, newData.p, newData.e);
             }
             if ("dg" in newData) {
-                delete garbage[newData.dg];
+                delete garbageAll[newData.dg];
+            }
+            if ("m" in newData) {
+                garbageAll[newData.m].setInMotion(newData.f,
+                                                    { x: newData.v.x/* * 1.18*/,
+                                                    y: newData.v.y/* * 1.18*/},
+                                                    newData.p);
+                console.log("got x " + newData.p.x + ", y " + newData.p.y);
             }
         },
         updateOutput: function(mouseX, mouseY) {
