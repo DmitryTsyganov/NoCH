@@ -39,7 +39,7 @@
 
 </script>
 <body>
-<div id="game_menu" style="width: 100%; position: absolute; top: 0px; left: 0px; background-color: #4D4A49; margin: 0;">
+<div id="game_menu" style="width: 100%; position: absolute; top: 0px; left: 0px; background-color: #4D4A49; margin: 0; display: none;">
     <div style="float:left; width: 15%; margin-left: 5%;">
         <img id="tools_image" src="menu/tools.png" />
         <div class="select_div">
@@ -105,7 +105,7 @@
         <div id="overlay_opacity">
 
         </div>
-        <div id="menu">
+        <div id="menu" style = "display: none;">
             <h1>NOCH</h1>
             <h3>ITS GETTING DARKER</h3>
             <ul>
@@ -133,8 +133,9 @@
             <div id="element"></div>
         </div>
     </div>
-    <canvas id="canvas"></canvas>
+
 </div>
+<canvas id="canvas"></canvas>
 
 <script type="text/javascript" src="client.js"></script>
 </body>

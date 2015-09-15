@@ -1,4 +1,6 @@
 var WebSocketServer = new require('ws');
+var Emitter = require('events').EventEmitter;
+var playersEmitter = new Emitter;
 
 var Geometry = require("geometry");
 
@@ -66,7 +68,7 @@ webSocketServer.on('connection', function(ws) {
 
     var Player = require('./player');
 
-    var player = new Player(ws, defaultPosition, engine, "C");
+    var player = new Player(ws, defaultPosition, engine, "C", playersEmitter);
 
     var id = addToArray(players, player);
 
@@ -80,15 +82,25 @@ webSocketServer.on('connection', function(ws) {
 
     for (var i = 0; i < players.length; ++i) {
         if (players[i]) {
-            try {
-                players[i].ws.send(JSON.stringify({ "id": player.body.id,
-                    "c": player.color,
-                    "e": player.body.element}));
-                player.ws.send(JSON.stringify({ "id": players[i].body.id,
+            if (id == i) {
+                player.ws.send(JSON.stringify({ "sid": players[i].body.id,
                     "c": players[i].color,
                     "e": players[i].body.element}));
-            } catch (e) {
-                console.log('Caught ' + e.name + ': ' + e.message);
+            } else {
+                try {
+                    players[i].ws.send(JSON.stringify({
+                        "id": player.body.id,
+                        "c": player.color,
+                        "e": player.body.element
+                    }));
+                    player.ws.send(JSON.stringify({
+                        "id": players[i].body.id,
+                        "c": players[i].color,
+                        "e": players[i].body.element
+                    }));
+                } catch (e) {
+                    console.log('Caught ' + e.name + ': ' + e.message);
+                }
             }
         }
     }
@@ -118,9 +130,9 @@ webSocketServer.on('connection', function(ws) {
                 y: parsedMessage.shotY - player.getLocalPosition().y
             };
             if (player.shoot(parsedMessage.particle, shotPos, freeProtons, garbage, engine)) {
-                var respounce = {};
-                respounce["sh" + parsedMessage.particle] = player.body.id;
-                sendEverybody(respounce/*{ key: player.body.id }*/);
+                var response = {};
+                response["sh" + parsedMessage.particle] = player.body.id;
+                sendEverybody(response/*{ key: player.body.id }*/);
                 switch (parsedMessage.particle) {
                     case 'p':
                         sendEverybody({ "id": player.body.id, "ne": player.body.element });
@@ -163,7 +175,7 @@ function createGarbage(quantity) {
         var position = getRandomPositionInside(diameter / 2, OFFSET_PLAYER,
                                                 diameter / 2 - OFFSET_BORDER);
 
-        var singleGarbage = new Garbage(position, engine, element);
+        var singleGarbage = new Garbage(position, engine, element, playersEmitter);
 
         garbage.push(singleGarbage);
         singleGarbage.body.number = garbage.indexOf(singleGarbage);
@@ -212,13 +224,14 @@ function createMessage(id) {
 
     var response = {};
 
-    if (Math.abs(players[id].previousPosition.x - players[id].body.position.x) > 1 &&
+    /*if (Math.abs(players[id].previousPosition.x - players[id].body.position.x) > 1 &&
         Math.abs(players[id].previousPosition.y - players[id].body.position.y) > 1) {
         response["player"] = {
             x: Math.ceil(players[id].body.position.x),
             y: Math.ceil(players[id].body.position.y)
         };
     }
+    players[id].previousPosition.x = players[id].body.position;*/
 
 
     /*var bonds = [];
@@ -228,7 +241,7 @@ function createMessage(id) {
             bonds = bonds.concat(obj);
     });*/
 
-    var bonds = [];
+    /*var bonds = [];
     Composite.allConstraints(engine.world).forEach(
         function(bond) {
             bonds.push({
@@ -250,16 +263,23 @@ function createMessage(id) {
     }
 
     response["bonds"] = parseCoordinates(bonds.map(function(obj) {
-                        return toLocalCS(obj, players[id]); }));
+                        return toLocalCS(obj, players[id]); }));*/
 
-    response["players"] =
+
+    var playersWhoMove =
         parseCoordinates(players.filter(inScreen,
             players[id]).map(function(player) {
-            var pos = toLocalCS(player.body.position, players[id]);
-            return { id: player.body.id, x: Math.ceil(pos.x), y: Math.ceil(pos.y) };
+                if (Math.abs(player.previousPosition.x - player.body.position.x) > 1 ||
+                    Math.abs(player.previousPosition.y - player.body.position.y) > 1) {
+
+                    var pos = /*toLocalCS(*/player.body.position/*, players[id])*/;
+                    return {id: player.body.id, x: Math.ceil(pos.x), y: Math.ceil(pos.y)};
+                }
         }));
 
-    var particlesInScreen = ((garbage.filter(inScreen, players[id])))
+    if (playersWhoMove.length) response["players"] = playersWhoMove;
+
+    /*var particlesInScreen = ((garbage.filter(inScreen, players[id])))
                             .concat(freeProtons.filter(inScreen, players[id]));
 
     for (var j = 0; j < elements.length; ++j) {
@@ -273,7 +293,7 @@ function createMessage(id) {
         var pos = toLocalCS(wall.body.position, players[id]);
         return { x: Math.ceil(pos.x), y: Math.ceil(pos.y),
                     angle: wall.body.angle.toFixed(3) };
-    }));
+    }));*/
 
     return /*JSON.stringify(*/response/*)*/;
 }
@@ -332,7 +352,7 @@ function createBond(playerBody, garbageBody) {
 
     //getMainObject(playerBody).muteBranch();
     //getMainObject(garbageBody).muteBranch();
-    console.log(garbageBody.inGameType);
+    //console.log(garbageBody.inGameType);
     //getCore(garbageBody).muteAll();
 
     ++playerBody.chemicalBonds;
@@ -349,6 +369,7 @@ function createBond(playerBody, garbageBody) {
     //console.log("mass = " + getPlayer(playerBody).body.realMass);
     getPlayer(playerBody).recalculateMass();
     getMainObject(garbageBody).markAsPlayer(playerBody);
+    playersEmitter.emit('became playerPart', { garbageBody: garbageBody });
     getMainObject(playerBody).connectBody(garbageBody, finalCreateBond);
 }
 
@@ -400,11 +421,13 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
     --playerBody.superMutex;
     --garbageBody.superMutex;
 
+    playersEmitter.emit('bond created', { bc1: playerBody, bc2: garbageBody });
+
     /*console.log("Player mutex after " + playerBody.superMutex);
     console.log("Garbage mutex after " + garbageBody.superMutex);*/
 
-    console.log(playerBody);
-    console.log(garbageBody);
+    //console.log(playerBody);
+    //console.log(garbageBody);
 }
 
 //links parts of a player to form tree structure
@@ -415,7 +438,7 @@ function link(child, parent/*, constraint1, constraint2, angle1, angle2*/) {
     child.chemicalParent = parent;
 }
 
-//creates constraint suitable for making bond 
+//creates constraint suitable for making bond
 function createBondConstraint(_bodyA, _bodyB, _stiffness) {
     return Matter.Constraint.create({bodyA: _bodyA, bodyB: _bodyB,
         pointA: { x: _bodyB.position.x - _bodyA.position.x,
@@ -545,7 +568,7 @@ function getCore(body) {
 }
 
 function getMainObject(body) {
-    console.log(body.inGameType);
+    //console.log(body.inGameType);
     switch (body.inGameType) {
         case "player":
             //console.log("returning player at " + body.number);
@@ -706,13 +729,31 @@ function checkGarbageVisibility() {
             //console.log(3);
             if (players[j] && inScreen.call(players[j], legitGarbage[i], 500) &&
                 legitGarbage[i].body.playersWhoSee.indexOf(players[j].body.playerNumber) == -1) {
-                legitGarbage[i].body.playersWhoSee.push(j);
+                /*legitGarbage[i].body.playersWhoSee.push(j);
 
                 tryToSend({
                     "ng": legitGarbage[i].body.id,
                     "p": legitGarbage[i].body.position,
                     "e": legitGarbage[i].body.element,
-                    "ms": legitGarbage[i].body.mass }, players[j]);
+                    "ms": legitGarbage[i].body.mass }, players[j]);*/
+
+                addPlayerWhoSee(legitGarbage[i], j);
+
+                if (legitGarbage[i].body.constraint1) {
+                    var secondBody = legitGarbage[i].body.constraint1.bodyA;
+                    addPlayerWhoSee(getMainObject(secondBody), j);
+                    /*tryToSend({
+                        "ng": secondBody.id,
+                        "p": secondBody.position,
+                        "e": secondBody.element/!*,
+                        "ms": secondBody.mass*!/ }, players[j]);*/
+                    tryToSend({
+                        "b1": legitGarbage[i].body.id,
+                        "b2": secondBody.id }, players[j]);
+                    console.log("we send it!");
+                }
+
+                //tryToSend(response, players[j]);
                 /*try {
                     players[j].ws.send(JSON.stringify({
                         "ng": legitGarbage[i].body.id,
@@ -730,10 +771,13 @@ function checkGarbageVisibility() {
 
             if (!players[playersWhoSee[j]]) {
                 playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
-            } else if (!inScreen.call(players[playersWhoSee[j]], legitGarbage[i], 500)) {
-
+            } else if (!inScreen.call(players[playersWhoSee[j]], legitGarbage[i], 500) &&
+                    (!legitGarbage[i].body.chemicalParent || inScreen.call(players[playersWhoSee[j]],
+                        getMainObject(legitGarbage[i].body.chemicalParent), 500))) {
                 tryToSend({
                     "dg": legitGarbage[i].body.id }, players[playersWhoSee[j]]);
+                if (legitGarbage[i].body.chemicalParent) tryToSend({
+                    "dg": legitGarbage[i].body.chemicalParent.id }, players[playersWhoSee[j]]);
                 /*try {
                     /!*console.log(j);
                     console.log(playersWhoSee[j]);
@@ -749,6 +793,15 @@ function checkGarbageVisibility() {
     }
 }
 
+function isEmpty(obj) {
+
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) return false;
+    }
+
+    return true;
+}
+
 function updateActiveGarbage() {
     for (var i = 0; i < garbageActive.length; ++i) {
         var playersWhoSee = garbageActive[i].playersWhoSee;
@@ -758,22 +811,128 @@ function updateActiveGarbage() {
             console.log("velocity x is " + garbageActive[i].velocity.x +
                         ", y " + garbageActive[i].velocity.y);
             console.log("frictionAir " + garbageActive[i].frictionAir);*/
-            players[playersWhoSee[j]]
-                .ws.send(JSON.stringify({ "m": garbageActive[i].id,
-                                        "v": garbageActive[i].positionPrev,
-                                        "p": garbageActive[i].position,
-                                        "f": garbageActive[i].force }));
+            var position = null;
+            switch (garbageActive[i].inGameType) {
+                case 'garbage':
+                    position = garbageActive[i].position;
+                    break;
+                case 'playerPart':
+                    var newLocalPosition = { x: garbageActive[i].position.x - players[garbageActive[i].playerNumber].body.position.x,
+                                            y: garbageActive[i].position.x - players[garbageActive[i].playerNumber].body.position.y};
+                    if (Math.abs(newLocalPosition.x - garbageActive[i].previousLocalPosition.x) > 1.5 ||
+                        Math.abs(newLocalPosition.y - garbageActive[i].previousLocalPosition.y) > 1.5 ) {
+                        position = garbageActive[i].position;
+                        garbageActive[i].previousLocalPosition = newLocalPosition;
+                    }
+            }
+            if (players[playersWhoSee[j]]) {
+                if (position) {
+                    try {
+                        players[playersWhoSee[j]].ws.send(JSON.stringify({
+                            "m": garbageActive[i].id,
+                            /*"v": garbageActive[i].positionPrev,*/
+                            "p": ceilPosition(garbageActive[i].position)/*,
+                             "f": garbageActive[i].force*/
+                        }));
+                    } catch (e) {
+                        console.log('playerWhoSee left.');
+                        playersWhoSee.splice(j);
+                    }
+                }
+            } else {
+                playersWhoSee.splice(j);
+            }
         }
     }
 }
 
-setInterval(updateActiveGarbage, 1000 / 3);
+setInterval(updateActiveGarbage, 1000 / 60);
 setInterval(checkGarbageVisibility, 1000);
+
+function sincronizePlayersWhoSee(target, mainArray) {
+    for (var i = 0; i < mainArray.length; ++i) {
+        if (target.playersWhoSee.indexOf(mainArray[i]) == -1) {
+            addPlayerWhoSee(getMainObject(target), mainArray[i]);
+        }
+    }
+}
+
+function addPlayerWhoSee(garbage, playerNumber) {
+    if (garbage.body.playersWhoSee.indexOf(playerNumber) == -1) {
+        garbage.body.playersWhoSee.push(playerNumber);
+    }
+
+    var message = { "e": garbage.body.element };
+
+    /*switch (garbage.body.inGameType) {
+        case 'garbage':*/
+            message.ng = garbage.body.id;
+            message.p = garbage.body.position;
+            if (garbage.body.inGameType == 'playerPart') message.id = garbage.body.playerNumber;
+            /*break;
+        case 'playerPart':
+            message.npp = garbage.body.id;
+            message.p = {
+                x: garbage.body.position.x - players[garbage.body.playerNumber].body.position.x,
+                y: garbage.body.position.y - players[garbage.body.playerNumber].body.position.y
+            };
+            garbage.body.prevLocalPos = message.p;*/
+    //}
+
+    tryToSend({
+        "ng": garbage.body.id,
+        "p": ceilPosition(garbage.body.position),
+        "e": garbage.body.element/*,
+        "ms": garbage.body.mass */}, players[playerNumber]);
+}
+
+function sendToPlayersWhoSee(playersWhoSee, message) {
+    for (var i = 0; i < playersWhoSee.length; ++i) {
+        tryToSend(message, players[playersWhoSee[i]]);
+    }
+}
+
+playersEmitter.on('bond created', function(event) {
+    console.log('super sending');
+    if (event.bc1.inGameType == 'garbage') sincronizePlayersWhoSee(event.bc1, event.bc2.playersWhoSee);
+    if (event.bc2.inGameType == 'garbage') sincronizePlayersWhoSee(event.bc2, event.bc1.playersWhoSee);
+    var playersWhoSee = event.bc1.inGameType == 'garbage' ?
+        event.bc1.playersWhoSee : event.bc2.playersWhoSee;
+    sendToPlayersWhoSee(playersWhoSee, {
+                        "b1": event.bc1.id,
+                        "b2": event.bc2.id });
+    /*for (var i = 0; i < playersWhoSee.length; ++i) {
+        tryToSend({
+            "b1": event.bc1.id,
+            "b2": event.bc2.id }, players[playersWhoSee[i]]);
+    }*/
+});
+
+playersEmitter.on('became playerPart', function(event) {
+    sendToPlayersWhoSee(event.garbageBody.playersWhoSee, { 'bp': event.garbageBody.id ,
+                    'pid': players[event.garbageBody.playerNumber].body.id });
+});
+
+playersEmitter.on('became garbage', function(event) {
+    sendToPlayersWhoSee(event.garbageBody.playersWhoSee, { 'bg': event.garbageBody.id, 'p': ceilPosition(event.garbageBody.position) });
+});
+
+playersEmitter.on('decoupled', function(event) {
+    var playersWhoSee = event.decoupledBodyA.inGameType == 'garbage' ?
+        event.decoupledBodyA.playersWhoSee : event.decoupledBodyB.playersWhoSee;
+    sendToPlayersWhoSee(playersWhoSee, {
+        "db1": event.decoupledBodyA.id,
+        "db2": event.decoupledBodyB.id });
+    //console.log(event);
+    //sendEverybody(event);
+});
 
 for (var i = 0; i < garbage.length; i++) {
     Matter.Events.on(garbage[i].body, 'sleepEnd', function(event) {
         var body = this;
-        garbageActive.push(body);
+        //if (body.inGameType == 'garbage') {
+            garbageActive.push(body);
+        //}
         /*console.log("right now there is " + garbageActive.length + " active garbage");
         console.log('garbage body id ' + body.id + " at " + this.position,
             'sleeping: ' + body.isSleeping + " woke up!");*/
@@ -781,11 +940,17 @@ for (var i = 0; i < garbage.length; i++) {
 
     Matter.Events.on(garbage[i].body, 'sleepStart', function(event) {
         var body = this;
-        garbageActive.splice(garbageActive.indexOf(body), 1);
+        //if (body.inGameType == 'garbage') {
+            garbageActive.splice(garbageActive.indexOf(body), 1);
+        //}
         /*console.log("right now there is " + garbageActive.length + " active garbage");
         console.log('garbage body id ' + body.id + " at " + this.position,
                     'sleeping: ' + body.isSleeping + " went to bed.");*/
     });
+}
+
+function ceilPosition(position) {
+    return { x: Math.ceil(position.x), y: Math.ceil(position.y)}
 }
 
 //main loop
@@ -812,7 +977,6 @@ setInterval(function() {
                     /*ghosts.splice(i, 1);*/
                     break;
                 case "garbage":
-
                     garbage[ghost.number].die(engine);
                     deleteProperly(ghost);
                     delete ghosts[i];
@@ -842,7 +1006,8 @@ setInterval(function() {
 
     for (var j = 0; j < players.length; ++j) {
         if (players[j]) {
-            tryToSend(createMessage(j), players[j]);
+            var message = createMessage(j);
+            if (!isEmpty(message)) tryToSend(createMessage(j), players[j]);
             /*try {
                 players[j].ws.send(createMessage(j));
             } catch (e) {
@@ -850,6 +1015,13 @@ setInterval(function() {
             }*/
         }
     }
+    players.forEach(function(player) {
+        if (Math.abs(player.previousPosition.x - player.body.position.x) > 1 ||
+                Math.abs(player.previousPosition.x - player.body.position.x) > 1) {
+            player.previousPosition.x = player.body.position.x;
+            player.previousPosition.y = player.body.position.y;
+        }
+    });
 }, 1000 / 60);
 
 //catches memory leaks

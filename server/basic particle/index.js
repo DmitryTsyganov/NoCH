@@ -13,7 +13,7 @@ var Engine = Matter.Engine,
     Body = Matter.Body,
     Composite = Matter.Composite;
 
-var basicParticle = function(position, engine, elem) {
+var basicParticle = function(position, engine, elem, emitter) {
     this.CHARGE_RADIUS = 5;
 
     //creating physics body for player
@@ -36,11 +36,15 @@ var basicParticle = function(position, engine, elem) {
 
     World.addBody(engine.world, this.body);
 
+    this.body.emitter = emitter;
+
     var self = this;
+    this.body.previousLocalPosition = { x: 0, y: 0 };
     this.body.playersWhoSee = [];
     this.body.superMutex = 0;
     this.body.chemicalBonds = 0;
     this.body.chemicalChildren = [];
+    this.body.intervalID = null;
 
     this.body.getFreeBonds = function() {
         return self.body.totalBonds - self.body.chemicalBonds;
@@ -96,7 +100,11 @@ basicParticle.prototype = {
     free: function(node, engine, breakConstraints) {
 
         if (node.typeTimeout) clearTimeout(node.typeTimeout);
-        if (node.intervalID) clearInterval(node.intervalID);
+        //for (var j = 0; j < node.intervalIDs.length; ++j) {
+        clearInterval(node.intervalID);
+        node.collisionFilter.mask = 0x0001;
+        //}
+        //node.intervalIDs = [];
         node.inGameType = "temporary undefined";
 
         if (node.constraint1) {
@@ -122,6 +130,8 @@ basicParticle.prototype = {
         }
 
         if (node.chemicalParent) {
+            node.emitter.emit('decoupled', { decoupledBodyA: node.chemicalParent,
+                                            decoupledBodyB: node });
             delete node.chemicalParent.chemicalChildren[
                 node.chemicalParent.chemicalChildren
                     .indexOf(node)];
@@ -147,9 +157,11 @@ basicParticle.prototype = {
         node.collisionFilter.group = 0;
         --node.chemicalBonds;
 
+        node.emitter.emit('became garbage', { garbageBody: node });
+        node.inGameType = "garbage";
         node.typeTimeout = setTimeout(function() {
             node.playerNumber = -1;
-            node.inGameType = "garbage";
+
         }, 1500);
     },
 
@@ -398,12 +410,14 @@ basicParticle.prototype = {
     },
 
     reconnectBond: function(child, engine) {
-        this.freeBondAngle.call({ body: child }, child.constraint2.chemicalAngle);
+        if (child.constraint2) {
+            this.freeBondAngle.call({body: child}, child.constraint2.chemicalAngle);
 
-        World.remove(engine.world, child.constraint1);
-        World.remove(engine.world, child.constraint2);
-        delete child["constraint1"];
-        delete child["constraint2"];
+            World.remove(engine.world, child.constraint1);
+            World.remove(engine.world, child.constraint2);
+            delete child["constraint1"];
+            delete child["constraint2"];
+        }
 
         var self = this;
 
@@ -491,6 +505,14 @@ basicParticle.prototype = {
             this.body.bondAngles[i].available = true;
         }
 
+        //TODO: figure it out
+        for (i = 0; i < this.body.chemicalChildren.length; ++i) {
+            if (this.body.chemicalChildren[i]) {
+                clearInterval(this.body.chemicalChildren[i].intervalID);
+            }
+        }
+        //this.body.intervalIDs = [];
+
         if (this.body.chemicalBonds) {
             this.correctBondAngles(engine);
         }
@@ -547,7 +569,11 @@ basicParticle.prototype = {
                 y: delta.y });
 
             if (i++ === N) {
+                //var id = self.body.intervalIDs.indexOf(this);
                 clearInterval(garbageBody.intervalID);
+                //console.log('before splice ' + garbageBody.intervalIDs.length);
+                //self.body.intervalIDs.splice(id);
+                //console.log('after splice ' + garbageBody.intervalIDs.length);
                 /*console.log('final:\tx = ' + garbageBody.position.x +
                  '\ny = ' + garbageBody.position.y);*/
 

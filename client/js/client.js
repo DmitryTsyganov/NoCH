@@ -5,7 +5,7 @@
     // WS_URL = 'ws://nochgame.cloudapp.net:8085';
 
     // Some test
-    function validateInputFields(inputField) {
+    /*function validateInputFields(inputField) {
         if (inputField.val() == "") {
             inputField.addClass('error__div');
             return false;
@@ -32,9 +32,9 @@
         $('#characteristic').show();
         Game.activePlayer = true;
     });
-
+*/
     var Noch = function(canvasId) {
-        this.activePlayer = false;
+        this.activePlayer = true/*false*/;
 
         this.canvas = document.getElementById(canvasId);
         var ctx = this.canvas.getContext('2d');
@@ -144,7 +144,6 @@
                         this.rescaleBack(point);
                     }
                     if (realPoint.y > 1.5 * gameSize.y) {
-                        console.log(1);
                         point.x = Math.random() * (gameSize.x + gameSize.y) - gameSize.y / 2;
                         point.y = -gameSize.y / 2;
                         this.rescaleBack(point);
@@ -340,7 +339,7 @@
     Noch.prototype = {
 
         drawBackground: function(ctx, gameSize ) {
-            if (freshData.inputData.player) {
+            if (players[freshData.selfID] && players[freshData.selfID].position) {
                 //var RESIZE_1 = 5;
                 //var RESIZE_2 = 2;
                 //var RESIZE_3 = 1;
@@ -351,12 +350,12 @@
                 //this.fillWithLines("y", "x", ctx, gameSize);
 
                 if (prevFlag == 1) {
-                    var deltaX = freshData.getCoefficient() * (freshData.inputData.player.x - previousX);
-                    var deltaY = freshData.getCoefficient() * (freshData.inputData.player.y - previousY);
+                    var deltaX = freshData.getCoefficient() * (players[freshData.selfID].position.x - previousX);
+                    var deltaY = freshData.getCoefficient() * (players[freshData.selfID].position.y - previousY);
                     for ( i = 0; i < this.numberOfClouds; ++i) {
                         // console.log(this.numberOfClouds);
-                        this.clouds[i].point.x -= deltaX  % gameSize.x;
-                        this.clouds[i].point.y -= deltaY  % gameSize.y;
+                        this.clouds[i].point.x -= deltaX % gameSize.x;
+                        this.clouds[i].point.y -= deltaY % gameSize.y;
                         this.clouds[i].move (this.clouds[i].point, this.clouds[i].speed,
                             this.clouds[i].vector, this.clouds[i].angle, CLOUD_TRAJECTORY);
                         this.clouds[i].checkCloud (this.clouds[i].point, this.clouds[i].image);
@@ -369,8 +368,8 @@
 
                 } else prevFlag = 1;
                 //console.log (freshData.coefficient, " ", freshData.targetCoefficient);
-                previousX = freshData.inputData.player.x;
-                previousY = freshData.inputData.player.y;
+                previousX = players[freshData.selfID].position.x;
+                previousY = players[freshData.selfID].position.y;
                 //scaleFlag = 0;
                 if (freshData.coefficient != freshData.targetCoefficient){
                     //if (scaleFlag) {
@@ -397,7 +396,7 @@
                     this['bObjects' + number][i] = new this.BackObject(gameSize, ctx, this['LEVEL_' + number],
                     i % this['backImageCount' + number], this['arrayOfImages' + number]);
                 this.choosePoint(this['bObjects' + number][i], i,  gameSize);
-                console.log(this['bObjects' + number][i].position);
+                //console.log(this['bObjects' + number][i].position);
                 ++this.imagesAddedTotal;
             }
             this['numberOfObjects' + number] += additionalObjects;
@@ -423,8 +422,8 @@
             for (var i = 1; i <= 3; ++i) {
                 this.addObject(i, gameSize, ctx);
             }
-            console.log("Images added " + this.imagesAddedTotal);
-            console.log("Images deleted " + this.imagesRemovedTotal);
+            //console.log("Images added " + this.imagesAddedTotal);
+            //console.log("Images deleted " + this.imagesRemovedTotal);
         },
 
         deleteObject: function(array, length, gameSize) {
@@ -444,8 +443,8 @@
                 this.deleteObject('bObjects' + i, 'numberOfObjects' + i, gameSize);
             }
             this.deleteObject('clouds', 'numberOfClouds', gameSize);
-            console.log("Images added " + this.imagesAddedTotal);
-            console.log("Images deleted " + this.imagesRemovedTotal);
+            //console.log("Images added " + this.imagesAddedTotal);
+            //console.log("Images deleted " + this.imagesRemovedTotal);
         },
 
         choosePoint: function (object, i, gameSize){
@@ -473,8 +472,8 @@
                     object.rescaleBack(object.point);
                     break;
             }
-            console.log("point x is " + object.point.x);
-            console.log("point x is " + object.point.y);
+            //console.log("point x is " + object.point.x);
+            //console.log("point x is " + object.point.y);
         },
 
         checkPoint: function (object, gameSize){
@@ -696,9 +695,9 @@
             if (freshData.targetCoefficient > freshData.coefficient) {
                 freshData.coefficient += 10;
             }
-            for (var key in garbageAll) {
+            /*for (var key in garbageAll) {
                 garbageAll[key].checkMovement();
-            }
+            }*/
 
         },
 
@@ -732,8 +731,8 @@
                         this.drawElement(ctx, pos.x, pos.y,
                             radius * freshData.getCoefficient(), "white", stuff);
                         this.addLetter(ctx, pos.x, pos.y, /*JSON.stringify({ x: pos.x +
-                             freshData.inputData.player.x, y: pos.y +
-                             freshData.inputData.player.y })*/stuff,
+                             players[freshData.selfID].position.x, y: pos.y +
+                             players[freshData.selfID].position.y })*/stuff,
                             radius * freshData.getCoefficient());
                     }
                 }
@@ -757,13 +756,57 @@
             }
         },
 
+        drawRedLines: function(ctx) {
+            for (var i = 0; i < bonds.length; ++i) {
+                ctx.beginPath();
+
+                var objA, objB;
+
+                if (players[bonds[i].idA]) {
+                    objA = freshData.toPlayerCS(players[bonds[i].idA].position);
+                } else if (garbageAll[bonds[i].idA]) {
+                    objA = freshData.toPlayerCS(garbageAll[bonds[i].idA].getPosition());
+                }
+                if (players[bonds[i].idB]) {
+                    objB = freshData.toPlayerCS(players[bonds[i].idB].position);
+                } else if (garbageAll[bonds[i].idB]) {
+                    objB = freshData.toPlayerCS(garbageAll[bonds[i].idB].getPosition());
+                }
+                //var objA = garbageAll[bonds[i].idA] || players[bonds[i].idA];
+                //var objB = garbageAll[bonds[i].idB] || players[bonds[i].idB];
+
+                //console.log(objA.position);
+                //console.log(objB.position);
+
+                if (objA && objB) {
+                    var pos1 = freshData.Scale(/*freshData.toPlayerCS(*/objA/*.position)*/);
+                    var pos2 = freshData.Scale(/*freshData.toPlayerCS(*/objB/*.position)*/);
+                    ctx.moveTo(pos1.x, pos1.y);
+                    ctx.lineTo(pos2.x, pos2.y);
+                    ctx.lineWidth = 5 * freshData.getCoefficient();
+
+                    ctx.strokeStyle = "red";
+                    ctx.stroke();
+                }
+            }
+        },
+
         drawGarbage: function(ctx) {
             for (var key in garbageAll) {
-                var pos = freshData.Scale({ x: garbageAll[key].position.x +
-                            Game.gameSize.x / 2 - freshData.inputData.player.x,
-                            y: garbageAll[key].position.y +
-                            Game.gameSize.y / 2 - freshData.inputData.player.y });
+                //console.log(garbageAll[key].playerID);
+                var pos = freshData.Scale(/*freshData.toPlayerCS(*/{ x: garbageAll[key].getPosition().x +
+                            Game.gameSize.x / 2 /*+ players[garbageAll[key].playerID].position.x*/ -
+                            players[freshData.selfID].position.x/*players[freshData.selfID].position.x*/,
+                            y: garbageAll[key].getPosition().y +
+                            Game.gameSize.y / 2 /*+ players[garbageAll[key].playerID].position.y*/ -
+                            players[freshData.selfID].position.y/*players[freshData.selfID].position.y*/ }/*)*/);
                 this.drawRedDot(ctx, pos);
+                //console.log(garbageAll[key].position);
+                /*console.log(garbageAll[key].playerID);
+                console.log(freshData.selfID);
+                console.log(players[freshData.selfID].position);*/
+                //console.log(garbageAll[key].element);
+                //console.log(pos);
                 this.addLetter(ctx, pos.x, pos.y, garbageAll[key].element, 10);
             }
         },
@@ -774,7 +817,8 @@
 
                 for (var i = 0; i < _players.length; i += 3) {
                     if (players[_players[i]]) {
-                        var pos = freshData.Scale({x: _players[i + 1], y: _players[i + 2]});
+                        var pos = {x: _players[i + 1], y: _players[i + 2]};
+                        pos = freshData.Scale(freshData.toPlayerCS(pos));
                         this.drawElement (ctx, pos.x, pos.y,
                             radiuses[players[_players[i]].element]
                             * freshData.getCoefficient(),
@@ -788,6 +832,25 @@
                             players[_players[i]].color, _players[i], ctx);
                     }
                 }
+            }
+        },
+
+        drawRedPlayers: function(ctx) {
+            for (var key in players) {
+                var pos = freshData.Scale(freshData.toPlayerCS(players[key].position));
+                this.drawElement (ctx, pos.x, pos.y,
+                    radiuses[players[key].element]
+                    * freshData.getCoefficient(),
+                    players[key].color, players[key].element);
+                this.addLetter (ctx, pos.x, pos.y,
+                    players[key].element,
+                    radiuses[players[key].element]
+                    * freshData.getCoefficient());
+                //this.indicatorProton.draw (pos.x, pos.y,
+                // radiuses[players[key].element], ctx);
+                this.drawIndicatorNeutron (pos.x, pos.y,
+                    radiuses[players[key].element],
+                    players[key].color, key, ctx);
             }
         },
 
@@ -858,7 +921,7 @@
 
             var lineCoords = { x: 0, y: 0 };
 
-            for (var i = squareSide - freshData.inputData.player[mainAxis] *
+            for (var i = squareSide - players[freshData.selfID].position[mainAxis] *
                 freshData.targetCoefficient / 1000 % squareSide; i < gameSize[mainAxis]; i += squareSide) {
 
                 lineCoords[mainAxis] = i;
@@ -881,6 +944,7 @@
             this.drawBackground(ctx, gameSize);
 
             this.drawBonds(ctx);
+            this.drawRedLines(ctx);
             this.drawStuff("H", 26, ctx);
             this.drawStuff("C", 40, ctx);
             this.drawStuff("He", 18, ctx);
@@ -893,7 +957,8 @@
             this.drawStuff("p", 9, ctx);
             this.drawStuff("n", 9, ctx);
             this.drawStuff("N", 31, ctx);
-            this.drawPlayers(ctx);
+            //this.drawPlayers(ctx);
+            this.drawRedPlayers(ctx);
             this.drawBorder(ctx);
             this.drawGarbage(ctx);
         }
@@ -901,11 +966,24 @@
 
     var players = {};
     var garbageAll = {};
-    var Garbage = function(mass, position, element) {
+    var bonds = [];
+
+    var Garbage = function(/*mass,*/ position, element, /*type,*/ playerID) {
         this.force = { x: 0, y: 0 };
-        this.mass = mass;
+        /*this.type = type;
+        if (type == 'playerPart') {*/
+        if (playerID) {
+            this.playerID = playerID;
+            this.type = 'playerPart';
+        } else {
+            this.playerID = freshData.selfID;
+            this.type = 'garbage';
+        }
+        //}
+        //this.mass = mass;
         this.STEPS_TOTAL = 20;
-        this.position = this.positionPrev = position;
+        this.setPosition(position);
+        //this.position = this.positionPrev = position;
         this.element = element;
         this.isInMotion = false;
         this.stepCounter = 0;
@@ -913,11 +991,36 @@
         this.speed = {};
     };
     Garbage.prototype = {
-        setInMotion: function(force, speed, position) {
-            this.force = force;
-            this.position = position;
-            this.positionPrev.x = /*position.x -*/ speed.x;
-            this.positionPrev.y = /*position.y - */speed.y;
+        getPosition: function() {
+            switch (this.type) {
+                case 'garbage':
+                    return this.position;
+                case 'playerPart':
+                    return { x: this.position.x + players[this.playerID]
+                                .position.x /*+ Game.gameSize.x / 2*/,
+                            y: this.position.y + players[this.playerID]
+                                .position.y /*+ Game.gameSize.y / 2*/ };
+            }
+        },
+        setPosition: function(position) {
+            switch (this.type) {
+                case 'garbage':
+                    this.position = position;
+                    break;
+                case 'playerPart':
+                    this.position = {
+                        x: position.x - players[this.playerID].position.x,
+                        y: position.y - players[this.playerID].position.y
+                    };
+                    break;
+            }
+        },
+
+        setInMotion: function(/*force,*/ /*speed,*/ position) {
+            //this.force = force;
+            this.setPosition(position);
+            //this.positionPrev.x = /*position.x -*/ speed.x;
+            //this.positionPrev.y = /*position.y - */speed.y;
             //this.positionPrev = this.position;
             this.stepCounter = 0;
             //this.speed = speed;
@@ -956,17 +1059,18 @@
             this.speed.y = (speedPrevY * frictionAir * correction) +
                             (this.force.y / this.mass) * deltaTimeSquared;
 
-            if (!this.stepCounter) console.log('velocity x ' + this.speed.x + ', y ' + this.speed.y);
+            //if (!this.stepCounter) console.log('velocity x ' + this.speed.x + ', y ' + this.speed.y);
 
             this.positionPrev.x = this.position.x;
             this.positionPrev.y = this.position.y;
             this.position.x += this.speed.x;
             this.position.y += this.speed.y;
-            console.log(this.position);
+            //console.log(this.position);
         }
     };
 
     var freshData = {
+        selfID: -1,
         previousRadius: 50,
         coefficient: 1000,
         targetCoefficient: 1000,
@@ -975,19 +1079,41 @@
         outputData: { "mouseX": 0, "mouseY": 0 },
         updateInput: function(data) {
             var newData = JSON.parse(data);
-            if ("player" in newData) {
+            if ("players" in newData) {
                 this.inputData = newData;
+                //console.log(newData.player.x + ' and ' + newData.player.y);
+                for (var i = 0; i < newData.players.length; i += 3) {
+                    players[newData.players[i]].position.x = newData.players[i + 1];
+                    players[newData.players[i]].position.y = newData.players[i + 2];
+                }
+                /*var playerIndex = newData.players.indexOf(this.selfID);
+                if (playerIndex != -1) {
+                    var pos = {x: newData.players[playerIndex + 1], y: newData.players[playerIndex + 2]};
+                    //var pos1 = freshData.toPlayerCS(pos);
+                    players[this.selfID].position.x = pos.x;
+                    players[this.selfID].position.y = pos.y;*/
+                    //newData[this.selfID].position.x = newData.player.x;
+                    //players[this.selfID].position.y = newData.player.y;
+                //}
             }
             if ("coefficient" in newData) {
                 var dicimalPlacesNumber = 2;
                 this.targetCoefficient = (newData.coefficient).toFixed(
                         dicimalPlacesNumber) * this.coefficientScale;
-                console.log(this.targetCoefficient);
+                //console.log(this.targetCoefficient);
             }
-            if ("c" in newData && "e" in newData) {
+            if ("sid" in newData) {
+                freshData.selfID = newData.sid;
+                players[newData.sid] = { "color": newData.c,
+                    "element": newData.e,
+                    "angle" : 2 * Math.PI,
+                    "position": {}};
+            }
+            if ("id" in newData && "c" in newData && "e" in newData) {
                 players[newData.id] = { "color": newData.c,
                                         "element": newData.e,
-                                        "angle" : 2 * Math.PI};
+                                        "angle" : 2 * Math.PI,
+                                        "position": {}};
             }
             if ('shn' in newData) {
                 players[newData.shn]["angle"] = 0;
@@ -1000,6 +1126,13 @@
                 players[newData.id]["element"] = newData.ne;
             }
             if ("dp" in newData) {
+                players[newData.dp].playerID = freshData.selfID;
+                garbageAll[newData.dp] = players[newData.dp];
+                for (var key in garbageAll) {
+                    if (garbageAll[key].playerID == newData.dp) {
+                        garbageAll[key].playerID = freshData.selfID;
+                    }
+                }
                 delete players[newData.dp];
             }
             if ("dead" in newData) {
@@ -1007,22 +1140,66 @@
                 //console.log("you're dead lol");
             }
             if ("ng" in newData) {
-                garbageAll[newData.ng] = new Garbage(newData.ms, newData.p, newData.e);
+                garbageAll[newData.ng] = new Garbage(/*newData.ms,*/ newData.p, newData.e, newData.id/*, 'garbage'*/);
             }
+            /*if ("npp" in newData) {
+                garbageAll[newData.ng] = new Garbage(/!*newData.ms,*!/ newData.p, newData.e, /!*'playerPart',*!/ newData.id);
+            }*/
             if ("dg" in newData) {
                 delete garbageAll[newData.dg];
             }
+            if ('bp' in newData) {
+                garbageAll[newData.bp].playerID = newData.pid;
+                garbageAll[newData.bp].type = 'playerPart';
+            }
+            if ("bg" in newData) {
+                garbageAll[newData.bg].playerID = freshData.selfID;
+                garbageAll[newData.bg].type = 'garbage';
+                garbageAll[newData.bg].setPosition(newData.p);
+            }
+            if ("b1" in newData) {
+                //console.log(2323);
+                bonds.push({ idA: newData.b1, idB: newData.b2 });
+            }
+            if ("db1" in newData) {
+                //console.log(bonds);
+                for (var i = 0; i < bonds.length; ++i) {
+                    var id;
+                    if (bonds[i].idA == newData.db1 && bonds[i].idB == newData.db2 ||
+                        bonds[i].idA == newData.db2 && bonds[i].idB == newData.db1) {
+                        id = i;
+                    }
+                }
+                bonds.splice(id, 1);
+                //console.log(bonds);
+                /*var optionA = bonds.indexOf({ idA: newData.db1, idB: newData.db2 });
+                var optionB = bonds.indexOf({ idA: newData.db2, idB: newData.db1 });
+                console.log('candidate 1 ' + { idA: newData.db1, idB: newData.db2 });
+                console.log('candidate 2 ' + { idA: newData.db2, idB: newData.db1 });
+                console.log('bonds are ' + newData.db1 + ' and ' + newData.db2);
+                var bondID = (optionA + 1) ? optionB : optionA;
+                console.log(optionA);
+                console.log(optionB);
+                console.log(bonds);
+                console.log('id is ' + bondID);
+                //bonds.splice(bondID);
+                delete bonds[bondID];*/
+            }
             if ("m" in newData) {
-                garbageAll[newData.m].setInMotion(newData.f,
-                                                    { x: newData.v.x/* * 1.18*/,
-                                                    y: newData.v.y/* * 1.18*/},
+                garbageAll[newData.m].setInMotion(/*newData.f,*/
+                                                    /*{ x: newData.v.x/!* * 1.18*!/,
+                                                    y: newData.v.y/!* * 1.18*!/},*/
                                                     newData.p);
-                console.log("got x " + newData.p.x + ", y " + newData.p.y);
+                //console.log("got x " + newData.p.x + ", y " + newData.p.y);
             }
         },
         updateOutput: function(mouseX, mouseY) {
             this.outputData.mouseX = mouseX;
             this.outputData.mouseY = mouseY;
+        },
+        toPlayerCS: function(position) {
+            return { x: position.x - players[this.selfID].position.x + Game.gameSize.x / 2,
+                    y: position.y - players[this.selfID].position.y + Game.gameSize.y / 2};
         },
         getCoefficient: function() {
             return this.coefficient / this.coefficientScale;
@@ -1072,11 +1249,11 @@
     //getting data
     socket.onmessage = function(event) {
         var newData = JSON.parse(event.data);
-        if (!("player" in newData)) {
-            //console.log('got message ' + event.data);
+        if (true/*("db1" in newData)*/) {
+            console.log('got message ' + event.data);
         }
         freshData.updateInput(event.data);
-        // console.log(freshData.inputData.player);
+        // console.log(players[freshData.selfID].position);
         
         //updateInput(event.data);
     };

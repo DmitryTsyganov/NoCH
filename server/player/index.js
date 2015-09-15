@@ -13,12 +13,12 @@ var Engine = Matter.Engine,
     Body = Matter.Body,
     Composite = Matter.Composite;
 
-var Player = function(ws, position, engine, elem) {
+var Player = function(ws, position, engine, elem, emitter) {
 
-    basicParticle.call(this, position, engine, elem);
+    basicParticle.call(this, position, engine, elem, emitter);
 
     this.ws = ws;
-    console.log(this.body);
+    //console.log(this.body);
 
     //this.body.collisionFilter.group = Body.nextGroup(true);
 
