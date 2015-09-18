@@ -333,7 +333,9 @@
         "Li": 72,
         "He": 18,
         "C": 40,
-        "H": 26
+        "H": 26,
+        "p": 10,
+        "n": 10
     };
 
     Noch.prototype = {
@@ -410,14 +412,13 @@
                     i % this.cloudsCount, this.arrayOfClouds);
                 this.choosePoint(this.clouds[i], i, gameSize);
                 ++this.imagesAddedTotal;
-                //console.log (this.clouds[i]);
+                    //console.log (this.clouds[i]);
             }
 
             //this.numberOfClouds = i;
             this.numberOfClouds += additionalClouds;
         },
 
-        //TODO: apply KISS to everything
         addObjects: function (relativeCoef, gameSize, ctx) {
             for (var i = 1; i <= 3; ++i) {
                 this.addObject(i, gameSize, ctx);
@@ -711,10 +712,11 @@
             ctx.fill();
         },
 
-        drawRedDot: function(ctx, position) {
+        drawRedDot: function(ctx, position, element) {
+
             ctx.beginPath();
-            ctx.arc(position.x, position.y, 10, 0, 2 * Math.PI);
-            ctx.fillStyle = "red";
+            ctx.arc(position.x, position.y, radiuses[element], 0, 2 * Math.PI);
+            ctx.fillStyle = "black";
             ctx.fill();
         },
 
@@ -785,8 +787,11 @@
                     ctx.lineTo(pos2.x, pos2.y);
                     ctx.lineWidth = 5 * freshData.getCoefficient();
 
-                    ctx.strokeStyle = "red";
+                    ctx.strokeStyle = "white";
                     ctx.stroke();
+                } else {
+                    bonds.splice(i, 1);
+                    console.log('bond failed ' + bonds[i]);
                 }
             }
         },
@@ -800,14 +805,17 @@
                             y: garbageAll[key].getPosition().y +
                             Game.gameSize.y / 2 /*+ players[garbageAll[key].playerID].position.y*/ -
                             players[freshData.selfID].position.y/*players[freshData.selfID].position.y*/ }/*)*/);
-                this.drawRedDot(ctx, pos);
+                //this.drawRedDot(ctx, pos, garbageAll[key].element);
+                this.drawElement(ctx, pos.x, pos.y,
+                    radiuses[garbageAll[key].element] * freshData.getCoefficient(), "white", garbageAll[key].element);
                 //console.log(garbageAll[key].position);
                 /*console.log(garbageAll[key].playerID);
                 console.log(freshData.selfID);
                 console.log(players[freshData.selfID].position);*/
                 //console.log(garbageAll[key].element);
                 //console.log(pos);
-                this.addLetter(ctx, pos.x, pos.y, garbageAll[key].element, 10);
+                this.addLetter(ctx, pos.x, pos.y, garbageAll[key].element,
+                    radiuses[garbageAll[key].element] * freshData.getCoefficient());
             }
         },
 
@@ -854,6 +862,42 @@
             }
         },
 
+        drawRedBorder: function(ctx) {
+            for (var i = 0; i < border.length; ++i) {
+                var width = 20 * freshData.getCoefficient();
+                var height = 100 * freshData.getCoefficient();
+
+                var half = 0.5;
+
+                ctx.beginPath();
+                ctx.save();
+
+                var angle = border[i].angle;
+
+                var pos = freshData.Scale(freshData.toPlayerCS(border[i].position));
+
+                ctx.translate(pos.x, pos.y);
+                ctx.rotate(angle);
+
+                ctx.rect(-width * half, - height * half, width * half/*30*/, height);
+                ctx.strokeStyle = 'White';
+                ctx.lineWidth = 4 * freshData.getCoefficient();
+
+                var grd = ctx.createLinearGradient(-width * half, - height * half,
+                    width * half/* 30*/, -height * half);
+
+                grd.addColorStop(0.35, 'black');
+                //grd.addColorStop(0.45, "rgba(0, 0, 0, 1)");
+                grd.addColorStop(1, "transparent");
+
+                ctx.fillStyle = grd;
+                //temporary
+                //ctx.fill();
+
+                ctx.stroke();
+                ctx.restore();
+            }
+        },
 
         drawBorder: function(ctx) {
             if (freshData.inputData.border) {
@@ -943,9 +987,9 @@
 
             this.drawBackground(ctx, gameSize);
 
-            this.drawBonds(ctx);
+            //this.drawBonds(ctx);
             this.drawRedLines(ctx);
-            this.drawStuff("H", 26, ctx);
+            /*this.drawStuff("H", 26, ctx);
             this.drawStuff("C", 40, ctx);
             this.drawStuff("He", 18, ctx);
             this.drawStuff("Li", 72, ctx);
@@ -956,16 +1000,18 @@
             this.drawStuff("F", 36, ctx);
             this.drawStuff("p", 9, ctx);
             this.drawStuff("n", 9, ctx);
-            this.drawStuff("N", 31, ctx);
+            this.drawStuff("N", 31, ctx);*/
             //this.drawPlayers(ctx);
             this.drawRedPlayers(ctx);
-            this.drawBorder(ctx);
+            //this.drawBorder(ctx);
+            this.drawRedBorder(ctx);
             this.drawGarbage(ctx);
         }
     };
 
     var players = {};
     var garbageAll = {};
+    var border = [];
     var bonds = [];
 
     var Garbage = function(/*mass,*/ position, element, /*type,*/ playerID) {
@@ -1126,11 +1172,14 @@
                 players[newData.id]["element"] = newData.ne;
             }
             if ("dp" in newData) {
+                console.log('player died ' + newData.dp);
                 players[newData.dp].playerID = freshData.selfID;
-                garbageAll[newData.dp] = players[newData.dp];
+                /*garbageAll[newData.dp] = new Garbage(players[newData.dp].position,
+                                                    players[newData.dp].element);*/
                 for (var key in garbageAll) {
                     if (garbageAll[key].playerID == newData.dp) {
                         garbageAll[key].playerID = freshData.selfID;
+                        garbageAll[key].type = 'garbage';
                     }
                 }
                 delete players[newData.dp];
@@ -1139,9 +1188,18 @@
                 alert("you're dead lol");
                 //console.log("you're dead lol");
             }
+            if ("che" in newData) {
+                var object = garbageAll[newData.che] ? garbageAll[newData.che] : players[newData.che];
+                object.element = newData.e;
+            }
             if ("ng" in newData) {
+                //console.log('new garbage is ' + newData.ng);
                 garbageAll[newData.ng] = new Garbage(/*newData.ms,*/ newData.p, newData.e, newData.id/*, 'garbage'*/);
             }
+            if ("nB" in newData) {
+                border.push({ position: newData.p, angle: newData.a });
+            }
+
             /*if ("npp" in newData) {
                 garbageAll[newData.ng] = new Garbage(/!*newData.ms,*!/ newData.p, newData.e, /!*'playerPart',*!/ newData.id);
             }*/
@@ -1149,28 +1207,29 @@
                 delete garbageAll[newData.dg];
             }
             if ('bp' in newData) {
-                garbageAll[newData.bp].playerID = newData.pid;
                 garbageAll[newData.bp].type = 'playerPart';
+                garbageAll[newData.bp].playerID = newData.pid;
             }
             if ("bg" in newData) {
-                garbageAll[newData.bg].playerID = freshData.selfID;
-                garbageAll[newData.bg].type = 'garbage';
-                garbageAll[newData.bg].setPosition(newData.p);
+                if (garbageAll[newData.bg]) {
+                    garbageAll[newData.bg].playerID = freshData.selfID;
+                    garbageAll[newData.bg].type = 'garbage';
+                    garbageAll[newData.bg].setPosition(newData.p);
+                }
             }
             if ("b1" in newData) {
-                //console.log(2323);
                 bonds.push({ idA: newData.b1, idB: newData.b2 });
             }
             if ("db1" in newData) {
                 //console.log(bonds);
+                var id = -1;
                 for (var i = 0; i < bonds.length; ++i) {
-                    var id;
                     if (bonds[i].idA == newData.db1 && bonds[i].idB == newData.db2 ||
                         bonds[i].idA == newData.db2 && bonds[i].idB == newData.db1) {
                         id = i;
                     }
                 }
-                bonds.splice(id, 1);
+                if (id != -1) bonds.splice(id, 1);
                 //console.log(bonds);
                 /*var optionA = bonds.indexOf({ idA: newData.db1, idB: newData.db2 });
                 var optionB = bonds.indexOf({ idA: newData.db2, idB: newData.db1 });
@@ -1184,6 +1243,11 @@
                 console.log('id is ' + bondID);
                 //bonds.splice(bondID);
                 delete bonds[bondID];*/
+            }
+            if ('gba' in newData) {
+                for (var i = 0; i < newData.gba.length; i += 3) {
+                    garbageAll[newData.gba[i]].setPosition({ x: newData.gba[i + 1], y: newData.gba[i + 2]});
+                }
             }
             if ("m" in newData) {
                 garbageAll[newData.m].setInMotion(/*newData.f,*/
@@ -1250,7 +1314,7 @@
     socket.onmessage = function(event) {
         var newData = JSON.parse(event.data);
         if (true/*("db1" in newData)*/) {
-            console.log('got message ' + event.data);
+            //console.log('got message ' + event.data);
         }
         freshData.updateInput(event.data);
         // console.log(players[freshData.selfID].position);
@@ -1317,7 +1381,6 @@
 
         freshData.updateOutput(Game.gameSize.x,
                                Game.gameSize.y);
-
         Game.start();
     };
 

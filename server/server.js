@@ -80,27 +80,28 @@ webSocketServer.on('connection', function(ws) {
     var colors = ["green", "blue", "yellow", "purple", "orange"];
     player.color = colors[Math.ceil(Math.random() * 4)];
 
-    for (var i = 0; i < players.length; ++i) {
-        if (players[i]) {
-            if (id == i) {
-                player.ws.send(JSON.stringify({ "sid": players[i].body.id,
+    player.ws.send(JSON.stringify({
+        "sid": player.body.id,
+        "c": player.color,
+        "e": player.body.element}));
+
+    player.isReady = true;
+
+    for (i = 0; i < players.length; ++i) {
+        if (players[i] && id != i) {
+            try {
+                players[i].ws.send(JSON.stringify({
+                    "id": player.body.id,
+                    "c": player.color,
+                    "e": player.body.element
+                }));
+                player.ws.send(JSON.stringify({
+                    "id": players[i].body.id,
                     "c": players[i].color,
-                    "e": players[i].body.element}));
-            } else {
-                try {
-                    players[i].ws.send(JSON.stringify({
-                        "id": player.body.id,
-                        "c": player.color,
-                        "e": player.body.element
-                    }));
-                    player.ws.send(JSON.stringify({
-                        "id": players[i].body.id,
-                        "c": players[i].color,
-                        "e": players[i].body.element
-                    }));
-                } catch (e) {
-                    console.log('Caught ' + e.name + ': ' + e.message);
-                }
+                    "e": players[i].body.element
+                }));
+            } catch (e) {
+                console.log('Caught ' + e.name + ': ' + e.message);
             }
         }
     }
@@ -357,8 +358,8 @@ function createBond(playerBody, garbageBody) {
 
     ++playerBody.chemicalBonds;
     ++garbageBody.chemicalBonds;
-    ++playerBody.superMutex;
-    ++garbageBody.superMutex;
+    /*++playerBody.superMutex;
+    ++garbageBody.superMutex;*/
 
     link(garbageBody, playerBody/*, constraintA, constraintB, angle1, angle2*/);
 
@@ -369,7 +370,6 @@ function createBond(playerBody, garbageBody) {
     //console.log("mass = " + getPlayer(playerBody).body.realMass);
     getPlayer(playerBody).recalculateMass();
     getMainObject(garbageBody).markAsPlayer(playerBody);
-    playersEmitter.emit('became playerPart', { garbageBody: garbageBody });
     getMainObject(playerBody).connectBody(garbageBody, finalCreateBond);
 }
 
@@ -418,8 +418,8 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
     /*getMainObject(playerBody).unmuteBranch();
     getMainObject(garbageBody).unmuteAll();*/
     garbageBody.collisionFilter.mask = 0x0001;
-    --playerBody.superMutex;
-    --garbageBody.superMutex;
+    /*--playerBody.superMutex;
+    --garbageBody.superMutex;*/
 
     playersEmitter.emit('bond created', { bc1: playerBody, bc2: garbageBody });
 
@@ -472,7 +472,8 @@ function connectPlayers(bodyA, bodyB) {
 
     getPlayer(garbageBody).lose(engine, players, garbage, playerBody);
     getMainObject(garbageBody).reverse();
-    sendEverybody({ "dp": deletedId });
+    //sendEverybody({ "dp": deletedId });
+    playersEmitter.emit('player died', { player: getPlayer(garbageBody) });
     createBond(playerBody, garbageBody);
 
     //testing
@@ -484,17 +485,21 @@ function connectPlayers(bodyA, bodyB) {
 }
 
 function collideWithProton(elementBody, protonBody) {
-    if (!elementBody.superMutex) {
+    /*if (!elementBody.superMutex) {*/
 
         getMainObject(elementBody).changeCharge(1, engine, freeProtons);
         sendEverybody({"id": elementBody.id, "ne": elementBody.element});
+        playersEmitter.emit('particle died', { id: protonBody.id,
+            playersWhoSee: protonBody.playersWhoSee });
         prepareToDelete(protonBody);
-    }
+    //}
 }
 
 function collideWithNeutron(elementBody, neutronBody) {
     if (Math.sqrt(neutronBody.velocity.x * neutronBody.velocity.x +
             neutronBody.velocity.y * neutronBody.velocity.y) < 7) {
+        playersEmitter.emit('particle died', { id: neutronBody.id,
+            playersWhoSee: neutronBody.playersWhoSee });
         prepareToDelete(neutronBody);
         ++elementBody.mass;
     }
@@ -507,6 +512,8 @@ function collideWithBorder(body) {
         prepareToDelete(body);
     } else {
         prepareToDelete(body);
+        playersEmitter.emit('particle died', { id: body.id,
+            playersWhoSee: body.playersWhoSee });
     }
 }
 
@@ -516,12 +523,12 @@ function collideWithGarbage(playerBody, garbageBody) {
     } else if (playerBody.inGameType  == "playerPart"){
         var momentum = calculateMomentum(playerBody, garbageBody);
         //console.log(momentum);
-        if (!playerBody.superMutex) {
+        /*if (!playerBody.superMutex) {*/
             getMainObject(playerBody).checkDecoupling(momentum, engine);
-        }
-        if (!garbageBody.superMutex) {
+        //}
+        /*if (!garbageBody.superMutex) {*/
             getMainObject(garbageBody).checkDecoupling(momentum, engine);
-        }
+        //}
     }
 }
 
@@ -531,12 +538,12 @@ function collidePVP(playerBodyA, playerBodyB) {
         connectPlayers(playerBodyA, playerBodyB);
     } else {
         var momentum = calculateMomentum(playerBodyA, playerBodyB);
-        if (!playerBodyA.superMutex) {
+        //if (!playerBodyA.superMutex) {
             getMainObject(playerBodyA).checkDecoupling(momentum, engine);
-        }
-        if (!playerBodyB.superMutex) {
+        //}
+        //if (!playerBodyB.superMutex) {
             getMainObject(playerBodyB).checkDecoupling(momentum, engine);
-        }
+        //}
     }
 }
 
@@ -667,6 +674,7 @@ function createFullBorder(radius) {
         var borderPart = { body: borderBody };
         borderBody.circleRadius = BORDER_PART_LENGTH * 2;
         borderBody.inGameType = "Border";
+        borderBody.playersWhoSee = [];
 
         World.addBody(engine.world, borderBody);
         border.push(borderPart);
@@ -690,7 +698,8 @@ function tryToSend(message, player) {
     try {
         player.ws.send(JSON.stringify(message));
     } catch(e) {
-        console.log('Unable to send ' + message + ' to player number ' + player.id);
+        console.log('Unable to send ' + message + ' to player');
+        delete players[players.indexOf(player)]; //he is dead
     }
 }
 
@@ -714,33 +723,34 @@ function deleteProperly(body) {
         clearTimeout(body.timerId2);
     }
 
+    var activeIndex = garbageActive.indexOf(body);
+    if (activeIndex != -1) garbageActive.splice(activeIndex);
     World.remove(engine.world, body);
     delete getArray(body)[body.number];
 }
 
 function checkGarbageVisibility() {
-    //console.log(1);
-    var legitGarbage = garbage.filter(function(obj) {
-       return obj;
+    var objects = garbage.concat(border).concat(freeProtons);
+    objects = objects.filter(function(obj) {
+        return obj;
     });
-    for (var i = 0; i < legitGarbage.length; ++i) {
-        //console.log(2);
+    for (var i = 0; i < objects.length; ++i) {
         for (var j = 0; j < players.length; ++j) {
-            //console.log(3);
-            if (players[j] && inScreen.call(players[j], legitGarbage[i], 500) &&
-                legitGarbage[i].body.playersWhoSee.indexOf(players[j].body.playerNumber) == -1) {
-                /*legitGarbage[i].body.playersWhoSee.push(j);
+
+            if (players[j] && players[j].isReady && inScreen.call(players[j], objects[i], 500) &&
+                objects[i].body.playersWhoSee.indexOf(players[j].body.playerNumber) == -1) {
+                /*objects[i].body.playersWhoSee.push(j);
 
                 tryToSend({
-                    "ng": legitGarbage[i].body.id,
-                    "p": legitGarbage[i].body.position,
-                    "e": legitGarbage[i].body.element,
-                    "ms": legitGarbage[i].body.mass }, players[j]);*/
+                    "ng": objects[i].body.id,
+                    "p": objects[i].body.position,
+                    "e": objects[i].body.element,
+                    "ms": objects[i].body.mass }, players[j]);*/
 
-                addPlayerWhoSee(legitGarbage[i], j);
+                addPlayerWhoSee(objects[i], j);
 
-                if (legitGarbage[i].body.constraint1) {
-                    var secondBody = legitGarbage[i].body.constraint1.bodyA;
+                if (objects[i].body.inGameType != "Border" && objects[i].body.constraint1) {
+                    var secondBody = objects[i].body.constraint1.bodyA;
                     addPlayerWhoSee(getMainObject(secondBody), j);
                     /*tryToSend({
                         "ng": secondBody.id,
@@ -748,42 +758,40 @@ function checkGarbageVisibility() {
                         "e": secondBody.element/!*,
                         "ms": secondBody.mass*!/ }, players[j]);*/
                     tryToSend({
-                        "b1": legitGarbage[i].body.id,
+                        "b1": objects[i].body.id,
                         "b2": secondBody.id }, players[j]);
-                    console.log("we send it!");
                 }
 
                 //tryToSend(response, players[j]);
                 /*try {
                     players[j].ws.send(JSON.stringify({
-                        "ng": legitGarbage[i].body.id,
-                        "p": legitGarbage[i].body.position,
-                        "e": legitGarbage[i].body.element,
-                        "ms": legitGarbage[i].body.mass}));
+                        "ng": objects[i].body.id,
+                        "p": objects[i].body.position,
+                        "e": objects[i].body.element,
+                        "ms": objects[i].body.mass}));
                 } catch (e) {
                     console.log('Caught ' + e.name + ': ' + e.message);
                 }*/
             }
         }
-        var playersWhoSee = legitGarbage[i].body.playersWhoSee;
+        var playersWhoSee = objects[i].body.playersWhoSee;
         for (j = 0; j < playersWhoSee.length; ++j) {
-            //console.log(4);
 
             if (!players[playersWhoSee[j]]) {
                 playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
-            } else if (!inScreen.call(players[playersWhoSee[j]], legitGarbage[i], 500) &&
-                    (!legitGarbage[i].body.chemicalParent || inScreen.call(players[playersWhoSee[j]],
-                        getMainObject(legitGarbage[i].body.chemicalParent), 500))) {
-                tryToSend({
-                    "dg": legitGarbage[i].body.id }, players[playersWhoSee[j]]);
-                if (legitGarbage[i].body.chemicalParent) tryToSend({
-                    "dg": legitGarbage[i].body.chemicalParent.id }, players[playersWhoSee[j]]);
+            } else if (!inScreen.call(players[playersWhoSee[j]], objects[i], 500) &&
+                    (!objects[i].body.chemicalParent || inScreen.call(players[playersWhoSee[j]],
+                        getMainObject(objects[i].body.chemicalParent), 500))) {
+                var message = { "dg": objects[i].body.id };
+                tryToSend(message, players[playersWhoSee[j]]);
+                if (objects[i].body.chemicalParent) tryToSend({
+                    "dg": objects[i].body.chemicalParent.id }, players[playersWhoSee[j]]);
                 /*try {
                     /!*console.log(j);
                     console.log(playersWhoSee[j]);
                     console.log("sending dg to " + players[playersWhoSee[j]]);*!/
                     players[playersWhoSee[j]].ws.send(JSON.stringify({
-                        "dg": legitGarbage[i].body.id }));
+                        "dg": objects[i].body.id }));
                 } catch (e) {
                     console.log('Caught ' + e.name + ': ' + e.message);
                 }*/
@@ -803,24 +811,74 @@ function isEmpty(obj) {
 }
 
 function updateActiveGarbage() {
+    var realPlayers = players.filter(function(player) {
+        return player;
+    });
+
+    var particlesActive = garbageActive.concat(freeProtons.filter(function(particle) {
+        return particle;
+    }).map(function(particle) {
+        return particle.body;
+    }));
+
+    for (var i = 0; i < realPlayers.length; ++i) {
+        var garbageToSend = [];
+        var playerIndex = players.indexOf(realPlayers[i]);
+        for (var j = 0; j < particlesActive.length; ++j) {
+            var realPlayerIndex = particlesActive[j].playersWhoSee.indexOf(i);
+            if (realPlayerIndex != -1) {
+                var position = null;
+                switch (particlesActive[j].inGameType) {
+                    case 'garbage':
+                    case 'p':
+                    case 'n':
+                        position = particlesActive[j].position;
+                        break;
+                    case 'playerPart':
+                        var newLocalPosition = { x: particlesActive[j].position.x -
+                        players[particlesActive[j].playerNumber].body.position.x,
+                            y: particlesActive[j].position.y -
+                            players[particlesActive[j].playerNumber].body.position.y};
+                        if (Math.abs(newLocalPosition.x - particlesActive[j].previousLocalPosition.x) > 1 ||
+                            Math.abs(newLocalPosition.y - particlesActive[j].previousLocalPosition.y) > 1 ) {
+                            position = particlesActive[j].position;
+                        }
+                        break;
+                }
+                if (position) {
+                    position = ceilPosition(position);
+                    garbageToSend.push(particlesActive[j].id);
+                    garbageToSend.push(position.x);
+                    garbageToSend.push(position.y);
+                }
+            }
+        }
+        if (garbageToSend.length) tryToSend({ 'gba': garbageToSend }, players[playerIndex]);
+    }
+}
+
+/*
+function updateActiveGarbage() {
     for (var i = 0; i < garbageActive.length; ++i) {
         var playersWhoSee = garbageActive[i].playersWhoSee;
         for (var j = 0; j < playersWhoSee.length; ++j) {
-            /*console.log("sending x " + garbageActive[i].position.x +
+            /!*console.log("sending x " + garbageActive[i].position.x +
                         ", y " + garbageActive[i].position.y);
             console.log("velocity x is " + garbageActive[i].velocity.x +
                         ", y " + garbageActive[i].velocity.y);
-            console.log("frictionAir " + garbageActive[i].frictionAir);*/
+            console.log("frictionAir " + garbageActive[i].frictionAir);*!/
             var position = null;
             switch (garbageActive[i].inGameType) {
                 case 'garbage':
                     position = garbageActive[i].position;
                     break;
                 case 'playerPart':
-                    var newLocalPosition = { x: garbageActive[i].position.x - players[garbageActive[i].playerNumber].body.position.x,
-                                            y: garbageActive[i].position.x - players[garbageActive[i].playerNumber].body.position.y};
-                    if (Math.abs(newLocalPosition.x - garbageActive[i].previousLocalPosition.x) > 1.5 ||
-                        Math.abs(newLocalPosition.y - garbageActive[i].previousLocalPosition.y) > 1.5 ) {
+                    var newLocalPosition = { x: garbageActive[i].position.x -
+                                            players[garbageActive[i].playerNumber].body.position.x,
+                                            y: garbageActive[i].position.x -
+                                            players[garbageActive[i].playerNumber].body.position.y};
+                    if (Math.abs(newLocalPosition.x - garbageActive[i].previousLocalPosition.x) > 1 ||
+                        Math.abs(newLocalPosition.y - garbageActive[i].previousLocalPosition.y) > 1 ) {
                         position = garbageActive[i].position;
                         garbageActive[i].previousLocalPosition = newLocalPosition;
                     }
@@ -830,9 +888,9 @@ function updateActiveGarbage() {
                     try {
                         players[playersWhoSee[j]].ws.send(JSON.stringify({
                             "m": garbageActive[i].id,
-                            /*"v": garbageActive[i].positionPrev,*/
-                            "p": ceilPosition(garbageActive[i].position)/*,
-                             "f": garbageActive[i].force*/
+                            /!*"v": garbageActive[i].positionPrev,*!/
+                            "p": ceilPosition(garbageActive[i].position)/!*,
+                             "f": garbageActive[i].force*!/
                         }));
                     } catch (e) {
                         console.log('playerWhoSee left.');
@@ -845,6 +903,7 @@ function updateActiveGarbage() {
         }
     }
 }
+*/
 
 setInterval(updateActiveGarbage, 1000 / 60);
 setInterval(checkGarbageVisibility, 1000);
@@ -857,33 +916,44 @@ function sincronizePlayersWhoSee(target, mainArray) {
     }
 }
 
-function addPlayerWhoSee(garbage, playerNumber) {
-    if (garbage.body.playersWhoSee.indexOf(playerNumber) == -1) {
-        garbage.body.playersWhoSee.push(playerNumber);
+function addPlayerWhoSee(object, playerNumber) {
+    if (object.body.playersWhoSee.indexOf(playerNumber) == -1) {
+        object.body.playersWhoSee.push(playerNumber);
     }
 
-    var message = { "e": garbage.body.element };
+    var message = {};
+    message.p = ceilPosition(object.body.position);
 
-    /*switch (garbage.body.inGameType) {
-        case 'garbage':*/
-            message.ng = garbage.body.id;
-            message.p = garbage.body.position;
-            if (garbage.body.inGameType == 'playerPart') message.id = garbage.body.playerNumber;
-            /*break;
+    switch (object.body.inGameType) {
+        case 'garbage':
+        case 'n':
+        case 'p':
+            message.ng = object.body.id;
+            message.e = object.body.element;
+            break;
         case 'playerPart':
-            message.npp = garbage.body.id;
-            message.p = {
-                x: garbage.body.position.x - players[garbage.body.playerNumber].body.position.x,
-                y: garbage.body.position.y - players[garbage.body.playerNumber].body.position.y
-            };
-            garbage.body.prevLocalPos = message.p;*/
-    //}
+            message.ng = object.body.id;
+            message.e = object.body.element;
+            /*switch (object.body.inGameType) {
+             case 'object':*/
+            /*if (object.body.inGameType == 'playerPart') */
+            if (message.id != -1) message.id = object.body.playerNumber;
+            break;
+            /*case 'playerPart':
+             message.npp = object.body.id;
+             message.p = {
+             x: object.body.position.x - players[object.body.playerNumber].body.position.x,
+             y: object.body.position.y - players[object.body.playerNumber].body.position.y
+             };
+             object.body.prevLocalPos = message.p;*/
+            //}
+        case 'Border':
+            message.nB = object.body.id;
+            message.a = object.body.angle.toFixed(3);
+            break;
 
-    tryToSend({
-        "ng": garbage.body.id,
-        "p": ceilPosition(garbage.body.position),
-        "e": garbage.body.element/*,
-        "ms": garbage.body.mass */}, players[playerNumber]);
+    }
+    tryToSend(message, players[playerNumber]);
 }
 
 function sendToPlayersWhoSee(playersWhoSee, message) {
@@ -892,8 +962,38 @@ function sendToPlayersWhoSee(playersWhoSee, message) {
     }
 }
 
+playersEmitter.on('particle appeared', function(event) {
+    checkGarbageVisibility();
+});
+
+playersEmitter.on('player died', function(event) {
+    var playerId = event.player.body.id;
+    sendEverybody( {"dp": playerId } );
+    var objects = garbage.concat(border).concat(freeProtons);
+    objects = objects.filter(function(obj) {
+        return obj;
+    });
+    for (var i = 0; i < objects.length; ++i) {
+        var playerIndex = objects[i].body.playersWhoSee.indexOf(playerId);
+        if (playerIndex != -1) {
+            objects[i].body.playersWhoSee.splice(playerIndex, 1);
+        }
+    }
+    subscribeToSleepEnd(event.player.body);
+    subscribeToSleepStart(event.player.body);
+    checkGarbageVisibility();
+});
+
+playersEmitter.on('particle died', function(event) {
+    sendToPlayersWhoSee(event.playersWhoSee, { "dg": event.id });
+});
+
+playersEmitter.on('element changed', function(event) {
+    sendToPlayersWhoSee(event.body.playersWhoSee, { che: event.body.id, e: event.body.element })
+});
+
 playersEmitter.on('bond created', function(event) {
-    console.log('super sending');
+    //console.log('super sending');
     if (event.bc1.inGameType == 'garbage') sincronizePlayersWhoSee(event.bc1, event.bc2.playersWhoSee);
     if (event.bc2.inGameType == 'garbage') sincronizePlayersWhoSee(event.bc2, event.bc1.playersWhoSee);
     var playersWhoSee = event.bc1.inGameType == 'garbage' ?
@@ -909,17 +1009,20 @@ playersEmitter.on('bond created', function(event) {
 });
 
 playersEmitter.on('became playerPart', function(event) {
-    sendToPlayersWhoSee(event.garbageBody.playersWhoSee, { 'bp': event.garbageBody.id ,
+    sendToPlayersWhoSee(event.garbageBody.playersWhoSee, { 'bp': event.garbageBody.id,
                     'pid': players[event.garbageBody.playerNumber].body.id });
+    //console.log('sending id ' + event.garbageBody.id);
 });
 
 playersEmitter.on('became garbage', function(event) {
-    sendToPlayersWhoSee(event.garbageBody.playersWhoSee, { 'bg': event.garbageBody.id, 'p': ceilPosition(event.garbageBody.position) });
+
+    sendToPlayersWhoSee(event.garbageBody.playersWhoSee,
+        { 'bg': event.garbageBody.id, 'p': ceilPosition(event.garbageBody.position) });
+    console.log('sending id ' + event.garbageBody.id);
 });
 
 playersEmitter.on('decoupled', function(event) {
-    var playersWhoSee = event.decoupledBodyA.inGameType == 'garbage' ?
-        event.decoupledBodyA.playersWhoSee : event.decoupledBodyB.playersWhoSee;
+    var playersWhoSee = event.decoupledBodyB.playersWhoSee;
     sendToPlayersWhoSee(playersWhoSee, {
         "db1": event.decoupledBodyA.id,
         "db2": event.decoupledBodyB.id });
@@ -927,26 +1030,42 @@ playersEmitter.on('decoupled', function(event) {
     //sendEverybody(event);
 });
 
+function subscribeToSleepEnd(Body) {
+    Matter.Events.on(Body, 'sleepEnd', function (event) {
+        var body = this;
+        garbageActive.push(body);
+    });
+}
+
+function subscribeToSleepStart(Body) {
+    Matter.Events.on(Body, 'sleepStart', function(event) {
+        var body = this;
+        garbageActive.splice(garbageActive.indexOf(body), 1);
+    });
+}
+
 for (var i = 0; i < garbage.length; i++) {
-    Matter.Events.on(garbage[i].body, 'sleepEnd', function(event) {
+    /*Matter.Events.on(garbage[i].body, 'sleepEnd', function(event) {
         var body = this;
         //if (body.inGameType == 'garbage') {
             garbageActive.push(body);
         //}
-        /*console.log("right now there is " + garbageActive.length + " active garbage");
+        /!*console.log("right now there is " + garbageActive.length + " active garbage");
         console.log('garbage body id ' + body.id + " at " + this.position,
-            'sleeping: ' + body.isSleeping + " woke up!");*/
-    });
+            'sleeping: ' + body.isSleeping + " woke up!");*!/
+    });*/
+    subscribeToSleepStart(garbage[i].body);
+    subscribeToSleepEnd(garbage[i].body);
 
-    Matter.Events.on(garbage[i].body, 'sleepStart', function(event) {
+    /*Matter.Events.on(garbage[i].body, 'sleepStart', function(event) {
         var body = this;
         //if (body.inGameType == 'garbage') {
             garbageActive.splice(garbageActive.indexOf(body), 1);
         //}
-        /*console.log("right now there is " + garbageActive.length + " active garbage");
+        /!*console.log("right now there is " + garbageActive.length + " active garbage");
         console.log('garbage body id ' + body.id + " at " + this.position,
-                    'sleeping: ' + body.isSleeping + " went to bed.");*/
-    });
+                    'sleeping: ' + body.isSleeping + " went to bed.");*!/
+    });*/
 }
 
 function ceilPosition(position) {
@@ -985,18 +1104,19 @@ setInterval(function() {
                 case "player":
                     //players[ghost.number].garbagify(players, garbage);
                     //players[ghost.number].lose(engine, players, garbage);
-                    if (!ghost.superMutex) {
+                    //if (!ghost.superMutex) {
                         console.log("player number " + ghost.number + " is dead.");
                         var player = getMainObject(ghost);
                         player.garbagify(players, garbage);
                         //player.die(engine);
-                        sendEverybody({ "dp": player.body.id });
+                        //sendEverybody({ "dp": player.body.id });
+                        playersEmitter.emit('player died', { player: player });
                         delete ghosts[i];
                         /*ghosts.splice(i, 1);*/
-                    } else {
+                    /*} else {
                         console.log("tried to delete player " + ghost.number);
                         console.log(ghost.superMutex);
-                    }
+                    }*/
                     break;
             }
         }
@@ -1022,6 +1142,21 @@ setInterval(function() {
             player.previousPosition.y = player.body.position.y;
         }
     });
+    garbageActive.forEach(function(garbage) {
+        if (garbage.inGameType == 'playerPart' && players[garbage.playerNumber]) {
+            var newLocalPosition = {
+                x: garbage.position.x -
+                players[garbage.playerNumber].body.position.x,
+                y: garbage.position.x -
+                players[garbage.playerNumber].body.position.y
+            };
+            if (Math.abs(newLocalPosition.x - garbage.previousLocalPosition.x) > 1 ||
+                Math.abs(newLocalPosition.y - garbage.previousLocalPosition.y) > 1) {
+                garbage.previousLocalPosition.x = garbage.position.x;
+                garbage.previousLocalPosition.x = garbage.position.x;
+            }
+        }
+    })
 }, 1000 / 60);
 
 //catches memory leaks

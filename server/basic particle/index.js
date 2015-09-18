@@ -22,8 +22,12 @@ var basicParticle = function(position, engine, elem, emitter) {
         element.radius + this.CHARGE_RADIUS,
         { restitution: 0.99 });
 
+    this.body.occupiedAngle = null;
     this.body.inertia = 0;
     this.body.inverseInertia = 0;
+
+    this.body.emitter = emitter;
+    this.body.playersWhoSee = [];
 
     this.setElement(elem);
 
@@ -36,11 +40,8 @@ var basicParticle = function(position, engine, elem, emitter) {
 
     World.addBody(engine.world, this.body);
 
-    this.body.emitter = emitter;
-
     var self = this;
     this.body.previousLocalPosition = { x: 0, y: 0 };
-    this.body.playersWhoSee = [];
     this.body.superMutex = 0;
     this.body.chemicalBonds = 0;
     this.body.chemicalChildren = [];
@@ -99,7 +100,7 @@ basicParticle.prototype = {
     //first part of disconnecting body from player
     free: function(node, engine, breakConstraints) {
 
-        if (node.typeTimeout) clearTimeout(node.typeTimeout);
+        //if (node.typeTimeout) clearTimeout(node.typeTimeout);
         //for (var j = 0; j < node.intervalIDs.length; ++j) {
         clearInterval(node.intervalID);
         node.collisionFilter.mask = 0x0001;
@@ -115,12 +116,16 @@ basicParticle.prototype = {
                 }
             }
 
-            for (i = 0; i < node.chemicalParent.bondAngles.length; ++i) {
-                //console.log("candidate angle " + node.chemicalParent.bondAngles[i].angle);
-                if (node.chemicalParent.bondAngles[i].angle ==
-                    node.constraint1.chemicalAngle) {
-                    node.chemicalParent.bondAngles[i].available = true;
+            if (node.chemicalParent) {
+                for (i = 0; i < node.chemicalParent.bondAngles.length; ++i) {
+                    //console.log("candidate angle " + node.chemicalParent.bondAngles[i].angle);
+                    if (node.chemicalParent.bondAngles[i].angle ==
+                        node.constraint1.chemicalAngle) {
+                        node.chemicalParent.bondAngles[i].available = true;
+                    }
                 }
+            } else {
+                console.log('constraint is here, but there is no parent though');
             }
 
             World.remove(engine.world, node.constraint1);
@@ -138,6 +143,13 @@ basicParticle.prototype = {
             /*node.chemicalParent.previousAngle -= 2 * Math.PI / node.chemicalParent.totalBonds;*/
 
             //console.log("angle to free " + node.constraint1.chemicalAngle);
+
+            if (node.occupiedAngle) {
+                node.chemicalParent.bondAngles[
+                    node.chemicalParent.bondAngles.indexOf(node.occupiedAngle)].availible = true;
+                node.occupiedAngle = null;
+            }
+
 
             if (node.chemicalParent.chemicalBonds) {
                 --node.chemicalParent.chemicalBonds;
@@ -159,10 +171,10 @@ basicParticle.prototype = {
 
         node.emitter.emit('became garbage', { garbageBody: node });
         node.inGameType = "garbage";
-        node.typeTimeout = setTimeout(function() {
-            node.playerNumber = -1;
+        node.playerNumber = -1;
+        /*node.typeTimeout = setTimeout(function() {
 
-        }, 1500);
+        }, 1500);*/
     },
 
     setElement: function(elem) {
@@ -198,6 +210,7 @@ basicParticle.prototype = {
                     this.body.bondAngles.pop();
                 }
             }
+            this.body.emitter.emit("element changed", { body: this.body });
         }
     },
 
@@ -230,9 +243,11 @@ basicParticle.prototype = {
         });
 
         nucleon.body = nucleonBody;
+        nucleon.body.playersWhoSee = [];
         World.addBody(engine.world, nucleonBody);
         nucleonsArray.push(nucleon);
         nucleonBody.number = nucleonsArray.indexOf(nucleon);
+        this.body.emitter.emit('particle appeared', { body: nucleonBody });
         return nucleonBody;
     },
 
@@ -269,9 +284,11 @@ basicParticle.prototype = {
 
     markAsPlayer: function(newPlayerBody) {
         this.traversDST(this.body, function(node) {
-            if (node.typeTimeout) clearTimeout(node.typeTimeout);
+            //if (node.typeTimeout) clearTimeout(node.typeTimeout);
             node.inGameType = "playerPart";
             node.playerNumber = newPlayerBody.playerNumber;
+
+            node.emitter.emit('became playerPart', { garbageBody: node });
         });
     },
 
@@ -370,7 +387,7 @@ basicParticle.prototype = {
     },
 
     checkDecoupling: function(momentum, engine) {
-        var bondStrength = 2;
+        var bondStrength = 30;
         if (momentum > bondStrength && this.body.chemicalBonds) {
             this.traversDST(this.body, this.free, this.letGo, engine);
             if (this.body.player) {
@@ -445,8 +462,8 @@ basicParticle.prototype = {
             garbageBody.constraint2.chemicalAngle = garbageAngle;
             World.add(engine.world, [constraintA, constraintB]);
             garbageBody.collisionFilter.mask = 0x0001;
-            --playerBody.superMutex;
-            --garbageBody.superMutex;
+            /*--playerBody.superMutex;
+            --garbageBody.superMutex;*/
             /*var newSelf = {};
             newSelf.body = garbageBody;
             newSelf.changeBranchAvailability = self.changeBranchAvailability;
@@ -457,30 +474,30 @@ basicParticle.prototype = {
 
     //TODO: get rid of recursion
     correctBondAnglesFinal: function(engine) {
-        console.log("working with " + this.body.element + " at " +
+        /*console.log("working with " + this.body.element + " at " +
             JSON.stringify(this.body.position));
-        console.log("correctBondAnglesFinal started");
+        console.log("correctBondAnglesFinal started");*/
         var body = this.body;
         for (var i = 0; i < body.chemicalChildren.length; ++i) {
 
             var child = body.chemicalChildren[i];
 
             if (child) {
-                ++body.superMutex;
-                ++child.superMutex;
+                /*++body.superMutex;
+                ++child.superMutex;*/
                 console.log("working with " + child.element + " at " +
                     JSON.stringify(child.position));
                 //child.collisionFilter.mask = 0x0008;
                 this.reconnectBond(child, engine);
             }
         }
-        console.log("correctBondAnglesFinal ended");
+        //console.log("correctBondAnglesFinal ended");
     },
 
     changeCharge: function(value, engine, nucleonsArray) {
-        console.log("changeCharge started");
-        console.log("working with " + this.body.element + " at " +
-            JSON.stringify(this.body.position));
+        //console.log("changeCharge started");
+        /*console.log("working with " + this.body.element + " at " +
+            JSON.stringify(this.body.position));*/
         //this.body.collisionFilter.mask = 0x0008;
 
         this.CHARGE_RADIUS = 5;
@@ -505,7 +522,6 @@ basicParticle.prototype = {
             this.body.bondAngles[i].available = true;
         }
 
-        //TODO: figure it out
         for (i = 0; i < this.body.chemicalChildren.length; ++i) {
             if (this.body.chemicalChildren[i]) {
                 clearInterval(this.body.chemicalChildren[i].intervalID);
@@ -529,6 +545,7 @@ basicParticle.prototype = {
         var currentAngle = Geometry.findAngle(this.body.position,
             garbageBody.position, this.body.angle);
         var angle = this.getClosestAngle(currentAngle);
+        garbageBody.occupiedAngle = angle;
 
         //console.log("current angle = " + currentAngle);
         //console.log("target angle = " + angle);
@@ -587,6 +604,7 @@ basicParticle.prototype = {
                 //console.log("current angle " + rotationAngle);
                 //console.log("target angle " + garbageAngle);
                 Body.rotate(garbageBody, (rotationAngle - garbageAngle));*/
+                garbageBody.occupiedAngle = null;
                 if (finalCreateBond) {
                     finalCreateBond(self.body, garbageBody, angle, garbageAngle);
                 }

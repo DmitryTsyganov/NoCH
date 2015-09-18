@@ -22,6 +22,8 @@ var Player = function(ws, position, engine, elem, emitter) {
 
     //this.body.collisionFilter.group = Body.nextGroup(true);
 
+    this.isReady = false;
+
     this.previousPosition = { x: 0, y: 0 };
     this.body.inGameType = "player";
     this.body.player = this;
@@ -110,6 +112,8 @@ Player.prototype = {
             nucleonBody.timerId2 = setTimeout(function() {
                 if (nucleonsArray[nucleonBody.number]) {
                     World.remove(engine.world, nucleonBody);
+                    self.body.emitter.emit('particle died', { id: nucleonBody.id,
+                                            playersWhoSee: nucleonBody.playersWhoSee });
                     delete nucleonsArray[nucleonBody.number];
                 }
             }, 10000);
@@ -200,6 +204,7 @@ Player.prototype = {
             });*/
         } else {
             this.traversDST(this.body, function(node) {
+                node.emitter.emit('became garbage', { garbageBody: node });
                 node.inGameType = "garbage";
                 node.playerNumber = - 1;
                 //node.collisionFilter.group = 0;

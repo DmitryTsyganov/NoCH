@@ -44,8 +44,8 @@ Garbage.prototype = {
             self.correctParentBond = this.correctParentBond;
             self.getClosestAngle = this.getClosestAngle;
             self.body = this.body.chemicalParent;
-            ++this.body.superMutex;
-            ++self.body.superMutex;
+            /*++this.body.superMutex;
+            ++self.body.superMutex;*/
 
             this.reconnectBond.call(self, this.body, engine);
         }
