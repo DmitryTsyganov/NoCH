@@ -687,7 +687,7 @@
         },
 
         update: function() {
-            if (Game.isStarted && freshData.send) {
+            if (freshData.send) {
                 socket.send(JSON.stringify(freshData.outputData));
             }
             if (freshData.targetCoefficient < freshData.coefficient) {
@@ -1129,6 +1129,7 @@
                 this.inputData = newData;
                 //console.log(newData.player.x + ' and ' + newData.player.y);
                 for (var i = 0; i < newData.players.length; i += 3) {
+                    if(!players[newData.players[i]]) console.log(newData.players[i]);
                     players[newData.players[i]].position.x = newData.players[i + 1];
                     players[newData.players[i]].position.y = newData.players[i + 2];
                 }
@@ -1159,7 +1160,7 @@
                 players[newData.id] = { "color": newData.c,
                                         "element": newData.e,
                                         "angle" : 2 * Math.PI,
-                                        "position": {}};
+                                        "position": newData.p};
             }
             if ('shn' in newData) {
                 players[newData.shn]["angle"] = 0;
@@ -1173,7 +1174,7 @@
             }
             if ("dp" in newData) {
                 console.log('player died ' + newData.dp);
-                players[newData.dp].playerID = freshData.selfID;
+                //players[newData.dp].playerID = freshData.selfID;
                 /*garbageAll[newData.dp] = new Garbage(players[newData.dp].position,
                                                     players[newData.dp].element);*/
                 for (var key in garbageAll) {
@@ -1193,7 +1194,7 @@
                 object.element = newData.e;
             }
             if ("ng" in newData) {
-                //console.log('new garbage is ' + newData.ng);
+                console.log('new garbage is ' + newData.ng);
                 garbageAll[newData.ng] = new Garbage(/*newData.ms,*/ newData.p, newData.e, newData.id/*, 'garbage'*/);
             }
             if ("nB" in newData) {
@@ -1246,6 +1247,7 @@
             }
             if ('gba' in newData) {
                 for (var i = 0; i < newData.gba.length; i += 3) {
+                    //console.log(newData.gba[i]);
                     garbageAll[newData.gba[i]].setPosition({ x: newData.gba[i + 1], y: newData.gba[i + 2]});
                 }
             }
@@ -1263,7 +1265,7 @@
         },
         toPlayerCS: function(position) {
             return { x: position.x - players[this.selfID].position.x + Game.gameSize.x / 2,
-                    y: position.y - players[this.selfID].position.y + Game.gameSize.y / 2};
+                    y: position.y - players[this.selfID].position.y + Game.gameSize.y / 2 };
         },
         getCoefficient: function() {
             return this.coefficient / this.coefficientScale;
@@ -1292,8 +1294,6 @@
         send: false
     };
 
-    var Game = {};
-    Game = new Noch('canvas');
 
 
     window.onresize = function() {
@@ -1373,15 +1373,20 @@
         socket.send(JSON.stringify(shot));
     }
 
+    var Game = {};
+
     socket.onopen = function() {
-        console.log("Connected.");
-        var resolution = {  "x": Game.gameSize.x,
-                            "y": Game.gameSize.y };
+        Game = new Noch('canvas');
+        var resolution = {
+            "x": Game.gameSize.x,
+            "y": Game.gameSize.y
+        };
         socket.send(JSON.stringify(resolution));
 
         freshData.updateOutput(Game.gameSize.x,
-                               Game.gameSize.y);
+            Game.gameSize.y);
         Game.start();
+        console.log("Connected.");
     };
 
     socket.onclose = function(event) {

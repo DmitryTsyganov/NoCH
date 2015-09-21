@@ -145,8 +145,13 @@ basicParticle.prototype = {
             //console.log("angle to free " + node.constraint1.chemicalAngle);
 
             if (node.occupiedAngle) {
-                node.chemicalParent.bondAngles[
-                    node.chemicalParent.bondAngles.indexOf(node.occupiedAngle)].availible = true;
+                /*node.chemicalParent.bondAngles[
+                    node.chemicalParent.bondAngles.indexOf(node.occupiedAngle)].availible = true;*/
+                node.chemicalParent.bondAngles.forEach(function(obj) {
+                    if (obj.angle == node.occupiedAngle) {
+                        obj.available = true;
+                    }
+                });
                 node.occupiedAngle = null;
             }
 
