@@ -745,7 +745,6 @@ function checkGarbageVisibility() {
     for (var i = 0; i < objects.length; ++i) {
         for (var j = 0; j < players.length; ++j) {
             if (players[j] && players[j].isReady && inScreen.call(players[j], objects[i], 500)) {
-                console.log(objects[i].body.id);
                 /*objects[i].body.playersWhoSee.push(j);
 
                 tryToSend({
@@ -754,40 +753,42 @@ function checkGarbageVisibility() {
                     "e": objects[i].body.element,
                     "ms": objects[i].body.mass }, players[j]);*/
 
-                console.log(addPlayerWhoSee(objects[i], j));
+                var addedSuccessfully = addPlayerWhoSee(objects[i], j);
+                if (addedSuccessfully) {
+                    var currentBody = objects[i].body;
 
-                var currentBody = objects[i].body;
-                var addedSuccessfully = true;
-                while (currentBody.chemicalParent && addedSuccessfully) {
-                    var secondBody = currentBody.chemicalParent;
+                    while (currentBody.chemicalParent && addedSuccessfully) {
+                        var secondBody = currentBody.chemicalParent;
 
-                    if (currentBody.chemicalParent.inGameType != 'player') {
-                        addedSuccessfully = addPlayerWhoSee(getMainObject(secondBody), j);
-                    } else {
-                        addedSuccessfully = false;
+                        if (currentBody.chemicalParent.inGameType != 'player') {
+                            addedSuccessfully = addPlayerWhoSee(getMainObject(secondBody), j);
+                        } else {
+                            addedSuccessfully = false;
+                        }
+                        /*tryToSend({
+                         "ng": secondBody.id,
+                         "p": secondBody.position,
+                         "e": secondBody.element/!*,
+                         "ms": secondBody.mass*!/ }, players[j]);*/
+                        //TODO: add this fix to branch 'events'
+                        tryToSend({
+                            "b1": currentBody.id,
+                            "b2": secondBody.id
+                        }, players[j]);
+                        currentBody = secondBody;
                     }
-                    /*tryToSend({
-                        "ng": secondBody.id,
-                        "p": secondBody.position,
-                        "e": secondBody.element/!*,
-                        "ms": secondBody.mass*!/ }, players[j]);*/
-                    //TODO: add this fix to branch 'events'
-                    tryToSend({
-                        "b1": currentBody.id,
-                        "b2": secondBody.id }, players[j]);
-                    currentBody = secondBody;
-                }
 
-                //tryToSend(response, players[j]);
-                /*try {
-                    players[j].ws.send(JSON.stringify({
-                        "ng": objects[i].body.id,
-                        "p": objects[i].body.position,
-                        "e": objects[i].body.element,
-                        "ms": objects[i].body.mass}));
-                } catch (e) {
-                    console.log('Caught ' + e.name + ': ' + e.message);
-                }*/
+                    //tryToSend(response, players[j]);
+                    /*try {
+                     players[j].ws.send(JSON.stringify({
+                     "ng": objects[i].body.id,
+                     "p": objects[i].body.position,
+                     "e": objects[i].body.element,
+                     "ms": objects[i].body.mass}));
+                     } catch (e) {
+                     console.log('Caught ' + e.name + ': ' + e.message);
+                     }*/
+                }
             }
         }
         var playersWhoSee = objects[i].body.playersWhoSee;
@@ -1065,7 +1066,8 @@ playersEmitter.on('became garbage', function(event) {
 });*/
 
 playersEmitter.on('decoupled', function(event) {
-    var playersWhoSee = event.decoupledBodyB.playersWhoSee;
+    var playersWhoSee = event.decoupledBodyB.inGameType != 'player' ?
+        event.decoupledBodyB.playersWhoSee : event.decoupledBodyA.playersWhoSee;
     sendToPlayersWhoSee(playersWhoSee, {
         "db1": event.decoupledBodyA.id,
         "db2": event.decoupledBodyB.id });

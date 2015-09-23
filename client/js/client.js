@@ -1196,7 +1196,7 @@
                 object.element = newData.e;
             }
             if ("ng" in newData) {
-                console.log('new garbage is ' + newData.ng);
+                //console.log('new garbage is ' + newData.ng);
                 garbageAll[newData.ng] = new Garbage(/*newData.ms,*/ newData.p, newData.e, newData.id/*, 'garbage'*/);
             }
             if ("nB" in newData) {
@@ -1232,6 +1232,9 @@
                         id = i;
                     }
                 }
+                //console.log(bonds);
+                console.log("id " + id);
+                //console.log(bonds);
                 if (id != -1) bonds.splice(id, 1);
                 //console.log(bonds);
                 /*var optionA = bonds.indexOf({ idA: newData.db1, idB: newData.db2 });
@@ -1321,8 +1324,9 @@
     //getting data
     socket.onmessage = function(event) {
         var newData = JSON.parse(event.data);
-        if (true/*("db1" in newData)*/) {
-            //console.log('got message ' + event.data);
+        console.log(bonds);
+        if (("db1" in newData)) {
+            console.log('got message ' + event.data);
         }
         freshData.updateInput(event.data);
         // console.log(players[freshData.selfID].position);
