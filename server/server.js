@@ -757,7 +757,7 @@ function checkGarbageVisibility() {
 
                 addPlayerWhoSee(objects[i], j);
 
-                var currentBody = objects[i];
+                var currentBody = objects[i].body;
                 var addedSuccessfully = true;
                 while (currentBody.chemicalParent && addedSuccessfully) {
                     var secondBody = currentBody.constraint1.bodyA;
