@@ -790,7 +790,7 @@
                     ctx.strokeStyle = "white";
                     ctx.stroke();
                 } else {
-                    bonds.splice(i, 1);
+                    //bonds.splice(i, 1);
                     console.log('bond failed ' + bonds[i]);
                 }
             }

@@ -996,7 +996,15 @@ playersEmitter.on('player died', function(event) {
     for (var i = 0; i < objects.length; ++i) {
         var playerIndex = objects[i].body.playersWhoSee.indexOf(playerId);
         if (playerIndex != -1) {
+            /*if (objects[i].body.playersWhoSee.length) {
+                console.log("before:");
+                console.log(objects[i].body.playersWhoSee);
+            }*/
             objects[i].body.playersWhoSee.splice(playerIndex, 1);
+            /*if (objects[i].body.playersWhoSee.length) {
+                console.log("after:");
+                console.log(objects[i].body.playersWhoSee);
+            }*/
         }
     }
     subscribeToSleepEnd(event.player.body);
