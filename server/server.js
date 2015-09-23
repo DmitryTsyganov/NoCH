@@ -768,7 +768,7 @@ function checkGarbageVisibility() {
                         "e": secondBody.element/!*,
                         "ms": secondBody.mass*!/ }, players[j]);*/
                     tryToSend({
-                        "b1": objects[i].body.id,
+                        "b1": currentBody.id,
                         "b2": secondBody.id }, players[j]);
                     currentBody = secondBody;
                 }
@@ -789,14 +789,14 @@ function checkGarbageVisibility() {
         for (j = 0; j < playersWhoSee.length; ++j) {
 
             if (!players[playersWhoSee[j]]) {
-                playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
-            } else if (!inScreen.call(players[playersWhoSee[j]], objects[i], 500) &&
+                playersWhoSee.splice(j, 1);
+            } else if (!inScreen.call(players[playersWhoSee[j]], objects[i], 500) /*&&
                     (!objects[i].body.chemicalParent || inScreen.call(players[playersWhoSee[j]],
-                        getMainObject(objects[i].body.chemicalParent), 500))) {
+                        getMainObject(objects[i].body.chemicalParent), 500))*/) {
                 var message = { "dg": objects[i].body.id };
                 tryToSend(message, players[playersWhoSee[j]]);
-                if (objects[i].body.chemicalParent) tryToSend({
-                    "dg": objects[i].body.chemicalParent.id }, players[playersWhoSee[j]]);
+                /*if (objects[i].body.chemicalParent) tryToSend({
+                    "dg": objects[i].body.chemicalParent.id }, players[playersWhoSee[j]]);*/
                 /*try {
                     /!*console.log(j);
                     console.log(playersWhoSee[j]);
@@ -806,7 +806,7 @@ function checkGarbageVisibility() {
                 } catch (e) {
                     console.log('Caught ' + e.name + ': ' + e.message);
                 }*/
-                playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
+                playersWhoSee.splice(j, 1);
             }
         }
     }
@@ -836,7 +836,7 @@ function updateActiveGarbage() {
         var garbageToSend = [];
         var playerIndex = players.indexOf(realPlayers[i]);
         for (var j = 0; j < particlesActive.length; ++j) {
-            var realPlayerIndex = particlesActive[j].playersWhoSee.indexOf(i);
+            var realPlayerIndex = particlesActive[j].playersWhoSee.indexOf(playerIndex);
             if (realPlayerIndex != -1) {
                 var position = null;
                 switch (particlesActive[j].inGameType) {
@@ -987,8 +987,8 @@ playersEmitter.on('particle appeared', function(event) {
 });
 
 playersEmitter.on('player died', function(event) {
-    var playerId = event.player.body.id;
-    sendEverybody( {"dp": playerId } );
+    var playerId = players.indexOf(event.player);
+    sendEverybody( { "dp": event.player.body.id } );
     var objects = garbage.concat(border).concat(freeProtons);
     objects = objects.filter(function(obj) {
         return obj;
@@ -1129,10 +1129,10 @@ setInterval(function() {
                     //if (!ghost.superMutex) {
                         console.log("player number " + ghost.number + " is dead.");
                         var player = getMainObject(ghost);
-                        player.garbagify(players, garbage);
                         //player.die(engine);
                         //sendEverybody({ "dp": player.body.id });
                         playersEmitter.emit('player died', { player: player });
+                        player.garbagify(players, garbage);
                         delete ghosts[i];
                         /*ghosts.splice(i, 1);*/
                     /*} else {
