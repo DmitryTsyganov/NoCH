@@ -757,10 +757,10 @@ function checkGarbageVisibility() {
 
                 addPlayerWhoSee(objects[i], j);
 
-                var currentBody = objects[i];
+                var currentBody = objects[i].body;
                 var addedSuccessfully = true;
                 while (currentBody.chemicalParent && addedSuccessfully) {
-                    var secondBody = currentBody.constraint1.bodyA;
+                    var secondBody = currentBody.chemicalParent;
                     addedSuccessfully = addPlayerWhoSee(getMainObject(secondBody), j);
                     /*tryToSend({
                         "ng": secondBody.id,
@@ -1013,8 +1013,8 @@ playersEmitter.on('player died', function(event) {
             }
         }
     }
-    subscribeToSleepEnd(event.player.body);
-    subscribeToSleepStart(event.player.body);
+    //subscribeToSleepEnd(event.player.body);
+    //subscribeToSleepStart(event.player.body);
     //checkGarbageVisibility();
 });
 

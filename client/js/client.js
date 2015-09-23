@@ -1246,6 +1246,7 @@
                 delete bonds[bondID];*/
             }
             if ('gba' in newData) {
+                //console.log(newData.gba);
                 for (var i = 0; i < newData.gba.length; i += 3) {
                     //console.log(newData.gba[i]);
                     garbageAll[newData.gba[i]].setPosition({ x: newData.gba[i + 1], y: newData.gba[i + 2]});
