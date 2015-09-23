@@ -1054,6 +1054,7 @@
                     this.position = position;
                     break;
                 case 'playerPart':
+                    if (!players[this.playerID]) console.log("show me the -1 " + this.playerID);
                     this.position = {
                         x: position.x - players[this.playerID].position.x,
                         y: position.y - players[this.playerID].position.y
@@ -1316,10 +1317,8 @@
 
     //getting data
     socket.onmessage = function(event) {
-        var newData = JSON.parse(event.data);
-        if (true/*("db1" in newData)*/) {
-            //console.log('got message ' + event.data);
-        }
+        //var newData = JSON.parse(event.data);
+        //console.log('got message ' + event.data);
         freshData.updateInput(event.data);
         // console.log(players[freshData.selfID].position);
         

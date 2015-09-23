@@ -706,6 +706,7 @@ function tryToSend(message, player) {
     try {
         player.ws.send(JSON.stringify(message));
     } catch(e) {
+        for (var key in message) console.log(key);
         console.log('Unable to send ' + message + ' to player');
         //delete players[players.indexOf(player)]; //he is dead
     }
