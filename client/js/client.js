@@ -1232,9 +1232,6 @@
                         id = i;
                     }
                 }
-                //console.log(bonds);
-                console.log("id " + id);
-                //console.log(bonds);
                 if (id != -1) bonds.splice(id, 1);
                 //console.log(bonds);
                 /*var optionA = bonds.indexOf({ idA: newData.db1, idB: newData.db2 });
@@ -1324,7 +1321,6 @@
     //getting data
     socket.onmessage = function(event) {
         var newData = JSON.parse(event.data);
-        console.log(bonds);
         if (("db1" in newData)) {
             console.log('got message ' + event.data);
         }
