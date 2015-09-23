@@ -110,8 +110,8 @@ webSocketServer.on('connection', function(ws) {
         }
     }
 
-    /*subscribeToSleepStart(player.body);
-    subscribeToSleepEnd(player.body);*/
+    subscribeToSleepStart(player.body);
+    subscribeToSleepEnd(player.body);
 
     ws.on('message', function(message) {
         //console.log('player ' + id + " says " + message);
@@ -767,8 +767,9 @@ function checkGarbageVisibility() {
                         "p": secondBody.position,
                         "e": secondBody.element/!*,
                         "ms": secondBody.mass*!/ }, players[j]);*/
+                    //TODO: add this fix to branch 'events'
                     tryToSend({
-                        "b1": objects[i].body.id,
+                        "b1": currentBody.id,
                         "b2": secondBody.id }, players[j]);
                     currentBody = secondBody;
                 }
@@ -789,14 +790,16 @@ function checkGarbageVisibility() {
         for (j = 0; j < playersWhoSee.length; ++j) {
 
             if (!players[playersWhoSee[j]]) {
-                playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
-            } else if (!inScreen.call(players[playersWhoSee[j]], objects[i], 500) &&
+                playersWhoSee.splice(j, 1);
+                //TODO: add this fix to branch 'events'
+            } else if (!inScreen.call(players[playersWhoSee[j]], objects[i], 500) /*&&
                     (!objects[i].body.chemicalParent || inScreen.call(players[playersWhoSee[j]],
-                        getMainObject(objects[i].body.chemicalParent), 500))) {
+                        getMainObject(objects[i].body.chemicalParent), 500))*/) {
                 var message = { "dg": objects[i].body.id };
+                //TODO: add this fix to branch 'events'
                 tryToSend(message, players[playersWhoSee[j]]);
-                if (objects[i].body.chemicalParent) tryToSend({
-                    "dg": objects[i].body.chemicalParent.id }, players[playersWhoSee[j]]);
+                /*if (objects[i].body.chemicalParent) tryToSend({
+                    "dg": objects[i].body.chemicalParent.id }, players[playersWhoSee[j]]);*/
                 /*try {
                     /!*console.log(j);
                     console.log(playersWhoSee[j]);
@@ -806,7 +809,7 @@ function checkGarbageVisibility() {
                 } catch (e) {
                     console.log('Caught ' + e.name + ': ' + e.message);
                 }*/
-                playersWhoSee.splice(playersWhoSee.indexOf(playersWhoSee[j]));
+                playersWhoSee.splice(j, 1);
             }
         }
     }
@@ -836,17 +839,18 @@ function updateActiveGarbage() {
         var garbageToSend = [];
         var playerIndex = players.indexOf(realPlayers[i]);
         for (var j = 0; j < particlesActive.length; ++j) {
-            var realPlayerIndex = particlesActive[j].playersWhoSee.indexOf(i);
+            //TODO: add this fix to branch 'events'
+            var realPlayerIndex = particlesActive[j].playersWhoSee.indexOf(playerIndex);
             if (realPlayerIndex != -1) {
-                var position = null;
-                switch (particlesActive[j].inGameType) {
+                /*var position = null;*/
+                /*switch (particlesActive[j].inGameType) {
                     case 'garbage':
                     case 'p':
                     case 'n':
-                        position = particlesActive[j].position;
-                        break;
-                    case 'playerPart':
-                        var newLocalPosition = { x: particlesActive[j].position.x -
+                    case 'playerPart':*/
+                    var position = particlesActive[j].position;
+                        /*break;*/
+                        /*var newLocalPosition = { x: particlesActive[j].position.x -
                         players[particlesActive[j].playerNumber].body.position.x,
                             y: particlesActive[j].position.y -
                             players[particlesActive[j].playerNumber].body.position.y};
@@ -854,8 +858,8 @@ function updateActiveGarbage() {
                             Math.abs(newLocalPosition.y - particlesActive[j].previousLocalPosition.y) > 1 ) {
                             position = particlesActive[j].position;
                         }
-                        break;
-                }
+                        break;*/
+                //}
                 if (position) {
                     position = ceilPosition(position);
                     garbageToSend.push(particlesActive[j].id);
@@ -941,17 +945,17 @@ function addPlayerWhoSee(object, playerNumber) {
             case 'garbage':
             case 'n':
             case 'p':
-                message.ng = object.body.id;
-                message.e = object.body.element;
-                break;
             case 'playerPart':
                 message.ng = object.body.id;
                 message.e = object.body.element;
+                break;
+                /*message.ng = object.body.id;
+                message.e = object.body.element;*/
                 /*switch (object.body.inGameType) {
                  case 'object':*/
                 /*if (object.body.inGameType == 'playerPart') */
-                if (message.id != -1) message.id = object.body.playerNumber;
-                break;
+                /*if (message.id != -1) message.id = object.body.playerNumber;
+                break;*/
             /*case 'player':
                 message.id = object.body.id;
                 message.c = object.color;
@@ -987,16 +991,26 @@ playersEmitter.on('particle appeared', function(event) {
 });
 
 playersEmitter.on('player died', function(event) {
-    var playerId = event.player.body.id;
-    sendEverybody( {"dp": playerId } );
+    var playerId = players.indexOf(event.player);
+    //TODO: add this fix to branch 'events'
+    sendEverybody( { "dp": event.player.body.id } );
     var objects = garbage.concat(border).concat(freeProtons);
     objects = objects.filter(function(obj) {
         return obj;
     });
     for (var i = 0; i < objects.length; ++i) {
         var playerIndex = objects[i].body.playersWhoSee.indexOf(playerId);
+
         if (playerIndex != -1) {
+            if (objects[i].body.playersWhoSee.length) {
+                console.log("before:");
+                console.log(objects[i].body.playersWhoSee);
+            }
             objects[i].body.playersWhoSee.splice(playerIndex, 1);
+            if (objects[i].body.playersWhoSee.length) {
+                console.log("after:");
+                console.log(objects[i].body.playersWhoSee);
+            }
         }
     }
     subscribeToSleepEnd(event.player.body);
@@ -1028,7 +1042,7 @@ playersEmitter.on('bond created', function(event) {
     }*/
 });
 
-playersEmitter.on('became playerPart', function(event) {
+/*playersEmitter.on('became playerPart', function(event) {
     sendToPlayersWhoSee(event.garbageBody.playersWhoSee, { 'bp': event.garbageBody.id,
                     'pid': players[event.garbageBody.playerNumber].body.id });
     //console.log('sending id ' + event.garbageBody.id);
@@ -1039,7 +1053,7 @@ playersEmitter.on('became garbage', function(event) {
     sendToPlayersWhoSee(event.garbageBody.playersWhoSee,
         { 'bg': event.garbageBody.id, 'p': ceilPosition(event.garbageBody.position) });
     //console.log('sending id ' + event.garbageBody.id);
-});
+});*/
 
 playersEmitter.on('decoupled', function(event) {
     var playersWhoSee = event.decoupledBodyB.playersWhoSee;
@@ -1129,10 +1143,11 @@ setInterval(function() {
                     //if (!ghost.superMutex) {
                         console.log("player number " + ghost.number + " is dead.");
                         var player = getMainObject(ghost);
-                        player.garbagify(players, garbage);
                         //player.die(engine);
                         //sendEverybody({ "dp": player.body.id });
                         playersEmitter.emit('player died', { player: player });
+                        player.garbagify(players, garbage);
+                        //TODO add this fix to branch 'events'
                         delete ghosts[i];
                         /*ghosts.splice(i, 1);*/
                     /*} else {
@@ -1164,7 +1179,7 @@ setInterval(function() {
             player.previousPosition.y = player.body.position.y;
         }
     });
-    garbageActive.forEach(function(garbage) {
+    /*garbageActive.forEach(function(garbage) {
         if (garbage.inGameType == 'playerPart' && players[garbage.playerNumber]) {
             var newLocalPosition = {
                 x: garbage.position.x -
@@ -1178,7 +1193,7 @@ setInterval(function() {
                 garbage.previousLocalPosition.x = garbage.position.x;
             }
         }
-    })
+    })*/
 }, 1000 / 60);
 
 //catches memory leaks

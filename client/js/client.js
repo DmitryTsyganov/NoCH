@@ -790,7 +790,7 @@
                     ctx.strokeStyle = "white";
                     ctx.stroke();
                 } else {
-                    bonds.splice(i, 1);
+                    //bonds.splice(i, 1);
                     console.log('bond failed ' + bonds[i]);
                 }
             }
@@ -1018,13 +1018,13 @@
         this.force = { x: 0, y: 0 };
         /*this.type = type;
         if (type == 'playerPart') {*/
-        if (playerID) {
+        /*if (playerID) {
             this.playerID = playerID;
             this.type = 'playerPart';
-        } else {
+        } else {*/
             this.playerID = freshData.selfID;
             this.type = 'garbage';
-        }
+        //}
         //}
         //this.mass = mass;
         this.STEPS_TOTAL = 20;
@@ -1038,28 +1038,28 @@
     };
     Garbage.prototype = {
         getPosition: function() {
-            switch (this.type) {
-                case 'garbage':
+            /*switch (this.type) {
+                case 'garbage':*/
                     return this.position;
-                case 'playerPart':
+                /*case 'playerPart':
                     return { x: this.position.x + players[this.playerID]
-                                .position.x /*+ Game.gameSize.x / 2*/,
+                                .position.x /!*+ Game.gameSize.x / 2*!/,
                             y: this.position.y + players[this.playerID]
-                                .position.y /*+ Game.gameSize.y / 2*/ };
-            }
+                                .position.y /!*+ Game.gameSize.y / 2*!/ };*/
+            //}
         },
         setPosition: function(position) {
-            switch (this.type) {
-                case 'garbage':
+            /*switch (this.type) {
+                case 'garbage':*/
                     this.position = position;
-                    break;
-                case 'playerPart':
+                    //break;
+                /*case 'playerPart':
                     this.position = {
                         x: position.x - players[this.playerID].position.x,
                         y: position.y - players[this.playerID].position.y
                     };
-                    break;
-            }
+                    break;*/
+            //}
         },
 
         setInMotion: function(/*force,*/ /*speed,*/ position) {
