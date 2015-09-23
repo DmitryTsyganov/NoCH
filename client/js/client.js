@@ -1028,6 +1028,7 @@
         //}
         //this.mass = mass;
         this.STEPS_TOTAL = 20;
+        this.position = {};
         this.setPosition(position);
         //this.position = this.positionPrev = position;
         this.element = element;
@@ -1040,7 +1041,7 @@
         getPosition: function() {
             /*switch (this.type) {
                 case 'garbage':*/
-                    return this.position;
+                    return { x: this.position.x, y: this.position.y };
                 /*case 'playerPart':
                     return { x: this.position.x + players[this.playerID]
                                 .position.x /!*+ Game.gameSize.x / 2*!/,
@@ -1051,7 +1052,8 @@
         setPosition: function(position) {
             /*switch (this.type) {
                 case 'garbage':*/
-                    this.position = position;
+                    this.position.x = position.x;
+                    this.position.y = position.y;
                     //break;
                 /*case 'playerPart':
                     this.position = {
@@ -1207,7 +1209,7 @@
             if ("dg" in newData) {
                 delete garbageAll[newData.dg];
             }
-            if ('bp' in newData) {
+            if ("bp" in newData) {
                 garbageAll[newData.bp].type = 'playerPart';
                 garbageAll[newData.bp].playerID = newData.pid;
             }
@@ -1248,8 +1250,13 @@
             if ('gba' in newData) {
                 //console.log(newData.gba);
                 for (var i = 0; i < newData.gba.length; i += 3) {
-                    //console.log(newData.gba[i]);
-                    garbageAll[newData.gba[i]].setPosition({ x: newData.gba[i + 1], y: newData.gba[i + 2]});
+                    if (garbageAll[newData.gba[i]]) {
+                        garbageAll[newData.gba[i]].setPosition({ x: newData.gba[i + 1], y: newData.gba[i + 2]});
+                    } else {
+                        console.log("garbage probably hasn't arrived yet");
+                        console.log(newData.gba[i]);
+                        console.log(garbageAll);
+                    }
                 }
             }
             if ("m" in newData) {
