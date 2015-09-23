@@ -1248,7 +1248,11 @@
             if ('gba' in newData) {
                 for (var i = 0; i < newData.gba.length; i += 3) {
                     //console.log(newData.gba[i]);
-                    garbageAll[newData.gba[i]].setPosition({ x: newData.gba[i + 1], y: newData.gba[i + 2]});
+                    if (garbageAll[newData.gba[i]]) {
+                        garbageAll[newData.gba[i]].setPosition({x: newData.gba[i + 1], y: newData.gba[i + 2]});
+                    } else {
+                        console.log("garbage probably hasn't arrived yet");
+                    }
                 }
             }
             if ("m" in newData) {

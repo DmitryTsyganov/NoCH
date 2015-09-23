@@ -744,7 +744,6 @@ function checkGarbageVisibility() {
     });
     for (var i = 0; i < objects.length; ++i) {
         for (var j = 0; j < players.length; ++j) {
-
             if (players[j] && players[j].isReady && inScreen.call(players[j], objects[i], 500) &&
                 objects[i].body.playersWhoSee.indexOf(players[j].body.playerNumber) == -1) {
                 /*objects[i].body.playersWhoSee.push(j);
@@ -761,7 +760,12 @@ function checkGarbageVisibility() {
                 var addedSuccessfully = true;
                 while (currentBody.chemicalParent && addedSuccessfully) {
                     var secondBody = currentBody.constraint1.bodyA;
-                    addedSuccessfully = addPlayerWhoSee(getMainObject(secondBody), j);
+
+                    if (currentBody.chemicalParent.inGameType != 'player') {
+                        addedSuccessfully = addPlayerWhoSee(getMainObject(secondBody), j);
+                    } else {
+                        addedSuccessfully = false;
+                    }
                     /*tryToSend({
                         "ng": secondBody.id,
                         "p": secondBody.position,
@@ -786,7 +790,9 @@ function checkGarbageVisibility() {
             }
         }
         var playersWhoSee = objects[i].body.playersWhoSee;
-        for (j = 0; j < playersWhoSee.length; ++j) {
+        j = playersWhoSee.length;
+        //for (j = 0; j < playersWhoSee.length; ++j) {
+        while (j--) {
 
             if (!players[playersWhoSee[j]]) {
                 playersWhoSee.splice(j, 1);
@@ -993,7 +999,9 @@ playersEmitter.on('player died', function(event) {
     objects = objects.filter(function(obj) {
         return obj;
     });
-    for (var i = 0; i < objects.length; ++i) {
+    var i = objects.length;
+    //for (var i = 0; i < objects.length; ++i) {
+    while (i--) {
         var playerIndex = objects[i].body.playersWhoSee.indexOf(playerId);
         if (playerIndex != -1) {
             /*if (objects[i].body.playersWhoSee.length) {
