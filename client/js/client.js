@@ -30,6 +30,38 @@
 
         $('#overlay').hide();
         $('#characteristic').show();
+        ////////
+        var color = $('#btn__go').css("background-color")
+        //alert(color)
+        var rgb = []
+        var tmp = "";
+        for (var k = 0;k < color.length ;++k){
+
+            if (color[k] <= "9" && color[k] >= "0"){
+                tmp+= color[k];
+                //alert(color[k])
+            }
+            if (color[k]==","||color[k] == ")") {
+                rgb.push(parseInt(tmp,10));
+                //alert(tmp)
+                tmp=""
+            }
+        } //alert(rgb);
+        if (rgb[0]> 200 && rgb[1] > 200 && rgb[2] > 200 ){
+            for (var i=0;i<3;i++){
+                rgb[i]-=20
+            }
+        }
+        else if (rgb[0] < 30 && rgb[1] < 30 && rgb[2] < 30){
+            for ( i = 0;i<3;i++){
+                rgb[i]+=20
+            }
+        }
+        //alert(rgb)
+        var rgb_new ="rgb("+String(rgb[0]) + "," + String(rgb[1]) + "," + String(rgb[2]) + ")";
+        //alert(rgb_new);
+        $("#btn__go").css("background-color",rgb_new);
+        //alert($("#btn__go").css("background-color"));
         Game.activePlayer = true;
     });
 
@@ -49,21 +81,25 @@
         this.arrayOfImages2 = [];
         this.arrayOfImages3 = [];
         this.arrayOfClouds = [];
+        this.arrayOfBorder = [];
+        this.arrayOfBalls = [];
         var flag_array = 0;
 
         this.gameSize = { x: this.canvas.width,
                           y: this.canvas.height };
         console.log(this.gameSize);
 
-        this.img_count = 7;
-        this.backImageCount1 = 30;
+        this.backImageCount1 = 29;
         this.backImageCount2 = 35;
         this.backImageCount3 = 30;
+        this.imageBorderCount = 2;
+        this.imageBallsCount = 7;
         this.cloudsCount = 29;
         this.numberOfClouds = /*29*/20;
         this.numberOfObjects1 = /*200*/35;
         this.numberOfObjects2 = /*75*/25;
         this.numberOfObjects3 = /*40*/11;
+        this.numberOfBalls = 15;
         this.backGroundOffset = this.gameSize.y / 2;
 
         this.imagesAddedTotal = 0;
@@ -75,15 +111,6 @@
 
         imageLoaded();  // "Костыль тут, ибо без него не работает т.к. убрал fon. см ниже"
 
-        //for (var i=1; i<this.img_count+1; ++i){
-        //    var img = new Image();
-        //    var path= String(i);
-        //    path+=".png";
-        //
-        //    img.src = path;
-        //    arrayOfImages.push(img);
-        //    img.onload = imageLoaded();
-        //}
         for (var i = 1; i < this.cloudsCount + 1; ++i){
             var img = new Image();
             img.src = "clouds/" + String(i) + ".png";
@@ -112,7 +139,19 @@
             img.onload = imageLoaded();
         }
 
+        for (i = 1; i < this.imageBorderCount + 1; ++i){
+            img = new Image();
+            img.src = "border/gradient" + String(i) + ".png";
+            this.arrayOfBorder.push (img);
+            img.onload = imageLoaded();
+        }
 
+        for (i = 1; i < this.imageBallsCount + 1; ++i){
+            img = new Image();
+            img.src = "borderballs/" + String(i) + ".png";
+            this.arrayOfBalls.push (img);
+            img.onload = imageLoaded();
+        }
 
         this.backObjectClass = function (gameSize) {
             this.rescale = function (point) {
@@ -250,15 +289,26 @@
             this.trajectory = Math.round (Math.random() * 10);
         };
 
-        //this.bObjects1 = [];
-        //this.bObjects2 = [];
-        //this.bObjects3 = [];
+        this.BorderBall = function (i, array){
+            this.image = array[i];
+            this.shift = {x : 0,
+                          y : 0};
+            this.startPlace = Math.random();
+            this.size = i % 3;
+            this.speed = Math.random() + 1;
+            this.lifetime = Math.random() * 7 + 7;
+            this.vector = {x : Math.random() - 0.5,
+                           y : 1};
+            this.opacity = 1;
+            //this.opacitySpeed = Math.random();
+        };
 
         this.relativeCoef = 1;
         this.clouds = [];
         this.bObjects1 = [];
         this.bObjects2 = [];
         this.bObjects3 = [];
+        this.bBalls = [];
         this.LEVEL_1 = 1;
         this.LEVEL_2 = 2;
         this.LEVEL_3 = 3;
@@ -280,6 +330,9 @@
             this.clouds[i] = new this.BackObject (this.gameSize, ctx, this.LEVEL_CLOUDS,
                                                 i % this.cloudsCount, this.arrayOfClouds);
         }
+        for ( i = 0; i < this.numberOfBalls; ++i){
+            this.bBalls[i] = new this.BorderBall (i % this.imageBallsCount, this.arrayOfBalls);
+        }
 
         var self = this;
         var gameLoop = function() {
@@ -290,7 +343,7 @@
 
        // while(flag_array!=this.img_count +1);
         // ctx.drawImage(fon, 0, 0);
-
+        document.body.style.cursor = "url('cursor.png'), auto";
         gameLoop();
     };
 
@@ -298,32 +351,26 @@
         'C': 8,
         'B': 12,
         'O': 6,
-        'Ni': 8,
+        'N': 8,
         'Be': 4,
-        'Li': -1,
+        'Li': 0,
         'F': 4,
-        'He': -1,
+        'He': 0,
         'Ne': 8,
-        'H': -1
+        'H': 0
     };
     var indiProtonTime = {
         'C': 20,
         'B': 10,
         'O': 60,
-        'Ni': 10,
+        'N': 10,
         'Be': 10,
         'Li': 15,
         'F': 20,
         'He': 20,
         'Ne': 8,
-        'H': -1
+        'H': 0
     };
-    var INDI_STATE_FULL = 2,
-        INDI_STATE_IN_PROGRESS = 1,
-        INDI_STATE_NONE = 0;
-        INDI_PROTON_STATE_NONE = 0;
-        INDI_PROTON_STATE_ON = 1;
-
     var radiuses = {
         "N": 31,
         "F": 36,
@@ -339,7 +386,7 @@
 
     Noch.prototype = {
 
-        drawBackground: function(ctx, gameSize ) {
+        drawBackground: function(ctx, gameSize) {
             if (freshData.inputData.player) {
                 //var RESIZE_1 = 5;
                 //var RESIZE_2 = 2;
@@ -397,7 +444,7 @@
                     this['bObjects' + number][i] = new this.BackObject(gameSize, ctx, this['LEVEL_' + number],
                     i % this['backImageCount' + number], this['arrayOfImages' + number]);
                 this.choosePoint(this['bObjects' + number][i], i,  gameSize);
-                console.log(this['bObjects' + number][i].position);
+              //  console.log(this['bObjects' + number][i].position);
                 ++this.imagesAddedTotal;
             }
             this['numberOfObjects' + number] += additionalObjects;
@@ -423,8 +470,8 @@
             for (var i = 1; i <= 3; ++i) {
                 this.addObject(i, gameSize, ctx);
             }
-            console.log("Images added " + this.imagesAddedTotal);
-            console.log("Images deleted " + this.imagesRemovedTotal);
+            //console.log("Images added " + this.imagesAddedTotal);
+            //console.log("Images deleted " + this.imagesRemovedTotal);
         },
 
         deleteObject: function(array, length, gameSize) {
@@ -473,8 +520,8 @@
                     object.rescaleBack(object.point);
                     break;
             }
-            console.log("point x is " + object.point.x);
-            console.log("point x is " + object.point.y);
+            //console.log("point x is " + object.point.x);
+            //console.log("point x is " + object.point.y);
         },
 
         checkPoint: function (object, gameSize){
@@ -545,100 +592,32 @@
         //    }
         //},
 
-            drawIndicatorProton : function (x, y, radius, id, ctx){
-                var timeShift = 1 / (60 * indiProtonTime[players[id].element]),
-                    fontSize = 20 * freshData.getCoefficient(),
-                    textShiftX = radius * 0.5 * freshData.getCoefficient(),
-                    textShiftY = radius * 0.2 * freshData.getCoefficient();
-                ctx.save();
-                if (players[id].protonTime < 1){
-                    ctx.fillStyle = "grey";
-                    players[id].protonTime += timeShift;
-                }
-                else ctx.fillStyle = "white";
-                ctx.font = "bold " + fontSize + "px tellural_altbold";
-                ctx.fillText (players[id].protonNumber, x + textShiftX, y - textShiftY);
-                ctx.restore();
-            },
-
-
-/*
-<<<<<<< HEAD
-        indicator : {
-            radius : radiuses["C"],
-            counterClockwise : false,
-            state : INDI_STATE_FULL,
-            currentAngle : Math.PI / 2,
-            startAngle : Math.PI / 2,
-            endAngle : 2.5 * Math.PI,
-            speed :  2 * Math.PI / (indiNeutronTime['C'] * 45),
-            color : 'rgba(204,0,65,1)',
-            width : 10,
-            time : 0,
-            startTime : 0,
-            duration : indiNeutronTime['C'] * 1000,
-
-            draw : function (x, y, radius, color, ctx) {
-                this.drawDefault (x, y, radius, ctx);
-                switch (this.state){
-                    case INDI_STATE_FULL :
-                        //console.log("k");
-                        this.drawFull (x, y, radius, color, ctx);
-                        break;
-                    case INDI_STATE_IN_PROGRESS :
-                        //console.log("kk");
-                        this.drawProgress (x, y, radius, color, ctx);
-                        break;
-                    case INDI_STATE_NONE :
-                        this.state = INDI_STATE_IN_PROGRESS;
-                        this.currentAngle = Math.PI / 2;
-                        break;
-                }
-            },
-            drawFull : function (x, y, radius, color, ctx) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.lineWidth = this.width * freshData.getCoefficient();
-                ctx.arc (x, y, radius * freshData.getCoefficient(), this.startAngle, this.endAngle, this.counterClockwise);
-                ctx.strokeStyle = color;
-                ctx.stroke();
-                ctx.restore();
-            },
-            drawProgress : function (x, y, radius, color, ctx) {
-                ctx.save();
-                this.time = (new Date().getTime() - this.startTime);
-                this.currentAngle = this.startAngle + (this.endAngle - this.startAngle) * this.time / this.duration;
-                ctx.beginPath();
-                ctx.lineWidth = this.width * freshData.getCoefficient();
-                ctx.arc (x, y, radius * freshData.getCoefficient(), this.startAngle, this.currentAngle, this.counterClockwise);
-                ctx.strokeStyle = color;
-                ctx.stroke();
-                if (this.time > this.duration) this.state = INDI_STATE_FULL;
-                ctx.restore();
-            },
-            drawDefault : function (x, y, radius, ctx){
-                ctx.save();
-                ctx.beginPath();
-                ctx.lineWidth = this.width * freshData.getCoefficient();
-                ctx.arc (x, y, radius * freshData.getCoefficient(), 0, 2 * Math.PI);
-                ctx.strokeStyle = 'grey';
-                ctx.stroke();
-                ctx.restore();
+        drawIndicatorProton : function (x, y, radius, id, ctx){
+            var timeShift = 1 / (60 * indiProtonTime[players[id].element]),
+                fontSize = 0.5 * radius * freshData.getCoefficient(),
+                textShiftX = radius * 0.45 * freshData.getCoefficient(),
+                textShiftY = radius * 0.2 * freshData.getCoefficient();
+            ctx.save();
+            if (players[id].protonTime < 1){
+                ctx.fillStyle = "grey";
+                players[id].protonTime += timeShift;
             }
-=======
-*/
-
-
+            else ctx.fillStyle = "white";
+            ctx.font = "bold " + fontSize + "px tellural_altbold";
+            ctx.fillText (players[id].protonNumber, x + textShiftX, y - textShiftY);
+            ctx.restore();
+        },
+        
         drawIndicatorNeutron : function (x, y, radius, color, id, ctx) {
             var currentAngle,
                 shift = 2 * Math.PI / (60 * indiNeutronTime[players[id].element]),
                 counterClockwise = false,
                 startAngle = Math.PI / 2,
                 width = 10;
-
+            if (!indiNeutronTime[players[id].element])  players[id].angle = 2 * Math.PI;
             ctx.save();
             ctx.beginPath();
-            ctx.lineWidth = width * freshData.getCoefficient();
+            ctx.lineWidth = width * freshData.getCoefficient() / radiuses["C"] * radius;
             ctx.arc(x, y, radius * freshData.getCoefficient(), 0, 2 * Math.PI);
             ctx.strokeStyle = 'grey';
             ctx.stroke();
@@ -653,41 +632,6 @@
             ctx.stroke();
             ctx.restore();
         },
-            //drawFull : function (x, y, radius, color, ctx) {
-            //    ctx.save();
-            //    ctx.beginPath();
-            //    ctx.lineWidth = this.width * freshData.getCoefficient();
-            //    ctx.arc (x, y, radius * freshData.getCoefficient(), this.startAngle, this.endAngle,
-            //        this.counterClockwise);
-            //    ctx.strokeStyle = color;
-            //    ctx.stroke();
-            //    ctx.restore();
-            //},
-            //drawProgress : function (x, y, radius, color, id, ctx) {
-            //    var currentAngle,
-            //        shift = 2 * Math.PI / (60 * indiNeutronTime[players[id].element]);
-            //    ctx.save();
-            //    if (players[id].angle < 2 * Math.PI)
-            //        players[id].angle += shift;
-            //    currentAngle = players[id].angle + this.startAngle;
-            //    ctx.beginPath();
-            //    ctx.lineWidth = this.width * freshData.getCoefficient();
-            //    ctx.arc (x, y, radius * freshData.getCoefficient(), this.startAngle, currentAngle,
-            //        this.counterClockwise);
-            //    ctx.strokeStyle = color;
-            //    ctx.stroke();
-            //  //  if (players[id].angle > 2 * Math.PI) this.state = INDI_STATE_FULL;
-            //    ctx.restore();
-            //},
-            //drawDefault : function (x, y, radius, ctx){
-            //    ctx.save();
-            //    ctx.beginPath();
-            //    ctx.lineWidth = this.width * freshData.getCoefficient();
-            //    ctx.arc (x, y, radius * freshData.getCoefficient(), 0, 2 * Math.PI);
-            //    ctx.strokeStyle = 'grey';
-            //    ctx.stroke();
-            //    ctx.restore();
-            //}
 
 
         start: function() {
@@ -717,8 +661,9 @@
         drawElement: function(ctx, x, y, radius, color, element) {
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, 2 * Math.PI);
+          //  console.log( "out ", radius);
             ctx.lineWidth = 7 * freshData.getCoefficient() / radiuses["C"] * radiuses[element];
-            ctx.strokeStyle = color;//"white";
+            ctx.strokeStyle = "white";
             ctx.stroke();
             ctx.fillStyle = "black";//color;
             ctx.fill();
@@ -791,6 +736,7 @@
                             radiuses[players[_players[i]].element]
                             * freshData.getCoefficient(),
                             players[_players[i]].color, players[_players[i]].element);
+                        //console.log(_players[i],"out", radiuses[players[_players[i]].element], "  ",radiuses[players[_players[i]].element] * freshData.getCoefficient());
                         this.addLetter (ctx, pos.x, pos.y,
                             players[_players[i]].element,
                             radiuses[players[_players[i]].element]
@@ -804,14 +750,15 @@
             }
         },
 
-
-        drawBorder: function(ctx) {
+        drawBorder: function(ctx, gameSize) {
             if (freshData.inputData.border) {
                 var border = freshData.inputData.border;
                 var width = 20 * freshData.getCoefficient();
                 var height = 100 * freshData.getCoefficient();
-
-                var half = 0.5;
+                var image = this.arrayOfBorder[0];
+                var half = 0.5 * freshData.getCoefficient();
+                var TO_RADIANS = Math.PI / 180;
+                var resize = 1.5;
 
                 for (var i = 0; i < border.length; i += 3) {
                     ctx.beginPath();
@@ -825,25 +772,43 @@
 
                     ctx.translate(pos.x, pos.y);
                     ctx.rotate(angle);
-
-                    ctx.rect(-width * half, - height * half, width * half/*30*/, height);
-                    ctx.strokeStyle = 'White';
-                    ctx.lineWidth = 4 * freshData.getCoefficient();
-
-                    var grd = ctx.createLinearGradient(-width * half, - height * half,
+                    ctx.save();
+                    ctx.rotate(90 * TO_RADIANS);
+                    ctx.drawImage (image, -image.width * half ,
+                        -image.height * half - 2 * radiuses["Li"] * freshData.getCoefficient() ,
+                        image.width * freshData.getCoefficient() * resize, image.height * freshData.getCoefficient());
+                    this.drawBorderBalls (ctx, -width, - height * half, height);
+                    ctx.restore();
+                    ctx.rect(-width * freshData.getCoefficient() + 2 * radiuses["Li"] * freshData.getCoefficient(), - height * half,
+                        width * half/*30*/ - 3 * gameSize.x, height + 2 * gameSize.x);
+                    var grd = ctx.createLinearGradient(-width * half , - height * half ,
                                                         width * half/* 30*/, -height * half);
-
-                    grd.addColorStop(0.35, 'black');
-                    //grd.addColorStop(0.45, "rgba(0, 0, 0, 1)");
-                    grd.addColorStop(1, "transparent");
-
+                    grd.addColorStop(1, "rgba(255, 255, 255, 0)");
+                    grd.addColorStop(0, "rgba(255, 255, 255, 1)");
                     ctx.fillStyle = grd;
                     //temporary
-                    //ctx.fill();
-
-                    ctx.stroke();
+                    ctx.fill();
+                    //ctx.stroke();
                     ctx.restore();
                 }
+            }
+        },
+        drawBorderBalls : function (ctx, xx, yy, width){
+            var x;
+            yy -= 50 * freshData.getCoefficient();
+
+            for (var i = 0; i < this.numberOfBalls; ++i){
+                if (this.bBalls[i].opacity > 0) {
+                    x = xx + this.bBalls[i].startPlace * width;
+                    ctx.drawImage(this.bBalls[i].image, x + this.bBalls[i].shift.x * freshData.getCoefficient(),
+                        yy - this.bBalls[i].shift.y * freshData.getCoefficient(),
+                        this.bBalls[i].image.width * freshData.getCoefficient() * this.bBalls[i].size,
+                        this.bBalls[i].image.height * freshData.getCoefficient() * this.bBalls[i].size);
+                    this.bBalls[i].shift.x += this.bBalls[i].speed * this.bBalls[i].vector.x / 10;
+                    this.bBalls[i].shift.y += this.bBalls[i].speed * this.bBalls[i].vector.y / 10;
+                    this.bBalls[i].opacity -= 1 / (this.bBalls[i].lifetime * 60);
+                } else
+                    this.bBalls[i] = new this.BorderBall (i % this.imageBallsCount, this.arrayOfBalls);
             }
         },
 
@@ -907,7 +872,7 @@
             this.drawStuff("n", 9, ctx);
             this.drawStuff("N", 31, ctx);
             this.drawPlayers(ctx);
-            this.drawBorder(ctx);
+            this.drawBorder(ctx, gameSize);
             this.drawGarbage(ctx);
         }
     };
@@ -969,13 +934,13 @@
             this.speed.y = (speedPrevY * frictionAir * correction) +
                             (this.force.y / this.mass) * deltaTimeSquared;
 
-            if (!this.stepCounter) console.log('velocity x ' + this.speed.x + ', y ' + this.speed.y);
+         //   if (!this.stepCounter) console.log('velocity x ' + this.speed.x + ', y ' + this.speed.y);
 
             this.positionPrev.x = this.position.x;
             this.positionPrev.y = this.position.y;
             this.position.x += this.speed.x;
             this.position.y += this.speed.y;
-            console.log(this.position);
+        //    console.log(this.position);
         }
     };
 
@@ -995,7 +960,7 @@
                 var dicimalPlacesNumber = 2;
                 this.targetCoefficient = (newData.coefficient).toFixed(
                         dicimalPlacesNumber) * this.coefficientScale;
-                console.log(this.targetCoefficient);
+         //       console.log(this.targetCoefficient);
             }
             if ("c" in newData && "e" in newData) {
                 players[newData.id] = { "color": newData.c,
@@ -1034,7 +999,7 @@
                                                     { x: newData.v.x/* * 1.18*/,
                                                     y: newData.v.y/* * 1.18*/},
                                                     newData.p);
-                console.log("got x " + newData.p.x + ", y " + newData.p.y);
+          //      console.log("got x " + newData.p.x + ", y " + newData.p.y);
             }
         },
         updateOutput: function(mouseX, mouseY) {
@@ -1094,7 +1059,7 @@
         }
         freshData.updateInput(event.data);
         // console.log(freshData.inputData.player);
-        
+
         //updateInput(event.data);
     };
 
@@ -1177,5 +1142,6 @@
     //////////////////////////////////////////////
     var previousX, previousY, prevFlag = 0;
     var scaleFlag = true;
+    var borderTimer = 0;
 
 })();

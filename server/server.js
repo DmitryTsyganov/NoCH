@@ -758,8 +758,7 @@ function updateActiveGarbage() {
             console.log("velocity x is " + garbageActive[i].velocity.x +
                         ", y " + garbageActive[i].velocity.y);
             console.log("frictionAir " + garbageActive[i].frictionAir);*/
-            players[playersWhoSee[j]]
-                .ws.send(JSON.stringify({ "m": garbageActive[i].id,
+            players[playersWhoSee[j]].ws.send(JSON.stringify({ "m": garbageActive[i].id,
                                         "v": garbageActive[i].positionPrev,
                                         "p": garbageActive[i].position,
                                         "f": garbageActive[i].force }));
@@ -767,7 +766,7 @@ function updateActiveGarbage() {
     }
 }
 
-setInterval(updateActiveGarbage, 1000 / 3);
+setInterval(updateActiveGarbage, 1000 / 3); //bug here
 setInterval(checkGarbageVisibility, 1000);
 
 for (var i = 0; i < garbage.length; i++) {
