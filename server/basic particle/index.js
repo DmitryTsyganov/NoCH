@@ -21,6 +21,8 @@ var basicParticle = function(position, engine, elem) {
     this.body = Bodies.circle(position.x, position.y,
         element.radius + this.CHARGE_RADIUS,
         { restitution: 0.99 });
+
+    this.body.occupiedAngle = null;
     this.body.inertia = 0;
     this.body.inverseInertia = 0;
 
@@ -36,7 +38,6 @@ var basicParticle = function(position, engine, elem) {
     World.addBody(engine.world, this.body);
 
     var self = this;
-    this.body.superMutex = 0;
     this.body.chemicalBonds = 0;
     this.body.chemicalChildren = [];
 
@@ -111,12 +112,15 @@ basicParticle.prototype = {
                 }
             }
 
-            for (i = 0; i < node.chemicalParent.bondAngles.length; ++i) {
-                //console.log("candidate angle " + node.chemicalParent.bondAngles[i].angle);
-                if (node.chemicalParent.bondAngles[i].angle ==
-                    node.constraint1.chemicalAngle) {
-                    node.chemicalParent.bondAngles[i].available = true;
-                }
+            if (node.occupiedAngle) {
+                /*node.chemicalParent.bondAngles[
+                 node.chemicalParent.bondAngles.indexOf(node.occupiedAngle)].availible = true;*/
+                node.chemicalParent.bondAngles.forEach(function(obj) {
+                    if (obj.angle == node.occupiedAngle) {
+                        obj.available = true;
+                    }
+                });
+                node.occupiedAngle = null;
             }
 
             if (node.chemicalParent.chemicalBonds) {
@@ -313,41 +317,6 @@ basicParticle.prototype = {
 
     },
 
-    muteAll: function() {
-        this.changeGeneralAvailability(1);
-    },
-
-    unmuteAll: function() {
-        this.changeGeneralAvailability(-1);
-    },
-
-    changeGeneralAvailability: function(value) {
-        this.traversDST(this.body, function(node) {
-            node.superMutex += value;
-        })
-    },
-
-    muteBranch: function() {
-        this.changeBranchAvailability(1);
-        //console.log("Mutex before " + this.body.superMutex);
-    },
-
-    unmuteBranch: function() {
-        this.changeBranchAvailability(-1);
-        //console.log("Mutex after " + this.body.superMutex);
-    },
-
-    changeBranchAvailability: function(value) {
-        this.reversDST(this.body, function(node) {
-
-            /*var name = value > 0 ? "mute" : "unmute";
-            console.log("applying func " + name + " to body " +
-                JSON.stringify(node.position) + ", mutex\nbefore: " + node.superMutex);*/
-            node.superMutex += value;
-            //console.log("after: " + node.superMutex);
-        })
-    },
-
     reverse: function() {
         var func = this.returnPostRevertTree();
         this.reversDST(this.body, func);
@@ -427,8 +396,6 @@ basicParticle.prototype = {
             garbageBody.constraint2.chemicalAngle = garbageAngle;
             World.add(engine.world, [constraintA, constraintB]);
             garbageBody.collisionFilter.mask = 0x0001;
-            --playerBody.superMutex;
-            --garbageBody.superMutex;
             /*var newSelf = {};
             newSelf.body = garbageBody;
             newSelf.changeBranchAvailability = self.changeBranchAvailability;
@@ -437,8 +404,6 @@ basicParticle.prototype = {
         });
     },
 
-    //TODO: get rid of recursion
-    //TODO: apply KISS to this function (transport createBond here???)
     correctBondAnglesFinal: function(engine) {
         console.log("working with " + this.body.element + " at " +
             JSON.stringify(this.body.position));
@@ -449,8 +414,6 @@ basicParticle.prototype = {
             var child = body.chemicalChildren[i];
 
             if (child) {
-                ++body.superMutex;
-                ++child.superMutex;
                 console.log("working with " + child.element + " at " +
                     JSON.stringify(child.position));
                 //child.collisionFilter.mask = 0x0008;
@@ -504,6 +467,7 @@ basicParticle.prototype = {
         var currentAngle = Geometry.findAngle(this.body.position,
             garbageBody.position, this.body.angle);
         var angle = this.getClosestAngle(currentAngle);
+        garbageBody.occupiedAngle = angle;
 
         //console.log("current angle = " + currentAngle);
         //console.log("target angle = " + angle);
@@ -558,6 +522,7 @@ basicParticle.prototype = {
                 //console.log("current angle " + rotationAngle);
                 //console.log("target angle " + garbageAngle);
                 Body.rotate(garbageBody, (rotationAngle - garbageAngle));*/
+                garbageBody.occupiedAngle = null;
                 if (finalCreateBond) {
                     finalCreateBond(self.body, garbageBody, angle, garbageAngle);
                 }
