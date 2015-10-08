@@ -1006,9 +1006,7 @@ playersEmitter.on('player died', function(event) {
     objects = objects.filter(function(obj) {
         return obj;
     });
-    var i = objects.length;
-    //for (var i = 0; i < objects.length; ++i) {
-    while (i--) {
+    for (var i = 0; i < objects.length; ++i) {
         var playerIndex = objects[i].body.playersWhoSee.indexOf(playerId);
 
         if (playerIndex != -1) {
