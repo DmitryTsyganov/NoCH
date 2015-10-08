@@ -363,14 +363,14 @@ basicParticle.prototype = {
     },
 
     reconnectBond: function(child, engine) {
-        this.freeBondAngle.call({ body: child }, child.constraint2.chemicalAngle);
+        if (child.constraint2) {
+            this.freeBondAngle.call({body: child}, child.constraint2.chemicalAngle);
 
-        World.remove(engine.world, child.constraint1);
-        World.remove(engine.world, child.constraint2);
-        delete child["constraint1"];
-        delete child["constraint2"];
-
-        var self = this;
+            World.remove(engine.world, child.constraint1);
+            World.remove(engine.world, child.constraint2);
+            delete child["constraint1"];
+            delete child["constraint2"];
+        }
 
         this.connectBody(child, function(playerBody, garbageBody, angle, garbageAngle) {
             var stiffness = 0.05;
