@@ -22,6 +22,7 @@ var Garbage = function(position, engine, elem) {
     this.body.inGameType = "garbage";
 };
 
+//noinspection JSUnusedGlobalSymbols
 Garbage.prototype = {
 
     dismountBranch: function(engine) {
@@ -37,15 +38,12 @@ Garbage.prototype = {
         if (this.body.chemicalParent) {
             this.freeBondAngle.call({body: this.body.chemicalParent},
                 this.body.constraint1.chemicalAngle);
-            //this.freeBondAngle(this.constraint2.chemicalAngle);
             var self = {};
             self.connectBody = this.connectBody;
             self.freeBondAngle = this.freeBondAngle;
             self.correctParentBond = this.correctParentBond;
             self.getClosestAngle = this.getClosestAngle;
             self.body = this.body.chemicalParent;
-            ++this.body.superMutex;
-            ++self.body.superMutex;
 
             this.reconnectBond.call(self, this.body, engine);
         }
