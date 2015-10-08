@@ -92,7 +92,7 @@ basicParticle.prototype = {
     },
 
     //first part of disconnecting body from player
-    free: function(node, engine, breakConstraints) {
+    free: function(node, engine) {
 
         if (node.typeTimeout) clearTimeout(node.typeTimeout);
         node.inGameType = "temporary undefined";
@@ -101,9 +101,6 @@ basicParticle.prototype = {
             delete node.chemicalParent.chemicalChildren[
                 node.chemicalParent.chemicalChildren
                     .indexOf(node)];
-            /*node.chemicalParent.previousAngle -= 2 * Math.PI / node.chemicalParent.totalBonds;*/
-
-            //console.log("angle to free " + node.constraint1.chemicalAngle);
 
             for (var i = 0; i < node.bondAngles.length; ++i) {
                 if (node.bondAngles[i].angle ==
@@ -113,8 +110,6 @@ basicParticle.prototype = {
             }
 
             if (node.occupiedAngle) {
-                /*node.chemicalParent.bondAngles[
-                 node.chemicalParent.bondAngles.indexOf(node.occupiedAngle)].availible = true;*/
                 node.chemicalParent.bondAngles.forEach(function(obj) {
                     if (obj.angle == node.occupiedAngle) {
                         obj.available = true;
@@ -126,16 +121,12 @@ basicParticle.prototype = {
             if (node.chemicalParent.chemicalBonds) {
                 --node.chemicalParent.chemicalBonds;
             }
-            //console.log("Now parent has " + node.chemicalParent.chemicalBonds);
-            //console.log("But test says that " + node.chemicalParent.getFreeBonds());
             node.parentPosition = node.chemicalParent.position;
             delete node.chemicalParent;
         }
 
         if (node.player) {
-            //console.log(node.player.body.realMass);
             node.player.body.realMass -= node.mass;
-            //console.log(" - " + node.mass + " = " + node.player.body.realMass);
         }
 
         if (node.constraint1) {
@@ -333,8 +324,8 @@ basicParticle.prototype = {
     },
 
     getClosestAngle: function(angle) {
-        //console.log("given angle " + angle);
         var bondAngles = this.body.bondAngles;
+
         var difference = this.body.bondAngles.map(function(obj) {
             var diff = Math.abs(obj.angle - angle);
             if (angle > Math.PI / 2 * 3 && obj.angle == 0) diff = 0;
@@ -344,13 +335,8 @@ basicParticle.prototype = {
         }).sort(function(a, b) {
             return a.diff - b.diff;
         });
-        for (var i = 0; i < bondAngles.length; ++i) {
-            if (bondAngles[i].available) {
-                //console.log("possible angle " + bondAngles[i].angle);
-            }
-        }
+
         this.body.bondAngles[difference[0].index].available = false;
-        //console.log("closest angle " + this.body.bondAngles[difference[0].index].angle);
         return this.body.bondAngles[difference[0].index].angle;
     },
 
@@ -396,38 +382,22 @@ basicParticle.prototype = {
             garbageBody.constraint2.chemicalAngle = garbageAngle;
             World.add(engine.world, [constraintA, constraintB]);
             garbageBody.collisionFilter.mask = 0x0001;
-            /*var newSelf = {};
-            newSelf.body = garbageBody;
-            newSelf.changeBranchAvailability = self.changeBranchAvailability;
-            newSelf.reversDST = self.reversDST;
-            self.unmuteBranch.call(newSelf);*/
         });
     },
 
     correctBondAnglesFinal: function(engine) {
-        console.log("working with " + this.body.element + " at " +
-            JSON.stringify(this.body.position));
-        console.log("correctBondAnglesFinal started");
         var body = this.body;
         for (var i = 0; i < body.chemicalChildren.length; ++i) {
 
             var child = body.chemicalChildren[i];
 
             if (child) {
-                console.log("working with " + child.element + " at " +
-                    JSON.stringify(child.position));
-                //child.collisionFilter.mask = 0x0008;
                 this.reconnectBond(child, engine);
             }
         }
-        console.log("correctBondAnglesFinal ended");
     },
 
     changeCharge: function(value, engine, nucleonsArray) {
-        console.log("changeCharge started");
-        console.log("working with " + this.body.element + " at " +
-            JSON.stringify(this.body.position));
-        //this.body.collisionFilter.mask = 0x0008;
 
         this.CHARGE_RADIUS = 5;
 
@@ -454,14 +424,11 @@ basicParticle.prototype = {
         if (this.body.chemicalBonds) {
             this.correctBondAngles(engine);
         }
-            //this.body.collisionFilter.mask = 0x0001;
-        console.log("changeCharge Ended");
     },
 
     connectBody: function(garbageBody, finalCreateBond) {
         var i = 0;
-        var N = 30;     // Number of iterations
-
+        var numberOfIterations = 30;
         garbageBody.collisionFilter.mask = 0x0008;      // turn off collisions
 
         var currentAngle = Geometry.findAngle(this.body.position,
@@ -469,8 +436,6 @@ basicParticle.prototype = {
         var angle = this.getClosestAngle(currentAngle);
         garbageBody.occupiedAngle = angle;
 
-        //console.log("current angle = " + currentAngle);
-        //console.log("target angle = " + angle);
         var realAngle = angle;
 
         if (currentAngle > 3 * Math.PI / 2 && angle == 0) realAngle = 2 * Math.PI;
@@ -480,15 +445,12 @@ basicParticle.prototype = {
             difference : difference - 2 * Math.PI;
         }
 
-        N = Math.abs(Math.round(N / Math.PI / 2 * difference)) * 2 + 1;
-        //console.log("N = " + N);
-        var step = difference / N;
-        //console.log("step =" + step);
+        numberOfIterations = Math.abs(Math.round(numberOfIterations / Math.PI / 2 * difference)) * 2 + 1;
+        var step = difference / numberOfIterations;
 
         var self = this;
         var intervalID = setInterval(function () {
             var pos1 = self.body.position;
-            //var pos2 = prev.position;
 
             var ADDITIONAL_LENGTH = 20;
 
@@ -496,32 +458,22 @@ basicParticle.prototype = {
                 x: ((self.body.circleRadius + garbageBody.circleRadius
                 + ADDITIONAL_LENGTH)
                 * Math.cos(currentAngle + step * i + self.body.angle)
-                + pos1.x - garbageBody.position.x) /*/ (N - i)*/,
+                + pos1.x - garbageBody.position.x),
                 y: ((self.body.circleRadius + garbageBody.circleRadius
                 + ADDITIONAL_LENGTH)
                 * Math.sin(currentAngle + step * i + self.body.angle)
-                + pos1.y - garbageBody.position.y) /*/ (N - i)*/
+                + pos1.y - garbageBody.position.y)
             };
 
             Body.translate(garbageBody, {
                 x: delta.x,
                 y: delta.y });
 
-            if (i++ === N) {
+            if (i++ === numberOfIterations) {
                 clearInterval(intervalID);
-                /*console.log('final:\tx = ' + garbageBody.position.x +
-                 '\ny = ' + garbageBody.position.y);*/
 
                 var garbageAngle = self.correctParentBond.call(self, garbageBody, self.body);
 
-                /*var rotationAngle = Geometry.findAngle(garbageBody.position,
-                    self.body.position, garbageBody.angle);
-
-                var garbageAngle = self.getClosestAngle.call({ body: garbageBody }, rotationAngle);
-
-                //console.log("current angle " + rotationAngle);
-                //console.log("target angle " + garbageAngle);
-                Body.rotate(garbageBody, (rotationAngle - garbageAngle));*/
                 garbageBody.occupiedAngle = null;
                 if (finalCreateBond) {
                     finalCreateBond(self.body, garbageBody, angle, garbageAngle);
@@ -536,8 +488,6 @@ basicParticle.prototype = {
 
         var garbageAngle = this.getClosestAngle.call({ body: garbageBody }, rotationAngle);
 
-        //console.log("current angle " + rotationAngle);
-        //console.log("target angle " + garbageAngle);
         Body.rotate(garbageBody, (rotationAngle - garbageAngle));
         return garbageAngle;
     }

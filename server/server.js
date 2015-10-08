@@ -18,6 +18,7 @@ var Engine = Matter.Engine,
 
 var elements = params.getParameter("elements");
 
+//noinspection JSCheckFunctionSignatures
 var engine = Engine.create();
 
 engine.world.gravity.y = 0;
@@ -51,8 +52,6 @@ console.log('The server is running');
 
 webSocketServer.on('connection', function(ws) {
 
-    //if (peekAtAvailablePosition(players > 9)) ws.close();
-
     var mapRadius = params.getParameter("gameDiameter") / 2;
 
     var minAreaRadius = 0;
@@ -67,14 +66,11 @@ webSocketServer.on('connection', function(ws) {
 
     var id = addToArray(players, player);
 
+    //noinspection JSUnresolvedVariable
     player.body.number = player.body.playerNumber = id;
 
     console.log('new player ' + id +
      ', players total ' + players.length);
-
-    /*player.ws.emit("np", JSON.stringify({ "id": player.body.id,
-                                            "c": "white",
-                                            "e": player.body.element}));*/
 
     var colors = ["green", "blue", "yellow", "purple", "orange"];
     player.color = colors[Math.ceil(Math.random() * 4)];
@@ -82,6 +78,7 @@ webSocketServer.on('connection', function(ws) {
     for (var i = 0; i < players.length; ++i) {
         if (players[i]) {
             try {
+                //noinspection JSUnresolvedVariable
                 players[i].ws.send(JSON.stringify({ "id": player.body.id,
                     "c": player.color,
                     "e": player.body.element}));
@@ -119,6 +116,7 @@ webSocketServer.on('connection', function(ws) {
                 y: parsedMessage.shotY - player.getLocalPosition().y
             };
             player.shoot(parsedMessage.particle, shotPos, freeProtons, garbage, engine);
+            //noinspection JSUnresolvedVariable
             sendEverybody({"id": player.body.id, "ne": player.body.element});
         }
     });
@@ -126,6 +124,7 @@ webSocketServer.on('connection', function(ws) {
     ws.on('close', function(event) {
 
         if (event != 1000) {
+            //noinspection JSUnresolvedVariable
             prepareToDelete(player.body);
             console.log('player exited ' + id);
         } else {
@@ -135,6 +134,7 @@ webSocketServer.on('connection', function(ws) {
 
     ws.on('error', function() {
         console.log('player disconnected ' + id);
+        //noinspection JSUnresolvedVariable
         prepareToDelete(player.body);
     });
 
@@ -156,6 +156,7 @@ function createGarbage(quantity) {
         var singleGarbage = new Garbage(position, engine, element);
 
         garbage.push(singleGarbage);
+        //noinspection JSUnresolvedVariable
         singleGarbage.body.number = garbage.indexOf(singleGarbage);
     }
 }
@@ -173,13 +174,6 @@ function getRandomPositionInside(mapRadius, areaRadiusMin, areaRadiusMax) {
     };
 }
 
-/*
-function calculateDistance(pos1, pos2) {
-    return Math.sqrt((pos1.x - pos2.x) * (pos1.x - pos2.x)
-                    + (pos1.y - pos2.y) * (pos1.y - pos2.y));
-}
-*/
-
 //inserts obj in first available position in array. returns position
 function addToArray(array, obj) {
     var i = 0;
@@ -188,11 +182,11 @@ function addToArray(array, obj) {
     return i;
 }
 
-function peekAtAvailablePosition(array) {
+/*function peekAtAvailablePosition(array) {
     var i = 0;
     while(array[i]) ++i;
     return i;
-}
+}*/
 
 //returns coordinates equivalent in player's local CS
 function toLocalCS(coordinates, player) {
@@ -214,16 +208,10 @@ function createMessage(id) {
         y: Math.ceil(players[id].body.position.y)
     };
 
-    /*var bonds = [];
-    players.map(function(player) {
-        return player.getBondsPositions();
-    }).forEach(function(obj) {
-            bonds = bonds.concat(obj);
-    });*/
-
     var bonds = [];
     Composite.allConstraints(engine.world).forEach(
         function(bond) {
+            //noinspection JSUnresolvedVariable
             bonds.push({
                 x: bond.bodyA.position.x,
                 y: bond.bodyA.position.y
@@ -278,19 +266,20 @@ function addElements(id, object, array, elementName) {
     }));
 }
 
+//transforms array of positions {x: value, y: value} into array of digits
 function parseCoordinates(array) {
     var parsedArray = [];
     for (var i = 0; i < array.length; ++i) {
-        /*parsedArray.push(array[i].x);
-        parsedArray.push(array[i].y);*/
         for (var key in array[i]) {
-            parsedArray.push(array[i][key]);
+            if (array[i].hasOwnProperty(key)) {
+                parsedArray.push(array[i][key]);
+            }
         }
     }
     return parsedArray;
 }
 
-//checks if object is in screen of current player, current player is 'this'
+//checks if object is in screen of player, current player is 'this'
 /**
  * @return {boolean}
  */
@@ -316,7 +305,7 @@ function isElement(object) {
     return object.body.element == this;
 }
 
-//creates Bond between two elements
+//starts bonding process
 function createBond(playerBody, garbageBody) {
 
     ++playerBody.chemicalBonds;
@@ -336,6 +325,7 @@ function createBond(playerBody, garbageBody) {
     getMainObject(playerBody).connectBody(garbageBody, finalCreateBond);
 }
 
+//adds bond in physical engine
 function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
 
     var bondStiffness = 0.05;
@@ -383,26 +373,17 @@ function connectPlayers(bodyA, bodyB) {
 
     var massA = getPlayer(bodyA).body.realMass;
     var massB = getPlayer(bodyB).body.realMass;
-    /*console.log("first mass = " + massA);
-    console.log("second mass = " + massB);*/
+
     if (massA == massB) return;
     var playerBody = massA > massB ? bodyA : bodyB;
     var garbageBody = massA < massB ? bodyA : bodyB;
 
-    //console.log("target id = " + getPlayer(garbageBody).playerNumber].body.id);
     var deletedId = getPlayer(garbageBody).body.id;
 
     getPlayer(garbageBody).lose(engine, players, garbage, playerBody);
     getMainObject(garbageBody).reverse();
     sendEverybody({ "dp": deletedId });
     createBond(playerBody, garbageBody);
-
-    //testing
-    /*setTimeout(function() {
-    players[playerBody.playerNumber].traversDST(players[playerBody.playerNumber].body, function(node){
-        node.element = "He";
-        console.log("Body " + node.id + " has " + node.chemicalChildren.length);
-    })}, 5500);*/
 }
 
 function collideWithProton(elementBody, protonBody) {
@@ -434,7 +415,7 @@ function collideWithGarbage(playerBody, garbageBody) {
         connectGarbageToPlayer(playerBody, garbageBody);
     } else if (playerBody.inGameType  == "playerPart"){
         var momentum = calculateMomentum(playerBody, garbageBody);
-        //console.log(momentum);
+
         getMainObject(playerBody).checkDecoupling(momentum, engine);
         getMainObject(garbageBody).checkDecoupling(momentum, engine);
     }
@@ -466,10 +447,8 @@ function getArray(body) {
 }
 
 function getMainObject(body) {
-    console.log(body.inGameType);
     switch (body.inGameType) {
         case "player":
-            //console.log("returning player at " + body.number);
             return players[body.number];
         case "player temporary undefined":
         case "temporary undefined":
@@ -477,11 +456,9 @@ function getMainObject(body) {
         case "playerPart temporary undefined":
         case "garbage":
         case "garbage temporary undefined":
-            //console.log("returning garbage at " + body.number);
             return garbage[body.number];
         case "n":
         case "p":
-            //console.log("returning freeProtons at " + body.number);
             return freeProtons[body.number];
     }
 }
@@ -496,7 +473,6 @@ function getPlayer(body) {
     }
 }
 
-//creates bonds on collision if necessary
 Matter.Events.on(engine, 'collisionStart', function(event) {
     var pairs = event.pairs;
     for (var i = 0; i < pairs.length; i++) {
@@ -583,20 +559,13 @@ function sendEverybody(message) {
     }
 }
 
-/*function toRadians(angle) {
-    return angle * (Math.PI / 180);
-}*/
-
 function prepareToDelete(body) {
-    //body.inGameType = "ghost";
     if (ghosts.indexOf(body) == -1) {
         addToArray(ghosts, body);
     }
 }
 
 function deleteProperly(body) {
-
-    /*var index = body.number;*/
 
     if (body.inGameType == "p") {
         clearTimeout(body.timerId1);
@@ -615,41 +584,40 @@ setInterval(function() {
             var ghost = ghosts[i];
             switch (ghost.inGameType) {
                 case "p":
+
                     deleteProperly(ghost);
                     delete ghosts[i];
-                    /*ghosts.splice(i, 1);*/
                     break;
+
                 case "playerPart":
+
                     var playerToCheck = getPlayer(ghost);
                     getMainObject(ghost).die(engine);
                     deleteProperly(ghost);
                     delete ghosts[i];
                     playerToCheck.checkResizeShrink();
-                    /*ghosts.splice(i, 1);*/
                     break;
+
                 case "garbage":
 
                     garbage[ghost.number].die(engine);
                     deleteProperly(ghost);
                     delete ghosts[i];
-                    /*ghosts.splice(i, 1);*/
                     break;
+
                 case "player":
-                    //players[ghost.number].garbagify(players, garbage);
-                    //players[ghost.number].lose(engine, players, garbage);
+
                     console.log("player number " + ghost.number + " is dead.");
                     var player = getMainObject(ghost);
                     player.garbagify(players, garbage);
-                    //player.die(engine);
+
                     sendEverybody({ "dp": player.body.id });
                     delete ghosts[i];
-                    /*ghosts.splice(i, 1);*/
                     break;
             }
         }
 
     }
-    //ghosts = [];
 
     for (var j = 0; j < players.length; ++j) {
         if (players[j]) {
@@ -663,6 +631,7 @@ setInterval(function() {
 }, 1000 / 60);
 
 //catches memory leaks
+//noinspection JSUnresolvedFunction
 memwatch.on('leak', function(info) {
     console.log(info);
 });
