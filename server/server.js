@@ -352,6 +352,23 @@ function isElement(object) {
     return object.body.element == this;
 }
 
+function checkConnectingPossibility(bodyA, bodyB) {
+    console.log(([bodyA.element, bodyB.element].sort()).join(''));
+    //console.log(bodyA.energy);
+    //console.log(bodyB.energy);
+    var bond = params.getParameter(([bodyA.element, bodyB.element].sort()).join(''));
+    console.log(bond);
+    //console.log(bodyA.energy - bond[bodyA.element]);
+    //console.log(bodyB.energy - bond[bodyB.element]);
+    if (bond && (bodyA.energy - bond[bodyA.element]) >= 0 &&
+        (bodyB.energy - bond[bodyB.element]) >= 0) {
+        bodyA.energy -= bond[bodyA.element];
+        bodyB.energy -= bond[bodyB.element];
+        return true;
+    }
+    return false;
+}
+
 //creates Bond between two elements
 function createBond(playerBody, garbageBody) {
 
@@ -526,7 +543,8 @@ function collideWithBorder(body) {
 }
 
 function collideWithGarbage(playerBody, garbageBody) {
-    if (playerBody.getFreeBonds() && garbageBody.getFreeBonds()) {
+    if (playerBody.getFreeBonds() && garbageBody.getFreeBonds()&&
+        checkConnectingPossibility(playerBody, garbageBody)) {
         connectGarbageToPlayer(playerBody, garbageBody);
     } else if (playerBody.inGameType  == "playerPart"){
         var momentum = calculateMomentum(playerBody, garbageBody);

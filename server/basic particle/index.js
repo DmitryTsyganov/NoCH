@@ -22,6 +22,8 @@ var basicParticle = function(position, engine, elem, emitter) {
         element.radius + this.CHARGE_RADIUS,
         { restitution: 0.99 });
 
+    this.body.energy = 0;
+
     this.body.occupiedAngle = null;
     this.body.inertia = 0;
     this.body.inverseInertia = 0;
@@ -137,6 +139,10 @@ basicParticle.prototype = {
         if (node.chemicalParent) {
             node.emitter.emit('decoupled', { decoupledBodyA: node.chemicalParent,
                                             decoupledBodyB: node });
+            var bond = params.getParameter(([node.element,
+                node.chemicalParent.element].sort()).join(''));
+            node.energy += bond[node.element];
+            node.chemicalParent.energy += bond[node.chemicalParent.element];
             delete node.chemicalParent.chemicalChildren[
                 node.chemicalParent.chemicalChildren
                     .indexOf(node)];
@@ -185,7 +191,14 @@ basicParticle.prototype = {
     setElement: function(elem) {
         if (elem) {
             var element = params.getParameter(elem);
+            if (this.body.element) {
+                var previousElement = params.getParameter(this.body.element);
+                this.body.energy -= previousElement.energy;
+            }
             this.body.element = elem;
+
+            this.body.energy += element.energy;
+
             var coefficient = (element.radius + this.CHARGE_RADIUS)
                 / this.body.circleRadius;
 
@@ -392,11 +405,31 @@ basicParticle.prototype = {
     },
 
     checkDecoupling: function(momentum, engine) {
-        var bondStrength = 30;
+        //var bondStrength = 200;
+        for (var i = 0; i < this.body.chemicalChildren.length; ++i) {
+            if (this.body.chemicalChildren[i]) {
+                this.checkSingleDecoupling(this.body,
+                    this.body.chemicalChildren[i], momentum, engine);
+            }
+        }
+        if (this.body.chemicalParent) {
+            this.checkSingleDecoupling(this.body.chemicalParent,
+                this.body, momentum, engine);
+        }
+    },
+
+    checkSingleDecoupling: function(bodyA, bodyB, momentum, engine) {
+        var bond = params.getParameter(([bodyA.element, bodyB.element].sort()).join(''));
+        var bondStrength = bond[bodyA.element] + bond[bodyB.element];
+
+        /*console.log("Checking " + bodyA.element + " and " + bodyB.element +
+         ", momentum is " + momentum + ", bondStrength is " +
+         bondStrength);*/
+
         if (momentum > bondStrength && this.body.chemicalBonds) {
-            this.traversDST(this.body, this.free, this.letGo, engine);
-            if (this.body.player) {
-                this.body.player.checkResizeShrink();
+            this.traversDST(bodyB, this.free, this.letGo, engine);
+            if (bodyB.player) {
+                bodyB.player.checkResizeShrink();
             }
         }
     },
@@ -499,6 +532,43 @@ basicParticle.prototype = {
         //console.log("correctBondAnglesFinal ended");
     },
 
+    checkBondValidity: function(newElement, engine) {
+        for (var i = 0; i < this.body.chemicalChildren.length; ++i) {
+            if (this.body.chemicalChildren[i]) {
+                this.checkSingleBondValidity(newElement, this.body.chemicalChildren[i].element,
+                    this.body.chemicalChildren[i], engine);
+            }
+        }
+        if (this.body.chemicalParent) {
+            this.checkSingleBondValidity(this.body.chemecalParent.element, newElement,
+                this.body, engine);
+        }
+    },
+
+    checkSingleBondValidity: function(parentElement, childElement, body, engine) {
+        var bond = params.getParameter(([childElement,
+            parentElement].sort()).join(''));
+
+        if (!bond) {
+            this.free(body, engine);
+        }
+    },
+
+    calculateEnergy: function() {
+        var energy = 0;
+        var neighbours = this.body.chemicalChildren.concat([this.body.chemicalParent]);
+        for (var i = 0; i < neighbours.length; ++i) {
+            if (neighbours[i]) {
+                var bond = params.getParameter(([this.body.element,
+                    neighbours[i].element].sort()).join(''));
+                if (bond) {
+                    energy += bond[this.body.element];
+                }
+            }
+        }
+        return energy;
+    },
+
     changeCharge: function(value, engine, nucleonsArray) {
         //console.log("changeCharge started");
         /*console.log("working with " + this.body.element + " at " +
@@ -518,11 +588,19 @@ basicParticle.prototype = {
         var elementName = elements[elements.indexOf(
             this.body.element) + value];
 
+        var previousElement = this.body.element;
         this.setElement(elementName);
+        this.body.element = previousElement;
 
-        if (this.body.chemicalBonds > this.body.totalBonds) {
+        this.checkBondValidity(elementName, engine);
+
+        while (this.body.chemicalBonds > this.body.totalBonds ||
+        this.calculateEnergy > this.body.energy) {
             this.dismountBranch(engine);
         }
+
+        this.body.element = elementName;
+
         for (var i = 0; i < this.body.bondAngles.length; ++i) {
             this.body.bondAngles[i].available = true;
         }
