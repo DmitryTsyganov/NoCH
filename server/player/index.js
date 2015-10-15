@@ -100,7 +100,7 @@ Player.prototype = {
             this["timeLimit" + particle] = true;
             setTimeout(function() {
                 self["timeLimit" + particle] = false;
-            }, 100/*this.body.coolDown*/);
+            }, this.body.coolDown);
 
             nucleonBody.timerId1 = setTimeout(function() {
                 nucleonBody.collisionFilter.mask = 0x0001;
@@ -133,7 +133,9 @@ Player.prototype = {
             //debugging
             /*nucleonBody.inGameType =
                 nucleonBody.element = "p";*/
+            return true;
         }
+        return false;
     },
 
     dismountBranch: function(engine) {

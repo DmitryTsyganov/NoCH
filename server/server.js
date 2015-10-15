@@ -115,9 +115,19 @@ webSocketServer.on('connection', function(ws) {
                 x: parsedMessage.shotX - player.getLocalPosition().x,
                 y: parsedMessage.shotY - player.getLocalPosition().y
             };
-            player.shoot(parsedMessage.particle, shotPos, freeProtons, garbage, engine);
-            //noinspection JSUnresolvedVariable
-            sendEverybody({"id": player.body.id, "ne": player.body.element});
+            if (player.shoot(parsedMessage.particle, shotPos, freeProtons, garbage, engine)) {
+                var response = {};
+                response["sh" + parsedMessage.particle] = player.body.id;
+                sendEverybody(response/*{ key: player.body.id }*/);
+                switch (parsedMessage.particle) {
+                    case 'p':
+                        sendEverybody({ "id": player.body.id, "ne": player.body.element });
+                        break;
+                    /*case 'n':
+                     sendEverybody({ "sh": player.body.id });
+                     break;*/
+                }
+            }
         }
     });
 
