@@ -560,7 +560,8 @@ function collideWithGarbage(playerBody, garbageBody) {
 
 function collidePVP(playerBodyA, playerBodyB) {
     if (playerBodyA.playerNumber == playerBodyB.playerNumber) return;
-    if (playerBodyA.getFreeBonds() && playerBodyB.getFreeBonds()) {
+    if (playerBodyA.getFreeBonds() && playerBodyB.getFreeBonds() &&
+        checkConnectingPossibility(playerBodyA, playerBodyB)) {
         connectPlayers(playerBodyA, playerBodyB);
     } else {
         var momentum = calculateMomentum(playerBodyA, playerBodyB);
