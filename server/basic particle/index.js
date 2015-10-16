@@ -77,6 +77,25 @@ basicParticle.prototype = {
         }
     },
 
+    resultDST: function(node, visit, additionalParameter) {
+        var result = visit(node, additionalParameter);
+        if (result) {
+            return result
+        }
+        if (!node.chemicalChildren) {
+            return false;
+        }
+        for (var i = 0; i < node.chemicalChildren.length; ++i) {
+            if (node.chemicalChildren[i]) {
+                result = this.resultDST(node.chemicalChildren[i], visit, additionalParameter);
+                if (result) {
+                    return result;
+                }
+            }
+        }
+        return false;
+    },
+
     //second part of disconnecting body from player
     letGo: function(body) {
         body.chemicalChildren = [];
@@ -191,8 +210,9 @@ basicParticle.prototype = {
     setElement: function(elem) {
         if (elem) {
             var element = params.getParameter(elem);
+            var previousElement = null;
             if (this.body.element) {
-                var previousElement = params.getParameter(this.body.element);
+                previousElement = params.getParameter(this.body.element);
                 this.body.energy -= previousElement.energy;
             }
             this.body.element = elem;
@@ -228,7 +248,9 @@ basicParticle.prototype = {
                     this.body.bondAngles.pop();
                 }
             }
-            this.body.emitter.emit("element changed", { body: this.body });
+            if (previousElement) {
+                this.body.emitter.emit("element changed", {body: this.body});
+            }
         }
     },
 
@@ -422,9 +444,9 @@ basicParticle.prototype = {
         var bond = params.getParameter(([bodyA.element, bodyB.element].sort()).join(''));
         var bondStrength = bond[bodyA.element] + bond[bodyB.element];
 
-        /*console.log("Checking " + bodyA.element + " and " + bodyB.element +
+        console.log("Checking " + bodyA.element + " and " + bodyB.element +
          ", momentum is " + momentum + ", bondStrength is " +
-         bondStrength);*/
+         bondStrength);
 
         if (momentum > bondStrength && this.body.chemicalBonds) {
             this.traversDST(bodyB, this.free, this.letGo, engine);
@@ -523,8 +545,8 @@ basicParticle.prototype = {
             if (child) {
                 /*++body.superMutex;
                 ++child.superMutex;*/
-                console.log("working with " + child.element + " at " +
-                    JSON.stringify(child.position));
+                /*console.log("working with " + child.element + " at " +
+                    JSON.stringify(child.position));*/
                 //child.collisionFilter.mask = 0x0008;
                 this.reconnectBond(child, engine);
             }
@@ -616,7 +638,6 @@ basicParticle.prototype = {
             this.correctBondAngles(engine);
         }
             //this.body.collisionFilter.mask = 0x0001;
-        console.log("changeCharge Ended");
     },
 
     connectBody: function(garbageBody, finalCreateBond) {

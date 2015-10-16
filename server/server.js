@@ -353,18 +353,18 @@ function isElement(object) {
 }
 
 function checkConnectingPossibility(bodyA, bodyB) {
-    console.log(([bodyA.element, bodyB.element].sort()).join(''));
+    //console.log(([bodyA.element, bodyB.element].sort()).join(''));
     //console.log(bodyA.energy);
     //console.log(bodyB.energy);
-    var bond = params.getParameter(([bodyA.element, bodyB.element].sort()).join(''));
-    console.log(bond);
-    //console.log(bodyA.energy - bond[bodyA.element]);
-    //console.log(bodyB.energy - bond[bodyB.element]);
-    if (bond && (bodyA.energy - bond[bodyA.element]) >= 0 &&
-        (bodyB.energy - bond[bodyB.element]) >= 0) {
-        bodyA.energy -= bond[bodyA.element];
-        bodyB.energy -= bond[bodyB.element];
-        return true;
+    if (bodyA.getFreeBonds() && bodyB.getFreeBonds()) {
+        var bond = params.getParameter(([bodyA.element, bodyB.element].sort()).join(''));
+        //console.log(bond);
+        //console.log(bodyA.energy - bond[bodyA.element]);
+        //console.log(bodyB.energy - bond[bodyB.element]);
+        if (bond && (bodyA.energy - bond[bodyA.element]) >= 0 &&
+            (bodyB.energy - bond[bodyB.element]) >= 0) {
+            return bodyA;
+        }
     }
     return false;
 }
@@ -382,6 +382,11 @@ function createBond(playerBody, garbageBody) {
 
     ++playerBody.chemicalBonds;
     ++garbageBody.chemicalBonds;
+
+    var bond = params.getParameter(([playerBody.element, garbageBody.element].sort()).join(''));
+    playerBody.energy -= bond[playerBody.element];
+    garbageBody.energy -= bond[garbageBody.element];
+
     /*++playerBody.superMutex;
     ++garbageBody.superMutex;*/
 
@@ -445,7 +450,7 @@ function finalCreateBond(playerBody, garbageBody, angle1, angle2) {
     /*--playerBody.superMutex;
     --garbageBody.superMutex;*/
 
-    playersEmitter.emit('bond created', { bc1: playerBody, bc2: garbageBody });
+    playersEmitter.emit('bond created', { bc1: playerBody, bc2: garbageBody, p: playerBody.player });
 
     /*console.log("Player mutex after " + playerBody.superMutex);
     console.log("Garbage mutex after " + garbageBody.superMutex);*/
@@ -543,10 +548,13 @@ function collideWithBorder(body) {
 }
 
 function collideWithGarbage(playerBody, garbageBody) {
-    if (playerBody.getFreeBonds() && garbageBody.getFreeBonds()&&
-        checkConnectingPossibility(playerBody, garbageBody)) {
-        connectGarbageToPlayer(playerBody, garbageBody);
-    } else if (playerBody.inGameType  == "playerPart"){
+    console.log(garbage.indexOf(getMainObject(garbageBody)) + ' is colliding');
+    /*checkConnectingPossibility(playerBody, garbageBody)*/
+    var bodyToConnect = getPlayer(playerBody)
+        .checkConnectingPossibilityGeneral(garbageBody, checkConnectingPossibility);
+    if (bodyToConnect) {
+        connectGarbageToPlayer(bodyToConnect, garbageBody);
+    } else if (playerBody.inGameType  == "playerPart") {
         var momentum = calculateMomentum(playerBody, garbageBody);
         //console.log(momentum);
         /*if (!playerBody.superMutex) {*/
@@ -560,8 +568,7 @@ function collideWithGarbage(playerBody, garbageBody) {
 
 function collidePVP(playerBodyA, playerBodyB) {
     if (playerBodyA.playerNumber == playerBodyB.playerNumber) return;
-    if (playerBodyA.getFreeBonds() && playerBodyB.getFreeBonds() &&
-        checkConnectingPossibility(playerBodyA, playerBodyB)) {
+    if (checkConnectingPossibility(playerBodyA, playerBodyB)) {
         connectPlayers(playerBodyA, playerBodyB);
     } else {
         var momentum = calculateMomentum(playerBodyA, playerBodyB);
@@ -899,6 +906,37 @@ function updateActiveGarbage() {
     }
 }
 
+function updateGarbageConnectingPossibility() {
+    for (var i = 0; i < garbage.length; ++i) {
+        var playersWhoSee = garbage[i].body.playersWhoSee;
+        for (var j = 0; j < playersWhoSee.length; ++j) {
+            if (players[playersWhoSee[j]].checkConnectingPossibilityGeneral(
+                    garbage[i].body, checkConnectingPossibility)) {
+                tryToSend({ "gbav": garbage[i].body.id }, players[playersWhoSee[j]])
+            } else {
+                tryToSend({ "gbnav": garbage[i].body.id }, players[playersWhoSee[j]])
+            }
+        }
+    }
+}
+
+function updateGarbageConnectingPossibilityForPlayer(playerIndex) {
+
+    for (var i = 0; i < garbage.length; ++i) {
+        //console.log(garbage[i]);
+        console.log('length ' + garbage.length);
+        console.log(i);
+        if (garbage[i] && playerIndex in garbage[i].body.playersWhoSee) {
+            if (players[playerIndex].checkConnectingPossibilityGeneral(
+                    garbage[i].body, checkConnectingPossibility)) {
+                tryToSend({"gbav": garbage[i].body.id}, players[playerIndex])
+            } else {
+                tryToSend({"gbnav": garbage[i].body.id}, players[playerIndex])
+            }
+        }
+    }
+}
+
 /*
 function updateActiveGarbage() {
     for (var i = 0; i < garbageActive.length; ++i) {
@@ -1001,6 +1039,11 @@ function addPlayerWhoSee(object, playerNumber) {
                 message.a = object.body.angle.toFixed(3);
                 break;
         }
+        if (object.body.inGameType == 'garbage') {
+            message.av = !!checkConnectingPossibility(players[playerNumber].body, object.body);
+            console.log(message.av);
+            //console.log(checkConnectingPossibility(players[playerNumber].body, object.body));
+        }
         tryToSend(message, players[playerNumber]);
         return true;
     }
@@ -1050,7 +1093,8 @@ playersEmitter.on('particle died', function(event) {
 });
 
 playersEmitter.on('element changed', function(event) {
-    sendToPlayersWhoSee(event.body.playersWhoSee, { che: event.body.id, e: event.body.element })
+    sendToPlayersWhoSee(event.body.playersWhoSee, { che: event.body.id, e: event.body.element });
+    updateGarbageConnectingPossibility();
 });
 
 playersEmitter.on('bond created', function(event) {
@@ -1067,6 +1111,7 @@ playersEmitter.on('bond created', function(event) {
             "b1": event.bc1.id,
             "b2": event.bc2.id }, players[playersWhoSee[i]]);
     }*/
+    updateGarbageConnectingPossibilityForPlayer(players.indexOf(event.p))
 });
 
 /*playersEmitter.on('became playerPart', function(event) {
@@ -1097,7 +1142,7 @@ function subscribeToSleepEnd(Body) {
         var body = this;
         garbageActive.push(body);
     });
-    console.log("body with id " + Body.id + " is subscribed to sleep end.");
+    //console.log("body with id " + Body.id + " is subscribed to sleep end.");
 }
 
 function subscribeToSleepStart(Body) {
@@ -1105,7 +1150,7 @@ function subscribeToSleepStart(Body) {
         var body = this;
         garbageActive.splice(garbageActive.indexOf(body), 1);
     });
-    console.log("body with id " + Body.id + " is subscribed to sleep start.");
+    //console.log("body with id " + Body.id + " is subscribed to sleep start.");
 }
 
 for (var i = 0; i < garbage.length; i++) {

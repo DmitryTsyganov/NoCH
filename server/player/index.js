@@ -185,6 +185,10 @@ Player.prototype = {
         }
     },
 
+    checkConnectingPossibilityGeneral: function(garbageBody, checkFunction) {
+        return this.resultDST(this.body, checkFunction, garbageBody)
+    },
+
     //turns player into garbage before appending it to another player
     garbagify: function(playersArray, garbageArray, newPlayerBody) {
 

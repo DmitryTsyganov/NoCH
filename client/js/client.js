@@ -2,7 +2,7 @@
 
     var WS_URL = 'ws://localhost:8085';
     //var WS_URL = 'ws://10.20.3.4:8085';
-    // WS_URL = 'ws://nochgame.cloudapp.net:8085';
+    //var WS_URL = 'ws://nochgame.cloudapp.net:8085';
 
     // Some test
     /*function validateInputFields(inputField) {
@@ -705,7 +705,7 @@
         drawElement: function(ctx, x, y, radius, color, element) {
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, 2 * Math.PI);
-            ctx.lineWidth = 7 * freshData.getCoefficient() / radiuses["C"] * radiuses[element];
+            ctx.lineWidth = 9 * freshData.getCoefficient() / radiuses["C"] * radiuses[element];
             ctx.strokeStyle = color;//"white";
             ctx.stroke();
             ctx.fillStyle = "black";//color;
@@ -807,7 +807,7 @@
                             players[freshData.selfID].position.y/*players[freshData.selfID].position.y*/ }/*)*/);
                 //this.drawRedDot(ctx, pos, garbageAll[key].element);
                 this.drawElement(ctx, pos.x, pos.y,
-                    radiuses[garbageAll[key].element] * freshData.getCoefficient(), "white", garbageAll[key].element);
+                    radiuses[garbageAll[key].element] * freshData.getCoefficient(), garbageAll[key].getColor(), garbageAll[key].element);
                 //console.log(garbageAll[key].position);
                 /*console.log(garbageAll[key].playerID);
                 console.log(freshData.selfID);
@@ -1014,7 +1014,7 @@
     var border = [];
     var bonds = [];
 
-    var Garbage = function(/*mass,*/ position, element, /*type,*/ playerID) {
+    var Garbage = function(/*mass,*/ position, element, color, /*type,*/ playerID) {
         this.force = { x: 0, y: 0 };
         /*this.type = type;
         if (type == 'playerPart') {*/
@@ -1027,6 +1027,11 @@
         //}
         //}
         //this.mass = mass;
+        if (color) {
+            this.color = 'green';
+        } else {
+            this.color = 'grey';
+        }
         this.STEPS_TOTAL = 20;
         this.position = {};
         this.setPosition(position);
@@ -1048,6 +1053,12 @@
                             y: this.position.y + players[this.playerID]
                                 .position.y /!*+ Game.gameSize.y / 2*!/ };*/
             //}
+        },
+        getColor: function() {
+            if (this.type == 'playerPart') {
+                return 'white';
+            }
+            return this.color
         },
         setPosition: function(position) {
             /*switch (this.type) {
@@ -1197,12 +1208,17 @@
             }
             if ("ng" in newData) {
                 //console.log('new garbage is ' + newData.ng);
-                garbageAll[newData.ng] = new Garbage(/*newData.ms,*/ newData.p, newData.e, newData.id/*, 'garbage'*/);
+                garbageAll[newData.ng] = new Garbage(/*newData.ms,*/ newData.p, newData.e, newData.av/*, 'garbage'*/);
             }
             if ("nB" in newData) {
                 border.push({ position: newData.p, angle: newData.a });
             }
-
+            if ("gbav" in newData) {
+                garbageAll[newData.gbav].color = 'green';
+            }
+            if ("gbnav" in newData) {
+                garbageAll[newData.gbnav].color = 'grey';
+            }
             /*if ("npp" in newData) {
                 garbageAll[newData.ng] = new Garbage(/!*newData.ms,*!/ newData.p, newData.e, /!*'playerPart',*!/ newData.id);
             }*/
