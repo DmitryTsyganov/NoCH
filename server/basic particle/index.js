@@ -499,7 +499,7 @@ basicParticle.prototype = {
                 y: delta.y });
 
             if (i++ === numberOfIterations) {
-                clearInterval(intervalID);
+                clearInterval(garbageBody.intervalID);
 
                 var garbageAngle = self.correctParentBond.call(self, garbageBody, self.body);
 
