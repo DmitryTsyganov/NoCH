@@ -339,21 +339,27 @@ function isElement(object) {
 //starts bonding process
 function createBond(playerBody, garbageBody) {
 
+    var playerPart = getMainObject(playerBody);
+    var singleGarbage = getMainObject(garbageBody);
+    var connectingPlayer = getPlayer(playerBody);
+    //if (!connectingPlayer || !singleGarbage || !playerPart) return;
+
     ++playerBody.chemicalBonds;
     ++garbageBody.chemicalBonds;
 
     link(garbageBody, playerBody);
 
-    var newRadius = Geometry.calculateDistance(getPlayer(playerBody)
+    var newRadius = Geometry.calculateDistance(connectingPlayer
         .body.position, garbageBody.position);
-    getPlayer(playerBody).checkResizeGrow(newRadius);
+    connectingPlayer.checkResizeGrow(newRadius);
 
-    getPlayer(playerBody).recalculateMass();
-    getMainObject(garbageBody).markAsPlayer(playerBody);
+    connectingPlayer.recalculateMass();
+    singleGarbage.markAsPlayer(playerBody);
 
-    garbageBody.player = getPlayer(playerBody);
+    garbageBody.player = connectingPlayer;
 
-    getMainObject(playerBody).connectBody(garbageBody, finalCreateBond);
+    playerPart.connectBody(garbageBody, finalCreateBond);
+
 }
 
 //adds bond in physical engine
@@ -442,13 +448,19 @@ function collideWithBorder(body) {
 }
 
 function collideWithGarbage(playerBody, garbageBody) {
+
+    var playerPart = getMainObject(playerBody);
+    var singleGarbage = getMainObject(garbageBody);
+
+    //if (!playerPart && !singleGarbage) return;
+
     if (playerBody.getFreeBonds() && garbageBody.getFreeBonds()) {
         connectGarbageToPlayer(playerBody, garbageBody);
     } else if (playerBody.inGameType  == "playerPart"){
         var momentum = calculateMomentum(playerBody, garbageBody);
 
-        getMainObject(playerBody).checkDecoupling(momentum, engine);
-        getMainObject(garbageBody).checkDecoupling(momentum, engine);
+        playerPart.checkDecoupling(momentum, engine);
+        singleGarbage.checkDecoupling(momentum, engine);
     }
 }
 
