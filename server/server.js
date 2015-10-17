@@ -908,13 +908,15 @@ function updateActiveGarbage() {
 
 function updateGarbageConnectingPossibility() {
     for (var i = 0; i < garbage.length; ++i) {
-        var playersWhoSee = garbage[i].body.playersWhoSee;
-        for (var j = 0; j < playersWhoSee.length; ++j) {
-            if (players[playersWhoSee[j]].checkConnectingPossibilityGeneral(
-                    garbage[i].body, checkConnectingPossibility)) {
-                tryToSend({ "gbav": garbage[i].body.id }, players[playersWhoSee[j]])
-            } else {
-                tryToSend({ "gbnav": garbage[i].body.id }, players[playersWhoSee[j]])
+        if (garbage[i]) {
+            var playersWhoSee = garbage[i].body.playersWhoSee;
+            for (var j = 0; j < playersWhoSee.length; ++j) {
+                if (players[playersWhoSee[j]].checkConnectingPossibilityGeneral(
+                        garbage[i].body, checkConnectingPossibility)) {
+                    tryToSend({"gbav": garbage[i].body.id}, players[playersWhoSee[j]])
+                } else {
+                    tryToSend({"gbnav": garbage[i].body.id}, players[playersWhoSee[j]])
+                }
             }
         }
     }
@@ -1163,8 +1165,10 @@ for (var i = 0; i < garbage.length; i++) {
         console.log('garbage body id ' + body.id + " at " + this.position,
             'sleeping: ' + body.isSleeping + " woke up!");*!/
     });*/
-    subscribeToSleepStart(garbage[i].body);
-    subscribeToSleepEnd(garbage[i].body);
+    if (garbage[i]) {
+        subscribeToSleepStart(garbage[i].body);
+        subscribeToSleepEnd(garbage[i].body);
+    }
 
     /*Matter.Events.on(garbage[i].body, 'sleepStart', function(event) {
         var body = this;
