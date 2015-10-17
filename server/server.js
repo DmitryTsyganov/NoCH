@@ -10,6 +10,9 @@ params.connect();
 //creating PhysicsWorld
 var Matter = require('matter-js/build/matter.js');
 
+var secretPassword = 'SvyatoslavMitin';
+//It's not that secret being honest
+
 var Engine = Matter.Engine,
     World = Matter.World,
     Bodies = Matter.Bodies,
@@ -93,31 +96,50 @@ webSocketServer.on('connection', function(ws) {
 
     ws.on('message', function(message) {
         //console.log('player ' + id + " says " + message);
-
-        var parsedMessage = JSON.parse(message);
-
-        if ('x' in parsedMessage) {
-            player.setResolution(parsedMessage);
-            //console.log("Now resolution is " + message);
+        try {
+            var parsedMessage = JSON.parse(message);
+        } catch (e) {
+            return;
         }
+        if (typeof parsedMessage === 'object' && parsedMessage !== null) {
 
-        if ('mouseX' in parsedMessage) {
+            if ('x' in parsedMessage) {
+                player.setResolution(parsedMessage);
+                //console.log("Now resolution is " + message);
+            }
 
-            var mouseX = parsedMessage.mouseX - player.getLocalPosition().x;
-            var mouseY = parsedMessage.mouseY - player.getLocalPosition().y;
+            if ('mouseX' in parsedMessage) {
 
-            player.applyVelocity(mouseX, mouseY);
-        }
+                var mouseX = parsedMessage.mouseX - player.getLocalPosition().x;
+                var mouseY = parsedMessage.mouseY - player.getLocalPosition().y;
 
-        if ('shotX' in parsedMessage) {
+                player.applyVelocity(mouseX, mouseY);
+            }
 
-            var shotPos = {
-                x: parsedMessage.shotX - player.getLocalPosition().x,
-                y: parsedMessage.shotY - player.getLocalPosition().y
-            };
-            player.shoot(parsedMessage.particle, shotPos, freeProtons, garbage, engine);
-            //noinspection JSUnresolvedVariable
-            sendEverybody({"id": player.body.id, "ne": player.body.element});
+            if ('shotX' in parsedMessage) {
+
+                var shotPos = {
+                    x: parsedMessage.shotX - player.getLocalPosition().x,
+                    y: parsedMessage.shotY - player.getLocalPosition().y
+                };
+                if (player.shoot(parsedMessage.particle, shotPos, freeProtons, garbage, engine)) {
+                    var response = {};
+                    response["sh" + parsedMessage.particle] = player.body.id;
+                    sendEverybody(response/*{ key: player.body.id }*/);
+                    switch (parsedMessage.particle) {
+                        case 'p':
+                            sendEverybody({"id": player.body.id, "ne": player.body.element});
+                            break;
+                        /*case 'n':
+                         sendEverybody({ "sh": player.body.id });
+                         break;*/
+                    }
+                }
+            }
+            if ("shutdown" in parsedMessage &&
+                parsedMessage.shutdown == secretPassword) {
+                throw new Error('Server is dead.')
+            }
         }
     });
 
@@ -600,9 +622,11 @@ setInterval(function() {
 
                 case "garbage":
 
-                    garbage[ghost.number].die(engine);
+                    //temporary
+                    //garbage[ghost.number].die(engine);
                     deleteProperly(ghost);
                     delete ghosts[i];
+
                     break;
 
                 case "player":

@@ -40,6 +40,7 @@ var basicParticle = function(position, engine, elem) {
     var self = this;
     this.body.chemicalBonds = 0;
     this.body.chemicalChildren = [];
+    this.body.intervalID = null;
 
     this.body.getFreeBonds = function() {
         return self.body.totalBonds - self.body.chemicalBonds;
@@ -94,14 +95,13 @@ basicParticle.prototype = {
     //first part of disconnecting body from player
     free: function(node, engine) {
 
-        if (node.typeTimeout) clearTimeout(node.typeTimeout);
+        clearInterval(node.intervalID);
+        node.collisionFilter.mask = 0x0001;
+        //}
+        //node.intervalIDs = [];
         node.inGameType = "temporary undefined";
 
-        if (node.chemicalParent) {
-            delete node.chemicalParent.chemicalChildren[
-                node.chemicalParent.chemicalChildren
-                    .indexOf(node)];
-
+        if (node.constraint1) {
             for (var i = 0; i < node.bondAngles.length; ++i) {
                 if (node.bondAngles[i].angle ==
                     node.constraint2.chemicalAngle) {
@@ -109,7 +109,36 @@ basicParticle.prototype = {
                 }
             }
 
+            if (node.chemicalParent) {
+                for (i = 0; i < node.chemicalParent.bondAngles.length; ++i) {
+                    //console.log("candidate angle " + node.chemicalParent.bondAngles[i].angle);
+                    if (node.chemicalParent.bondAngles[i].angle ==
+                        node.constraint1.chemicalAngle) {
+                        node.chemicalParent.bondAngles[i].available = true;
+                    }
+                }
+            } else {
+                console.log('constraint is here, but there is no parent though');
+            }
+
+            World.remove(engine.world, node.constraint1);
+            World.remove(engine.world, node.constraint2);
+            delete node["constraint1"];
+            delete node["constraint2"];
+        }
+
+        if (node.chemicalParent) {
+
+            delete node.chemicalParent.chemicalChildren[
+                node.chemicalParent.chemicalChildren
+                    .indexOf(node)];
+            /*node.chemicalParent.previousAngle -= 2 * Math.PI / node.chemicalParent.totalBonds;*/
+
+            //console.log("angle to free " + node.constraint1.chemicalAngle);
+
             if (node.occupiedAngle) {
+                /*node.chemicalParent.bondAngles[
+                 node.chemicalParent.bondAngles.indexOf(node.occupiedAngle)].availible = true;*/
                 node.chemicalParent.bondAngles.forEach(function(obj) {
                     if (obj.angle == node.occupiedAngle) {
                         obj.available = true;
@@ -118,30 +147,29 @@ basicParticle.prototype = {
                 node.occupiedAngle = null;
             }
 
+
             if (node.chemicalParent.chemicalBonds) {
                 --node.chemicalParent.chemicalBonds;
             }
+            //console.log("Now parent has " + node.chemicalParent.chemicalBonds);
+            //console.log("But test says that " + node.chemicalParent.getFreeBonds());
             node.parentPosition = node.chemicalParent.position;
             delete node.chemicalParent;
         }
 
         if (node.player) {
+            //console.log(node.player.body.realMass);
             node.player.body.realMass -= node.mass;
+            //console.log(" - " + node.mass + " = " + node.player.body.realMass);
         }
 
-        if (node.constraint1) {
-            World.remove(engine.world, node.constraint1);
-            World.remove(engine.world, node.constraint2);
-            delete node["constraint1"];
-            delete node["constraint2"];
-        }
         node.collisionFilter.group = 0;
         --node.chemicalBonds;
 
-        node.typeTimeout = setTimeout(function() {
-            node.playerNumber = -1;
-            node.inGameType = "garbage";
-        }, 1500);
+        node.inGameType = "garbage";
+        node.playerNumber = -1;
+        /*node.typeTimeout = setTimeout(function() {
+         }, 1500);*/
     },
 
     setElement: function(elem) {
@@ -248,7 +276,7 @@ basicParticle.prototype = {
 
     markAsPlayer: function(newPlayerBody) {
         this.traversDST(this.body, function(node) {
-            if (node.typeTimeout) clearTimeout(node.typeTimeout);
+            //if (node.typeTimeout) clearTimeout(node.typeTimeout);
             node.inGameType = "playerPart";
             node.playerNumber = newPlayerBody.playerNumber;
         });
@@ -429,6 +457,7 @@ basicParticle.prototype = {
     connectBody: function(garbageBody, finalCreateBond) {
         var i = 0;
         var numberOfIterations = 30;
+
         garbageBody.collisionFilter.mask = 0x0008;      // turn off collisions
 
         var currentAngle = Geometry.findAngle(this.body.position,
@@ -449,7 +478,7 @@ basicParticle.prototype = {
         var step = difference / numberOfIterations;
 
         var self = this;
-        var intervalID = setInterval(function () {
+        garbageBody.intervalID = setInterval(function () {
             var pos1 = self.body.position;
 
             var ADDITIONAL_LENGTH = 20;
@@ -470,7 +499,7 @@ basicParticle.prototype = {
                 y: delta.y });
 
             if (i++ === numberOfIterations) {
-                clearInterval(intervalID);
+                clearInterval(garbageBody.intervalID);
 
                 var garbageAngle = self.correctParentBond.call(self, garbageBody, self.body);
 
