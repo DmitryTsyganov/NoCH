@@ -62,6 +62,12 @@
         //alert(rgb_new);
         $("#btn__go").css("background-color",rgb_new);
         //alert($("#btn__go").css("background-color"));
+
+        if (!getCookie("name")){
+
+            $("#help1").show(700);
+        }
+
         Game.activePlayer = true;
     });
 
@@ -101,6 +107,10 @@
         this.numberOfObjects3 = /*40*/11;
         this.numberOfBalls = 15;
         this.backGroundOffset = this.gameSize.y / 2;
+
+        this.soundNeutron = new Audio('../sounds/vystrel_neytron.wav');
+        this.soundProton = new Audio('../sounds/vystrel_proton.wav');
+        this.soundDeath = new Audio('../sounds/smert.wav');
 
         this.imagesAddedTotal = 0;
         this.imagesRemovedTotal = 0;
@@ -552,45 +562,7 @@
             }
         },
 
-        //indicatorProton : {
-        //    state : INDI_PROTON_STATE_ON,
-        //    color : 'white',
-        //    time : 0,
-        //    radius : 5,
-        //    sizeCoefficient : 0.5,
-        //    size : 20,
-        //    number : 6,
-        //    shiftX : 20,
-        //    shiftY : 5,
-        //    duration : indiProtonTime['C'] * 1000,
-        //    startTime : 0,
-        //
-        //    draw : function (x, y, radius, ctx){
-        //        if (this.state) {
-        //            this.color = 'white';
-        //            this.drawNumber (x, y, radius, ctx);
-        //        }
-        //        else {
-        //            this.color = 'grey';
-        //            this.time = (new Date().getTime() - this.startTime) / this.duration;
-        //            if (this.time < 1) this.drawNumber (x, y, radius, ctx);
-        //            else {
-        //                this.state = INDI_PROTON_STATE_ON;
-        //                this.radius -= 1;
-        //            }
-        //        }
-        //    },
-        //
-        //    drawNumber : function (x, y, radius, ctx){
-        //        ctx.save();
-        //        ctx.fillStyle = this.color;
-        //        var fontSize = this.size * freshData.getCoefficient();
-        //        ctx.font = "bold " + fontSize + "px tellural_altbold";
-        //        ctx.fillText (this.number, x + radius * 0.5 * freshData.getCoefficient(),
-        //            y - radius * 0.2 * freshData.getCoefficient());
-        //        ctx.restore();
-        //    }
-        //},
+
 
         drawIndicatorProton : function (x, y, radius, id, ctx){
             var timeShift = 1 / (60 * indiProtonTime[players[id].element]),
@@ -682,20 +654,50 @@
                 for (var i = 0; i < freshData.inputData[stuff].length; i += 2) {
                     var x = freshData.inputData[stuff][i];
                     var y = freshData.inputData[stuff][i + 1];
-
+                    //var flag = freshData.inputData[stuff][i + 2];
+                    var flag = true;
                     var pos = freshData.Scale({x: x, y: y});
 
                     if (pos) {
-                        this.drawElement(ctx, pos.x, pos.y,
-                            radius * freshData.getCoefficient(), "white", stuff);
-                        this.addLetter(ctx, pos.x, pos.y, /*JSON.stringify({ x: pos.x +
-                             freshData.inputData.player.x, y: pos.y +
-                             freshData.inputData.player.y })*/stuff,
-                            radius * freshData.getCoefficient());
+                        if (flag){
+                            ctx.beginPath();
+                            var grd = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y,
+                                radius * freshData.getCoefficient());
+                            //var grd = ctx.createRadialGradient(pos.x, pos.y, radius * freshData.getCoefficient()
+                            //    + 100 * freshData.getCoefficient() / radiuses["C"] * radiuses[stuff],
+                            //    pos.x, pos.y, radius );
+
+                            //grd.addColorStop(1, "rgba(168, 228, 160, 1)");
+
+                            grd.addColorStop(1, "rgba(0, 66, 32, 1)");
+                            grd.addColorStop(0.5, "black");
+                            grd.addColorStop(0, "black");
+
+                            //grd.addColorStop(0, "rgba(0, 66, 32, 1)");
+                            //grd.addColorStop(1, "rgba(0, 66, 32, 0)");
+                            ctx.fillStyle = grd;
+                            ctx.arc (pos.x, pos.y, radius * freshData.getCoefficient(), 0, 2 * Math.PI);
+                            ctx.fill();
+                            ctx.lineWidth = 7 * freshData.getCoefficient() / radiuses["C"] * radiuses[stuff];
+                            ctx.strokeStyle = "rgba(0, 66, 32, 1)";
+                            ctx.stroke();
+
+                            this.addLetter(ctx, pos.x, pos.y, stuff,
+                                radius * freshData.getCoefficient());
+                        }
+                        else {
+                            this.drawElement(ctx, pos.x, pos.y,
+                                radius * freshData.getCoefficient(), "white", stuff);
+                            this.addLetter(ctx, pos.x, pos.y, /*JSON.stringify({ x: pos.x +
+                                 freshData.inputData.player.x, y: pos.y +
+                                 freshData.inputData.player.y })*/stuff,
+                                radius * freshData.getCoefficient());
+                        }
                     }
                 }
             }
         },
+
 
         drawBonds: function(ctx) {
             if (freshData.inputData.bonds) {
@@ -855,9 +857,7 @@
 
         draw: function(ctx, gameSize) {
             ctx.clearRect(0 ,0, gameSize.x, gameSize.y);
-
             this.drawBackground(ctx, gameSize);
-
             this.drawBonds(ctx);
             this.drawStuff("H", 26, ctx);
             this.drawStuff("C", 40, ctx);
@@ -971,11 +971,13 @@
             }
             if ('shn' in newData) {
                 players[newData.shn]["angle"] = 0;
+                Game.soundNeutron.play();
                 //the player who shot neutron is players[newData.shn]
             }
             if ('shp' in newData) {
                 -- players[newData.shp]["protonNumber"];
                 players[newData.shp]["protonTime"] = 0;
+                Game.soundProton.play();
                 //the player who shot proton is players[newData.shp]
             }
             if ("ne" in newData && players[newData.id]) {
@@ -985,7 +987,11 @@
                 delete players[newData.dp];
             }
             if ("dead" in newData) {
-                alert("you're dead lol");
+                Game.soundDeath.play();
+                //alert($('#dead').css("display"))
+                $('#dead').css("display","block")
+                //alert("you're dead lol");
+                //location.reload();
                 //console.log("you're dead lol");
             }
             if ("ng" in newData) {
