@@ -490,6 +490,7 @@ function getArray(body) {
 }
 
 function getMainObject(body) {
+    if (!body) throw new Error(body + ' passed to getMainObject');
     switch (body.inGameType) {
         case "player":
             return players[body.number];
@@ -504,6 +505,7 @@ function getMainObject(body) {
         case "p":
             return freeProtons[body.number];
     }
+    throw new Error ('unknown type ' + body.inGameType);
 }
 
 function getPlayer(body) {
