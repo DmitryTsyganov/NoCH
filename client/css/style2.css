@@ -2,9 +2,6 @@ body{
     margin: 0;
 
 }
-h1{
-    font: bold 30px tellural_altbold;
-}
 #main {
     width: 100%;
     height: 100%;
@@ -22,7 +19,7 @@ h1{
     margin: 0;
     padding: 0;
     display: block;
-    cursor:url("cursor.png");
+
 }
 
 #overlay {
@@ -47,7 +44,6 @@ h1{
 #menu {
     display: inline-block;
     position: fixed;
-    width: 300px;
     top: 50%;
     left: 50%;
     -webkit-transform: translate(-50%, -50%);
@@ -59,16 +55,14 @@ h1{
 }
 
 #btn__go {
-    margin-left: 10%;
     margin-top: 5%;
-    width:70%;
-    height: 40px;
+    width:100%;
     text-align: center;
 
     color: white;
     background:orange;
     
-    padding: 3% 0%;
+    padding: 5% 0%;
     display: table;
 }
 

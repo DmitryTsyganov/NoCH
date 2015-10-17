@@ -2,10 +2,45 @@
 <html>
 <head>
     <title>N-o-C-H</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../css/style.css">
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script type="text/javascript" src="farbtastic.js"></script>
+
 </head>
 <style>
+    .farbtastic {
+        position: relative;margin-left: 4%; margin-top: 10px;
+    }
+    .farbtastic * {
+        position: absolute;
+        cursor: crosshair;
+    }
+    .farbtastic, .farbtastic .wheel {
+        width: 195px;
+        height: 195px;
+    }
+    .farbtastic .color, .farbtastic .overlay {
+        top: 49px;
+        left: 47px;
+        width: 100px;
+        height:100px;
+    }
+    .farbtastic .wheel {
+        background: url(../picker/wheel.png) no-repeat;
+        width: 195px;
+        height: 195px;
+    }
+    .farbtastic .overlay {
+        background: url(../picker/mask.png) no-repeat;
+    }
+    .farbtastic .marker {
+        width: 17px;
+        height: 17px;
+        margin: -8px 0 0 -8px;
+        overflow: hidden;
+        background: url(../picker/marker.png) no-repeat;
+    }
+
     img{
         float:left;
         width: 20%;
@@ -21,10 +56,66 @@
 
     }
     .select_div{
-        float:left; background-color: #23b022; width: 75%;
+        float:left;  width: 75%;
+        position: relative;
+        left: 2%;
+        //border: 2px #000 solid;
+        background-size: contain;
     }
     .select_div select {
-        background-color: #120B05;
+        margin: 0;
+        font: bold 20px tellural_altbold;
+        background-color: #18180a;
+        background-image: url(../assets/123_dlinny.png) ;
+        background-position:  right ;
+        background-repeat: no-repeat;
+        //background:  ;//background-color: transparent;
+       background-size: cover;
+        -webkit-appearance: none; border: none;
+        color: #fff;   outline:none;
+        -moz-appearance:none;
+        appearance:none; z-index: 20;
+        cursor:pointer;
+
+
+    }
+    #stick{
+        position: absolute; top: 50px;  width: 30px; height: 30px; right: 30px;background: url(../assets/stick.png) no-repeat; background-size: cover;;
+    }
+    #stick_2{
+        position: absolute; top: 50px;  width: 30px; height: 30px; left: 30px;background: url(../assets/stick_2.png) no-repeat; background-size: cover;;
+    }
+    #vk{
+        position: absolute; top: 5px;  width: 60px; height: 60px; right: 37px;background: url(../assets/vk.png) no-repeat; background-size: cover;;
+    }
+    #fb{
+        position: absolute; top: 60px;  width: 60px; height: 60px; right: 5px;background: url(../assets/fb.png) no-repeat; background-size: cover;;
+    }
+    #vk{
+        position: absolute; top: 5px;  width: 60px; height: 60px; right: 37px;background: url(../assets/vk.png) no-repeat; background-size: cover;;
+    }
+    #fb{
+        position: absolute; top: 60px;  width: 60px; height: 60px; right: 5px;background: url(../assets/fb.png) no-repeat; background-size: cover;;
+    }
+    #rus{ cursor: pointer;
+        position: absolute; top: 5px;  width: 60px; height: 60px; left: 37px;background: url(../assets/rus.png) no-repeat; background-size: cover;;
+    }
+    #eng{ cursor: pointer;
+        position: absolute; top: 60px;  width: 60px; height: 60px; left: 5px;background: url(../assets/eng.png) no-repeat; background-size: cover;;
+    }
+    #vk:hover{ top: -18px; right: 35px;
+        width: 80px; height: 80px;
+    }
+    #fb:hover {
+        top: 63px; right: -13px;
+        width: 80px; height: 80px;
+    }
+    #rus:hover{ top: -18px; left: 35px;
+        width: 80px; height: 80px;
+    }
+    #eng:hover {
+        top: 63px; left: -13px;
+        width: 80px; height: 80px;
     }
 </style>
 <script>
@@ -39,15 +130,18 @@
 
 </script>
 <body>
-<div id="game_menu" style="width: 100%; position: absolute; top: 0px; left: 0px; background-color: #4D4A49; margin: 0;">
+<div id="game_menu" style="width: 100%; position: absolute; top: 0px; left: 0px; background-color: #655951; margin: 0;">
     <div style="float:left; width: 15%; margin-left: 5%;">
         <img id="tools_image" src="menu/tools.png" />
         <div class="select_div">
+            <label>
             <select class="menu_selection" >
                 <option disabled>RUS</option>
                 <option value="1" >RUS</option>
                 <option value="2" >ENG</option>
+
             </select>
+                </label>
         </div>
 
     </div>
@@ -55,9 +149,17 @@
         <img src="menu/connections.png" />
         <div class="select_div">
             <select class="menu_selection">
-                <option disabled>RUS</option>
-                <option value="1" >RUS</option>
-                <option value="2" >ENG</option>
+                <option disabled>CH4</option>
+                <option value="1" >CH4</option>
+                <option value="2" >CH4</option>
+                <option value="2" >CO</option>
+                <option value="2" >CO2</option>
+                <option value="2" >CH3OH</option>
+                <option value="2" >C2H5OH</option>
+                <option value="2" >C3H8</option>
+
+
+
             </select>
         </div>
     </div>
@@ -65,17 +167,18 @@
         <img src="menu/shop.png" />
         <div class="select_div">
             <select class="menu_selection">
-                <option disabled>RUS</option>
-                <option value="1" >RUS</option>
-                <option value="2" >ENG</option>
+                <option disabled>N</option>
+                <option value="1" >N</option>
+                <option value="2" >O</option>
+                <option value="2" >Ne</option>
             </select>
         </div>
     </div>
     <div style="float:left;width: 15%; "> <img src="menu/money.png" />
         <div class="select_div">
             <select class="menu_selection">
-                <option disabled>RUS</option>
-                <option value="1" >RUS</option>
+                <option disabled>340 MeV</option>
+                <option value="1" >340 MeV</option>
                 <option value="2" >ENG</option>
             </select>
         </div>
@@ -83,8 +186,8 @@
     <div style="float:left;width: 15%; "> <img src="menu/server.png" />
         <div class="select_div">
             <select class="menu_selection">
-                <option disabled>RUS</option>
-                <option value="1" >RUS</option>
+                <option disabled>server  #4</option>
+                <option value="1" >server  #4</option>
                 <option value="2" >ENG</option>
             </select>
         </div>
@@ -92,8 +195,8 @@
     <div style="float:left;width:15%; margin-right: 5%;"> <img src="menu/rating.png" />
         <div class="select_div">
             <select class="menu_selection">
-                <option disabled>RUS</option>
-                <option value="1" >RUS</option>
+                <option disabled>Admin 7</option>
+                <option value="1" >Admin 7</option>
                 <option value="2" >ENG</option>
             </select>
         </div>
@@ -107,19 +210,34 @@
         </div>
         <div id="menu">
             <h1>NOCH</h1>
-            <h3>ITS GETTING DARKER</h3>
-            <ul>
-                <li>
-                    <input name="login" id="login__input" placeholder="LOGIN">
+
+            <ul class = "input_type_ul">
+                <li class="input_type_li">
+                    <input name="login" id="login__input" placeholder="login" style="color: white;width: 85%;font-size:20px; height:30px;background-color: #181715; border: 2px grey solid;">
                 </li>
-                <li>
-                    <input name="password" id="password__input" placeholder="PASSWORD">
-                    <select>
-                        <option disabled>Color</option>
-                        <option value="1" >Red</option>
-                        <option value="2" >Blue</option>
-                        <option value="3" >Green</option>
-                    </select>
+                <li class="input_type_li">
+                    <input name="password" id="password__input" placeholder="password" style="color: white; font-size:20px; width: 85%; height:30px;background-color: #181715;border: 2px grey solid;">
+                    <script type="text/javascript" charset="utf-8">
+                        $(document).ready(function() {
+                            $('#demo').hide();
+                            $('#picker').farbtastic('#btn__go');
+                        });
+                    </script>
+
+                    <form action="" style="width: 400px; z-index: 100;">
+                        <div class="form-item">
+
+                        </div>
+                        <div id="picker"></div>
+
+                    </form>
+
+                    <div id="stick"></div>
+                    <div id="stick_2"></div>
+                    <a href="https://vk.com/game_noch" target="_blank"><div id="vk"></div></a>
+                    <div id="fb"></div>
+                    <div id="eng"></div>
+                    <div id="rus"></div>
                     <div id="btn__go">
                         <h2>GO</h2>
                     </div>
