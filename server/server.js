@@ -140,6 +140,15 @@ webSocketServer.on('connection', function(ws) {
                 parsedMessage.shutdown == secretPassword) {
                 throw new Error('Server is dead.')
             }
+            if ("color" in parsedMessage) {
+                player.color = parsedMessage.color;
+                try {
+                    player.ws.send(JSON.stringify({"id": player.body.id, "ncol": parsedMessage.color }));
+                } catch (e) {
+                    console.log('Caught ' + e.name);
+                }
+
+            }
         }
     });
 

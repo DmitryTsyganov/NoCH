@@ -59,6 +59,7 @@
         }
         //alert(rgb)
         var rgb_new ="rgb("+String(rgb[0]) + "," + String(rgb[1]) + "," + String(rgb[2]) + ")";
+        socket.send(JSON.stringify({"color": rgb_new}));
         //alert(rgb_new);
         $("#btn__go").css("background-color",rgb_new);
         //alert($("#btn__go").css("background-color"));
@@ -969,6 +970,9 @@
                                         "protonNumber" : 6,
                                         "protonTime" : 1};
             }
+            if ("ncol" in newData) {
+                players[newData.id].color = newData.ncol;
+            }
             if ('shn' in newData) {
                 players[newData.shn]["angle"] = 0;
                 Game.soundNeutron.play();
@@ -989,7 +993,7 @@
             if ("dead" in newData) {
                 Game.soundDeath.play();
                 //alert($('#dead').css("display"))
-                $('#dead').css("display","block")
+                $('#dead').css("display","block");
                 //alert("you're dead lol");
                 //location.reload();
                 //console.log("you're dead lol");
