@@ -11,7 +11,7 @@ params.connect();
 var Matter = require('matter-js/build/matter.js');
 
 var secretPassword = 'SvyatoslavMitin';
-//It's not that secret beeing honest
+//It's not that secret being honest
 
 var Engine = Matter.Engine,
     World = Matter.World,
@@ -622,9 +622,11 @@ setInterval(function() {
 
                 case "garbage":
 
-                    garbage[ghost.number].die(engine);
+                    //temporary
+                    //garbage[ghost.number].die(engine);
                     deleteProperly(ghost);
                     delete ghosts[i];
+
                     break;
 
                 case "player":
