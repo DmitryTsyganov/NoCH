@@ -143,7 +143,7 @@ webSocketServer.on('connection', function(ws) {
             if ("color" in parsedMessage) {
                 player.color = parsedMessage.color;
                 try {
-                    player.ws.send(JSON.stringify({"id": player.body.id, "ncol": parsedMessage.color }));
+                    sendEverybody({"id": player.body.id, "ncol": parsedMessage.color });
                 } catch (e) {
                     console.log('Caught ' + e.name);
                 }
@@ -387,7 +387,7 @@ function link(child, parent) {
     child.chemicalParent = parent;
 }
 
-//creates constraint suitable for making bond 
+//creates constraint suitable for making bond
 function createBondConstraint(_bodyA, _bodyB, _stiffness) {
     return Matter.Constraint.create({bodyA: _bodyA, bodyB: _bodyB,
         pointA: { x: _bodyB.position.x - _bodyA.position.x,
