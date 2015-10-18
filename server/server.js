@@ -623,47 +623,51 @@ function deleteProperly(body) {
 
 //main loop
 setInterval(function() {
-    Matter.Engine.update(engine, engine.timing.delta);
-    for (var i = 0; i < ghosts.length; ++i) {
-        if (ghosts[i]) {
-            var ghost = ghosts[i];
-            switch (ghost.inGameType) {
-                case "p":
+    if (players.filter(function(player) {
+        return !!player;
+    }).length) {
+        Matter.Engine.update(engine, engine.timing.delta);
+        for (var i = 0; i < ghosts.length; ++i) {
+            if (ghosts[i]) {
+                var ghost = ghosts[i];
+                switch (ghost.inGameType) {
+                    case "p":
 
-                    deleteProperly(ghost);
-                    delete ghosts[i];
-                    break;
+                        deleteProperly(ghost);
+                        delete ghosts[i];
+                        break;
 
-                case "playerPart":
+                    case "playerPart":
 
-                    var playerToCheck = getPlayer(ghost);
-                    getMainObject(ghost).die(engine);
-                    deleteProperly(ghost);
-                    delete ghosts[i];
-                    playerToCheck.checkResizeShrink();
-                    break;
+                        var playerToCheck = getPlayer(ghost);
+                        getMainObject(ghost).die(engine);
+                        deleteProperly(ghost);
+                        delete ghosts[i];
+                        playerToCheck.checkResizeShrink();
+                        break;
 
-                case "garbage":
+                    case "garbage":
 
-                    //temporary
-                    //garbage[ghost.number].die(engine);
-                    deleteProperly(ghost);
-                    delete ghosts[i];
+                        //temporary
+                        //garbage[ghost.number].die(engine);
+                        deleteProperly(ghost);
+                        delete ghosts[i];
 
-                    break;
+                        break;
 
-                case "player":
+                    case "player":
 
-                    console.log("player number " + ghost.number + " is dead.");
-                    var player = getMainObject(ghost);
-                    player.garbagify(players, garbage);
+                        console.log("player number " + ghost.number + " is dead.");
+                        var player = getMainObject(ghost);
+                        player.garbagify(players, garbage);
 
-                    sendEverybody({ "dp": player.body.id });
-                    delete ghosts[i];
-                    break;
+                        sendEverybody({"dp": player.body.id});
+                        delete ghosts[i];
+                        break;
+                }
             }
-        }
 
+        }
     }
 
     for (var j = 0; j < players.length; ++j) {
