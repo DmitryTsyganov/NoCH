@@ -5,7 +5,7 @@
  Node JS,
  Matter.js
  
- ## Server
+## Server
 ### Quickstart
 ```shell
 git clone git@github.com:DmitryTsyganov/NoCH.git
