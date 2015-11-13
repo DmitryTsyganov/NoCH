@@ -8,7 +8,10 @@
     "matter-js": "~0.8.0",
     "ws": "~0.7.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "ws": "~0.7.2",
+    "memwatch": "~0.2.2"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
