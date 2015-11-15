@@ -4,15 +4,15 @@
   "description": "NOCH game",
   "main": "server.js",
   "dependencies": {
-    "memwatch": "~0.2.2",
-    "ws": "~0.7.2"
+    "ws": "^0.8.0"
   },
   "devDependencies": {
-    "ws": "~0.7.2",
-    "memwatch": "~0.2.2"
+    "db_noch": "0.0.1",
+    "geometry_noch": "0.0.1",
+    "ws": "^0.8.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"Error: no test specified\" && exit 1","postinstall": "git clone -b master --single-branch https://github.com/liabru/matter-js node_modules/matter-js",
     "start": "node server.js"
   },
   "repository": {

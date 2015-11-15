@@ -2,7 +2,7 @@
  * Created by fatman on 13/07/15.
  */
 
-var params = require("db");
+var params = require("db_noch");
 var elements = params.getParameter("elements");
 var Matter = require('matter-js/build/matter.js');
 var basicParticle = require("../basic particle");

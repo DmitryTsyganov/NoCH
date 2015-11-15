@@ -2,9 +2,9 @@
  * Created by fatman on 06/08/15.
  */
 
-var Geometry = require("geometry");
+var Geometry = require("geometry_noch");
 var Matter = require('matter-js/build/matter.js');
-var params = require("db");
+var params = require("db_noch");
 var elements = params.getParameter("elements");
 
 var Engine = Matter.Engine,
