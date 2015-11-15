@@ -12,7 +12,8 @@
     "ws": "^0.8.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1","postinstall": "git clone -b master --single-branch https://github.com/liabru/matter-js node_modules/matter-js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "git clone -b master --single-branch https://github.com/liabru/matter-js node_modules/matter-js",
     "start": "node server.js"
   },
   "repository": {
